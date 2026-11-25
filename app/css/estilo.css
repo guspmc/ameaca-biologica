@@ -1,0 +1,105 @@
+:root {
+  --fundo: #0b0f0c;
+  --painel: #121a15;
+  --painel-2: #18231c;
+  --borda: #24332a;
+  --texto: #e6f0e8;
+  --suave: #8fa396;
+  --acento: #3ddc84;
+  --acento-escuro: #0b2a18;
+  --aviso: #ffb454;
+  --erro: #ff6b6b;
+  --raio: 14px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; background: var(--fundo); color: var(--texto); }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.45;
+  min-height: 100vh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+#app { max-width: 560px; margin: 0 auto; padding: 20px 16px 40px; }
+
+[hidden] { display: none !important; }
+
+h1 { font-size: 1.6rem; margin: 0; letter-spacing: 0.02em; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; color: var(--acento); text-transform: uppercase; letter-spacing: 0.08em; }
+h3 { font-size: 0.95rem; margin: 16px 0 6px; }
+
+.subtitulo { color: var(--suave); margin: 4px 0 0; }
+.dica { color: var(--suave); font-size: 0.88rem; margin: 8px 0; }
+
+.marca { text-align: center; padding: 28px 0 20px; }
+.marca img { border-radius: 20px; }
+.marca h1 { margin-top: 12px; font-size: 2rem; }
+
+.topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+
+.cartao {
+  background: var(--painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.cartao.desativado { opacity: 0.55; }
+
+label { display: block; font-size: 0.85rem; color: var(--suave); margin: 12px 0 4px; }
+
+input {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  color: var(--texto);
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+}
+input:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
+
+.linha { display: flex; gap: 10px; margin-top: 14px; }
+
+.botao {
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 18px;
+  color: var(--texto);
+  background: var(--painel-2);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  cursor: pointer;
+  min-height: 44px;
+}
+.botao:hover { border-color: var(--acento); }
+.botao.primario { background: var(--acento); color: var(--acento-escuro); border-color: var(--acento); }
+.botao.discreto { background: transparent; padding: 8px 14px; min-height: 36px; }
+#form-login .botao { width: 100%; margin-top: 16px; }
+#btn-instalar { width: 100%; }
+
+.pilulas { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.pilula {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  color: var(--suave);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.pilula.ativa { color: var(--acento-escuro); background: var(--acento); border-color: var(--acento); }
+#pilula-offline.ativa { background: var(--aviso); border-color: var(--aviso); }
+.pilula.desativada { opacity: 0.4; border-style: dashed; }
+
+.mensagem { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; font-size: 0.9rem; border: 1px solid var(--borda); }
+.mensagem.erro { color: var(--erro); border-color: var(--erro); }
+.mensagem.aviso { color: var(--aviso); border-color: var(--aviso); }
+.mensagem.info { color: var(--suave); }
+
+.lista { list-style: none; margin: 0; padding: 0; }
+.lista li { padding: 8px 0; border-bottom: 1px solid var(--borda); word-break: break-all; }
+.lista li:last-child { border-bottom: 0; }
+.lista .voce { color: var(--acento); font-size: 0.85rem; margin-left: 6px; }
