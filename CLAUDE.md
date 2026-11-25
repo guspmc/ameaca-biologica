@@ -20,6 +20,13 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 ## Estado
 - v0.1: servidor, login, Laboratório (status Offline/Local), conexão por endereço, presença em tempo real, manifesto + service worker.
 
+## Pendência combinada (fazer junto com a próxima etapa)
+**Testar portas antes de conectar**, para funcionar em qualquer máquina mesmo com a 3000 ocupada:
+- Servidor: tentar `PORTA` (padrão 3000) e, se estiver em uso (`EADDRINUSE`), tentar as seguintes (ex.: 3000–3010), em vez de encerrar. Mostrar na janela a porta realmente usada.
+- `iniciar.bat` abre o navegador numa porta fixa: precisa abrir na porta real (o servidor pode abrir o navegador ou gravar a porta num arquivo).
+- App: `normalizarEndereco` assume `:3000` quando o jogador não digita a porta. Trocar por orientação clara (usar o endereço completo mostrado na tela/QR Code) ou testar as portas candidatas.
+- O QR Code do servidor deve embutir a porta real.
+
 ## Próximas etapas
 1. QR Code do servidor (gerado no servidor, sem biblioteca) e tela de conexão.
 2. Mesas: criar (vira Mestre), código, entrar, aprovação do Mestre.
