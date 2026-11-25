@@ -282,6 +282,7 @@ function renderizar() {
   $('btn-conectar').hidden = estado.quer;
   $('btn-desconectar').hidden = !estado.quer;
   $('campo-servidor').disabled = estado.quer;
+  if (estado.quer && estado.base) $('campo-servidor').value = estado.base.replace(/^http:\/\//, '');
 
   const conectado = estado.modo === 'local';
   $('bloco-enderecos').hidden = !(conectado && estado.enderecos.length);
