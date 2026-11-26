@@ -112,12 +112,13 @@ function montarPainelCombateMestre(){
     agi.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
     tipo.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
     const add=document.createElement('button');add.type='submit';add.className='botao primario';add.textContent='Adicionar';form.append(ln,nome,lt,tipo,la,agi,lb,bonus,add);
+    const msg=document.createElement('p');msg.id='combate-msg';msg.className='mensagem';msg.hidden=true;
     const acoes=document.createElement('div');acoes.className='linha combate-acoes';
     function acao(texto,classe,fn,id){const b=document.createElement('button');b.type='button';b.className='botao '+classe;b.textContent=texto;if(id)b.id=id;b.addEventListener('click',fn);return b;}
     acoes.append(acao('Rolar iniciativa','primario',rolarIniciativasCombate),acao('Próximo turno','',avancarTurnoCombate,'combate-avancar'),acao('Novo combate','',novoCombateMestre));
     const vazio=document.createElement('p');vazio.id='combate-vazio';vazio.className='dica';vazio.textContent='Adicione personagens e criaturas para preparar a ordem de iniciativa.';
     const ul=document.createElement('ol');ul.id='combate-lista';ul.className='lista combate-lista';
-    card.append(h,resumo,ajuda,empate,form,acoes,vazio,ul);raiz.append(card);
+    card.append(h,resumo,ajuda,empate,form,msg,acoes,vazio,ul);raiz.append(card);
   }
   if(combateMestre)desenharCombateMestre();
 }
