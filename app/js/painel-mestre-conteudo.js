@@ -113,7 +113,7 @@ function desenharConteudoMestre() {
   const encontros = $('encontros-mestre'); encontros.replaceChildren();
   for (const item of conteudoMestre.encontros) {
     const li = elemento('li', '', 'registro-mestre');
-    li.append(elemento('strong', item.nome || 'Encontro sem título'), elemento('p', (item.pontos || 0) + ' pontos · ' + (item.dificuldade || '—') + ' · ' + (item.composicao || 'Sem composição')));
+    li.append(elemento('strong', item.nome || 'Encontro sem título'), elemento('p', (item.pontos || 0) + ' / ' + (item.orcamento || '—') + ' pontos · ' + (item.dificuldade || '—') + ' · ' + (item.composicao || 'Sem composição')));
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { conteudoMestre.encontros = conteudoMestre.encontros.filter(x => x.id !== item.id); salvarConteudoMestre(); });
     li.append(remover); encontros.append(li);
@@ -170,7 +170,7 @@ function montarConteudoMestre() {
     e.preventDefault();
     let s; try { s = JSON.parse(form.dataset.sorteio || 'null'); } catch {}
     if (!s) { mensagem(msg, 'Faça um sorteio antes de guardar o encontro.', 'aviso'); return; }
-    conteudoMestre.encontros.unshift({ id: novoIdConteudo(), nome: 'Encontro · Nível ' + s.nivel, nivel: s.nivel, jogadores: s.jogadores, dificuldade: s.dificuldade, pontos: s.pontos, composicao: s.composicao, cenario: cenario.value, direcao: direcao.value });
+    conteudoMestre.encontros.unshift({ id: novoIdConteudo(), nome: 'Encontro · Nível ' + s.nivel, nivel: s.nivel, jogadores: s.jogadores, dificuldade: s.dificuldade, pontos: s.pontos, orcamento: s.limite, composicao: s.composicao, cenario: cenario.value, direcao: direcao.value });
     form.dataset.sorteio = ''; salvarConteudoMestre();
   });
   encontro.append(form); card.append(encontro);
