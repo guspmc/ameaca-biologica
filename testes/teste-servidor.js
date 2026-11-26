@@ -91,6 +91,58 @@ async function ouvir(token, ms) {
       confere(`serve ${rota}`, x.status === 200 && (x.headers.get('content-type') || '').includes(tipo), x.status + ' ' + x.headers.get('content-type'));
     }
 
+    // Fluxo de publicação: Mestre cria Mesa, aprova Jogador e compartilha documentos/itens.
+    const criada = await fetch(B + '/api/mesas', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + ana.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: 'Mesa de teste', limiteJogadores: 2, limiteNivel: 1 })
+    });
+    const mesaCriada = await criada.json();
+    confere('Mestre cria Mesa para testar publicações', criada.status === 201 && Boolean(mesaCriada.id));
+    const detalheMestre = await (await fetch(B + '/api/mesas/' + mesaCriada.id, { headers: { Authorization: 'Bearer ' + ana.token } })).json();
+    const entradaMesa = await fetch(B + '/api/mesas/entrar', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + b.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo: detalheMestre.mesa.codigo })
+    });
+    confere('Jogador solicita entrada na Mesa', entradaMesa.status === 200);
+    const aprovacao = await fetch(B + '/api/mesas/' + mesaCriada.id + '/jogadores/Beto/aprovar', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + ana.token }
+    });
+    confere('Mestre aprova Jogador', aprovacao.status === 200);
+    const privado = await fetch(B + '/api/mesas/' + mesaCriada.id + '/publicacoes', { headers: { Authorization: 'Bearer ' + b.token } });
+    confere('Jogador aprovado consulta publicações vazias', privado.status === 200);
+    const conteudo = await fetch(B + '/api/painel-mestre/' + mesaCriada.id + '/conteudo', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + ana.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        anotacoes: 'Somente o Mestre vê',
+        encontros: [],
+        documentos: [
+          { id: 'doc-publico', titulo: 'Relatório', tipo: 'Arquivo', conteudo: 'Documento compartilhado', visivel: true },
+          { id: 'doc-privado', titulo: 'Segredo', tipo: 'Nota', conteudo: 'Documento reservado', visivel: false }
+        ],
+        itens: [
+          { id: 'item-publico', nome: 'Cartão de acesso', categoria: 'Chave', descricao: 'Cartão azul', efeito: 'Abre a ala B', visivel: true },
+          { id: 'item-privado', nome: 'Protótipo', categoria: 'Equipamento', visivel: false }
+        ]
+      })
+    });
+    confere('Mestre salva conteúdo e publicações', conteudo.status === 200);
+    const publicacoes = await (await fetch(B + '/api/mesas/' + mesaCriada.id + '/publicacoes', { headers: { Authorization: 'Bearer ' + b.token } })).json();
+    confere('Jogador recebe apenas documento e item publicados',
+      publicacoes.documentos?.length === 1 && publicacoes.documentos[0].titulo === 'Relatório' &&
+      publicacoes.itens?.length === 1 && publicacoes.itens[0].nome === 'Cartão de acesso');
+    const naoAprovado = await post('/api/entrar', { usuario: 'Caio', senha: '1234' });
+    const caio = await naoAprovado.json();
+    const pedidoCaio = await fetch(B + '/api/mesas/entrar', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + caio.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo: detalheMestre.mesa.codigo })
+    });
+    const tentativaPendente = await fetch(B + '/api/mesas/' + mesaCriada.id + '/publicacoes', { headers: { Authorization: 'Bearer ' + caio.token } });
+    confere('Jogador pendente não acessa publicações', pedidoCaio.status === 200 && tentativaPendente.status === 403);
+    const tentativaEstranha = await fetch(B + '/api/mesas/' + mesaCriada.id + '/publicacoes');
+    confere('Publicações exigem autenticação', tentativaEstranha.status === 401);
+
     // Tentativas de sair da pasta do app
     for (const rota of ['/..%2fservidor%2fserver.js', '/%2e%2e/servidor/dados/usuarios.json', '/..%5cservidor%5cserver.js']) {
       const x = await fetch(B + rota);
