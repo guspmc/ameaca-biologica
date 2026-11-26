@@ -24,7 +24,13 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
       if (nomes.has(chave)) return { erro:'Não use nomes repetidos no mesmo combate.' };
       ids.add(id); nomes.add(chave);
       const original=anterior.participantes.find(x=>x.id===id);
-      participantes.push({ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,
+      const condicoes = Array.isArray(p.condicoes) ? p.condicoes.slice(0, 10).map((x) => ({
+        id: String(x.id || require('crypto').randomUUID()).slice(0, 40),
+        nome: String(x.nome || '').trim().slice(0, 60),
+        duracao: String(x.duracao || '').trim().slice(0, 80),
+        observacao: String(x.observacao || '').trim().slice(0, 300)
+      })).filter(x => x.nome) : (original?.condicoes || []);
+      participantes.push({ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,condicoes,
         entradaTardia:original?original.entradaTardia:Boolean(p.entradaTardia),ordem:original?original.ordem:i });
     }
     const rodada=Number(corpo.rodada);
