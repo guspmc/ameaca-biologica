@@ -75,8 +75,7 @@ function adicionarCondicaoCombate(id){
   const observacao=prompt('Observação opcional:')||'';
   p.condicoes=p.condicoes||[];
   if(p.condicoes.some(x=>x.nome.toLocaleLowerCase('pt-BR')===nome.trim().toLocaleLowerCase('pt-BR'))){
-    alert('Essa condição já está aplicada. O livro não acumula os efeitos mecânicos de duas instâncias da mesma condição.');
-    return;
+    alert('Os efeitos mecânicos da mesma condição não se acumulam; esta nova instância terá sua duração acompanhada separadamente.');
   }
   p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),nome:nome.trim(),duracao:duracao.trim(),observacao:observacao.trim()});
   salvarCombateMestre();
