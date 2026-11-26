@@ -147,3 +147,24 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .lista li { padding: 8px 0; border-bottom: 1px solid var(--borda); word-break: break-all; }
 .lista li:last-child { border-bottom: 0; }
 .lista .voce { color: var(--acento); font-size: 0.85rem; margin-left: 6px; }
+
+/* Painel do Mestre · iniciativa e turnos */
+.painel-combate{border-color:#365a43}
+.combate-resumo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:8px 0}
+.combate-rodada{color:var(--acento);font-weight:700}
+.combate-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}
+.combate-form label{margin:4px 0 0}
+.combate-form input,.combate-form select{min-width:0;width:100%}
+.combate-form label:first-child,.combate-form input:first-of-type,.combate-form button{grid-column:1/-1}
+.combate-acoes{flex-wrap:wrap}
+.combate-lista{padding-left:24px}
+.combate-participante{display:grid;grid-template-columns:minmax(0,1fr) auto 76px auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--borda)}
+.combate-participante:last-child{border-bottom:0}
+.combate-participante.turno-atual{background:var(--acento-escuro);border-radius:8px;padding-left:8px;padding-right:8px}
+.combate-identidade,.combate-dados{display:flex;flex-direction:column;min-width:0}
+.combate-identidade strong{overflow-wrap:anywhere}
+.combate-dados{text-align:right}
+.combate-dados strong{font-size:1.25rem;color:var(--acento)}
+.combate-participante input{min-width:0;width:76px;padding:8px}
+.combate-participante .botao{padding:7px 9px}
+@media(max-width:430px){.combate-participante{grid-template-columns:minmax(0,1fr) auto}.combate-participante input{grid-column:1;width:100%}.combate-participante .botao{grid-column:2;grid-row:2}.combate-dados{grid-column:2;grid-row:1}}
