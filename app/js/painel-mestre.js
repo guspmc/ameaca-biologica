@@ -68,6 +68,23 @@ function empateIniciativaMestre(){
   const a=combateMestre.participantes;
   return a.some((p,i)=>i>0&&p.d20>0&&a[i-1].d20>0&&!p.entradaTardia&&!a[i-1].entradaTardia&&p.iniciativa===a[i-1].iniciativa&&p.agi===a[i-1].agi&&p.d20===a[i-1].d20);
 }
+function adicionarCondicaoCombate(id){
+  const p=combateMestre.participantes.find(x=>x.id===id);if(!p)return;
+  const nome=prompt('Nome da condição (conforme o Livro do Jogador):');if(!nome||!nome.trim())return;
+  const duracao=prompt('Duração ou momento de término (ex.: 2 rodadas, até o fim do próximo turno):')||'Conforme a fonte';
+  const observacao=prompt('Observação opcional:')||'';
+  p.condicoes=p.condicoes||[];
+  if(p.condicoes.some(x=>x.nome.toLocaleLowerCase('pt-BR')===nome.trim().toLocaleLowerCase('pt-BR'))){
+    alert('Essa condição já está aplicada. O livro não acumula os efeitos mecânicos de duas instâncias da mesma condição.');
+    return;
+  }
+  p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),nome:nome.trim(),duracao:duracao.trim(),observacao:observacao.trim()});
+  salvarCombateMestre();
+}
+function removerCondicaoCombate(id,condicaoId){
+  const p=combateMestre.participantes.find(x=>x.id===id);if(!p)return;
+  p.condicoes=(p.condicoes||[]).filter(x=>x.id!==condicaoId);salvarCombateMestre();
+}
 function desenharCombateMestre(){
   const raiz=$('bloco-combate-mestre');if(!raiz||!combateMestre)return;
   const lista=$('combate-lista');lista.replaceChildren();
@@ -83,7 +100,16 @@ function desenharCombateMestre(){
     dados.append(total,detalhe);
     const d20=document.createElement('input');d20.type='number';d20.min='1';d20.max='20';d20.value=p.d20||'';d20.placeholder='d20';d20.setAttribute('aria-label','Resultado natural do d20 de '+p.nome);d20.addEventListener('change',()=>ajustarD20Combate(p.id,d20.value));
     const remover=document.createElement('button');remover.type='button';remover.className='botao pequeno perigo';remover.textContent='Remover';remover.addEventListener('click',()=>removerParticipanteCombate(p.id));
-    li.append(identidade,dados,d20,remover);lista.append(li);
+    li.append(identidade,dados,d20,remover);
+    const condicoes=document.createElement('div');condicoes.className='combate-condicoes';
+    for(const condicao of (p.condicoes||[])){
+      const tag=document.createElement('span');tag.className='condicao-combate';
+      tag.textContent=condicao.nome+' · '+(condicao.duracao||'duração não definida')+(condicao.observacao?' · '+condicao.observacao:'');
+      const excluir=document.createElement('button');excluir.type='button';excluir.className='botao pequeno';excluir.textContent='×';excluir.setAttribute('aria-label','Remover condição '+condicao.nome);
+      excluir.addEventListener('click',()=>removerCondicaoCombate(p.id,condicao.id));tag.append(excluir);condicoes.append(tag);
+    }
+    const adicionar=document.createElement('button');adicionar.type='button';adicionar.className='botao pequeno';adicionar.textContent='Aplicar condição';adicionar.addEventListener('click',()=>adicionarCondicaoCombate(p.id));
+    condicoes.append(adicionar);li.append(condicoes);lista.append(li);
   }
   $('combate-rodada').textContent=String(combateMestre.rodada);
   $('combate-status').textContent=combateMestre.combateAtivo?'Combate em andamento':'Preparação';
