@@ -212,7 +212,47 @@ function montarConteudoMestre() {
   desenharConteudoMestre();
 }
 
+let documentosPublicosMesa = [];
+let carregandoDocumentosPublicos = false;
+async function carregarDocumentosPublicos() {
+  if (!estado.mesaId || estado.modo !== 'local' || estado.mesaAtual?.papel !== 'jogador' || carregandoDocumentosPublicos) return;
+  carregandoDocumentosPublicos = true;
+  try {
+    const r = await buscar(estado.base + '/api/mesas/' + encodeURIComponent(estado.mesaId) + '/documentos', {
+      headers: { Authorization: 'Bearer ' + estado.token }
+    });
+    documentosPublicosMesa = r.documentos || [];
+  } catch { documentosPublicosMesa = []; }
+  finally { carregandoDocumentosPublicos = false; }
+}
+function montarDocumentosPublicos() {
+  if (estado.mesaAtual?.papel !== 'jogador' || $('documentos-publicos-mesa')) return;
+  const card = elemento('section', '', 'cartao'); card.id = 'documentos-publicos-mesa';
+  card.append(elemento('h2', 'Documentos compartilhados pelo Mestre'));
+  if (!documentosPublicosMesa.length) card.append(elemento('p', 'Nenhum documento foi compartilhado nesta Mesa.', 'dica'));
+  for (const doc of documentosPublicosMesa) {
+    const sec = elemento('article', '', 'subpainel-mestre');
+    sec.append(elemento('h3', doc.titulo), elemento('p', doc.tipo, 'dica'));
+    const corpo = elemento('p', doc.conteudo); corpo.style.whiteSpace = 'pre-wrap'; sec.append(corpo);
+    card.append(sec);
+  }
+  $('conteudo-mesa').append(card);
+}
 const renderizarMesaConteudoOriginal = window.renderizarMesa;
 const carregarMesaConteudoOriginal = window.carregarMesaAtual;
-window.renderizarMesa = function () { renderizarMesaConteudoOriginal(); if (estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') montarConteudoMestre(); };
-window.carregarMesaAtual = async function () { await carregarMesaConteudoOriginal(); if (estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true); };
+window.renderizarMesa = function () {
+  renderizarMesaConteudoOriginal();
+  if (estado.tela !== 'mesa') return;
+  if (estado.mesaAtual?.papel === 'mestre') montarConteudoMestre();
+  else montarDocumentosPublicos();
+};
+window.carregarMesaAtual = async function () {
+  await carregarMesaConteudoOriginal();
+  if (estado.tela !== 'mesa') return;
+  if (estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true);
+  else {
+    documentosPublicosMesa = [];
+    await carregarDocumentosPublicos();
+    window.renderizarMesa();
+  }
+};
