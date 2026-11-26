@@ -249,7 +249,9 @@ window.renderizarMesa = function () {
   if (estado.mesaAtual?.papel === 'mestre') montarConteudoMestre();
   else montarDocumentosPublicos();
 };
+let mesaConteudoCarregada = null;
 window.carregarMesaAtual = async function () {
+  if (estado.mesaId !== mesaConteudoCarregada) { conteudoMestre = CONTEUDO_MESTRE_VAZIO(); documentosPublicosMesa = []; mesaConteudoCarregada = estado.mesaId; }
   await carregarMesaConteudoOriginal();
   if (estado.tela !== 'mesa') return;
   if (estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true);
