@@ -193,3 +193,7 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
   .painel-conteudo > h2, .painel-conteudo > #conteudo-msg { grid-column: 1 / -1; }
   .painel-conteudo > .subpainel-mestre { margin: 0; }
 }
+
+.combate-condicoes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; grid-column: 1 / -1; }
+.condicao-combate { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 8px; border: 1px solid var(--aviso); border-radius: 8px; color: var(--texto); font-size: .82rem; overflow-wrap: anywhere; }
+.condicao-combate .botao { min-height: 28px; padding: 2px 8px; line-height: 1; }
