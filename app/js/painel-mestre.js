@@ -109,6 +109,8 @@ function montarPainelCombateMestre(){
     const lt=document.createElement('label');lt.textContent='Tipo';const tipo=document.createElement('select');tipo.id='combate-tipo';
     for(const x of [['personagem','Personagem'],['criatura','Criatura']]){const o=document.createElement('option');o.value=x[0];o.textContent=x[1];tipo.append(o);}
     const [la,agi]=campo('AGI (desempate)','combate-agi','input','0');const [lb,bonus]=campo('Bônus de Iniciativa','combate-bonus','input','0');
+    agi.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
+    tipo.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
     const add=document.createElement('button');add.type='submit';add.className='botao primario';add.textContent='Adicionar';form.append(ln,nome,lt,tipo,la,agi,lb,bonus,add);
     const acoes=document.createElement('div');acoes.className='linha combate-acoes';
     function acao(texto,classe,fn,id){const b=document.createElement('button');b.type='button';b.className='botao '+classe;b.textContent=texto;if(id)b.id=id;b.addEventListener('click',fn);return b;}
