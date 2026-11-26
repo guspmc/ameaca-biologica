@@ -149,6 +149,7 @@ function montarPainelCombateMestre(){
   if(combateMestre)desenharCombateMestre();
 }
 function renderizarMesa(){renderizarMesaBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')montarPainelCombateMestre();}
-async function carregarMesaAtual(){await carregarMesaAtualBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')await carregarCombateMestre(true);}
+let mesaCombateCarregada=null;
+async function carregarMesaAtual(){const id=estado.mesaId;if(id!==mesaCombateCarregada){combateMestre=null;mesaCombateCarregada=id;}await carregarMesaAtualBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')await carregarCombateMestre(true);}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')carregarCombateMestre(true);});
 setInterval(()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre'&&!salvandoCombate)carregarCombateMestre(true);},4000);
