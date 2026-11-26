@@ -1,0 +1,49 @@
+'use strict';
+function criarPainelMestre({ carregar, salvar, ehMestre }) {
+  const dados = carregar() || {};
+  const vazio = (mesaId) => ({ mesaId, combateAtivo:false, rodada:1, turnoAtual:null, participantes:[], atualizadoEm:new Date().toISOString() });
+  function ordenar(lista) {
+    return [...lista].sort((a,b) => {
+      if (a.entradaTardia !== b.entradaTardia) return a.entradaTardia ? 1 : -1;
+      return b.iniciativa-a.iniciativa || b.agi-a.agi || b.d20-a.d20 || a.ordem-b.ordem;
+    });
+  }
+  function validar(corpo, anterior, mesaId) {
+    if (!corpo || typeof corpo !== 'object' || !Array.isArray(corpo.participantes)) return { erro:'Dados de combate inválidos.' };
+    if (corpo.participantes.length > 30) return { erro:'O combate aceita até 30 participantes.' };
+    const ids=new Set(), nomes=new Set(), participantes=[];
+    for (let i=0;i<corpo.participantes.length;i++) {
+      const p=corpo.participantes[i] || {};
+      const id=String(p.id || '').slice(0,40), nome=String(p.nome || '').trim().slice(0,40);
+      const tipo=p.tipo==='criatura'?'criatura':'personagem';
+      const agi=Number(p.agi), bonus=Number(p.bonusIniciativa), d20=Number(p.d20);
+      if (!id || ids.has(id) || !nome || !Number.isInteger(agi) || agi < -10 || agi > 30 ||
+          !Number.isInteger(bonus) || bonus < -10 || bonus > 30 || !Number.isInteger(d20) || d20 < 0 || d20 > 20)
+        return { erro:'Confira nome, AGI, bônus de Iniciativa e resultado do d20 de cada participante.' };
+      const chave=nome.toLocaleLowerCase('pt-BR');
+      if (nomes.has(chave)) return { erro:'Não use nomes repetidos no mesmo combate.' };
+      ids.add(id); nomes.add(chave);
+      const original=anterior.participantes.find(x=>x.id===id);
+      participantes.push({ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,
+        entradaTardia:original?original.entradaTardia:Boolean(p.entradaTardia),ordem:original?original.ordem:i });
+    }
+    const rodada=Number(corpo.rodada);
+    if (!Number.isInteger(rodada) || rodada<1 || rodada>9999) return { erro:'Rodada inválida.' };
+    const turnoAtual=corpo.turnoAtual==null?null:String(corpo.turnoAtual);
+    if (turnoAtual && !participantes.some(p=>p.id===turnoAtual)) return { erro:'O turno atual não pertence a este combate.' };
+    return { valor:{ mesaId,combateAtivo:Boolean(corpo.combateAtivo),rodada,turnoAtual,participantes:ordenar(participantes),atualizadoEm:new Date().toISOString() } };
+  }
+  return {
+    atender(usuario,metodo,mesaId,corpo) {
+      if (!ehMestre(usuario,mesaId)) return {status:403,dados:{erro:'Somente o Mestre desta Mesa pode acessar o Painel do Mestre.'}};
+      const atual=dados[mesaId] || vazio(mesaId);
+      if (metodo==='GET') return {status:200,dados:{combate:atual}};
+      if (metodo!=='PUT') return {status:405,dados:{erro:'Método não permitido.'}};
+      const r=validar(corpo,atual,mesaId);
+      if (r.erro) return {status:400,dados:{erro:r.erro}};
+      dados[mesaId]=r.valor; salvar(dados);
+      return {status:200,dados:{combate:dados[mesaId]}};
+    }
+  };
+}
+module.exports={criarPainelMestre};
