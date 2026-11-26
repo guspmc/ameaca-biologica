@@ -168,3 +168,28 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .combate-participante input{min-width:0;width:76px;padding:8px}
 .combate-participante .botao{padding:7px 9px}
 @media(max-width:430px){.combate-participante{grid-template-columns:minmax(0,1fr) auto}.combate-participante input{grid-column:1;width:100%}.combate-participante .botao{grid-column:2;grid-row:2}.combate-dados{grid-column:2;grid-row:1}}
+
+
+/* Conteúdo e ferramentas do Painel do Mestre */
+.painel-conteudo { margin-top: 14px; }
+.subpainel-mestre { border-top: 1px solid var(--borda); margin-top: 18px; padding-top: 14px; }
+.subpainel-mestre h3 { color: var(--texto); margin-top: 0; }
+.form-encontro-mestre { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+.form-encontro-mestre label { grid-column: 1 / -1; margin-bottom: -5px; }
+.form-encontro-mestre input, .form-encontro-mestre select, .form-encontro-mestre textarea { grid-column: 1 / -1; width: 100%; }
+.form-encontro-mestre button, .form-encontro-mestre p { grid-column: 1 / -1; }
+.form-encontro-mestre select, .form-encontro-mestre textarea {
+  color: var(--texto); background: var(--fundo); border: 1px solid var(--borda);
+  border-radius: 10px; padding: 11px 12px; font: inherit;
+}
+.form-encontro-mestre textarea, #anotacoes-mestre { width: 100%; resize: vertical; }
+#doc-visivel { width: auto; margin-right: 8px; vertical-align: middle; }
+.registro-mestre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--borda); }
+.registro-mestre strong, .registro-mestre p { flex: 1 1 100%; margin: 0; overflow-wrap: anywhere; }
+.registro-mestre .botao { margin-left: auto; }
+@media (min-width: 760px) {
+  #app { max-width: 900px; }
+  .painel-conteudo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .painel-conteudo > h2, .painel-conteudo > #conteudo-msg { grid-column: 1 / -1; }
+  .painel-conteudo > .subpainel-mestre { margin: 0; }
+}
