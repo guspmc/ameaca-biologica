@@ -10,6 +10,7 @@ r=painel.atender('Mestre','PUT','mesa-1',{combateAtivo:true,rodada:1,turnoAtual:
 {id:'p2',nome:'Infectado',tipo:'criatura',agi:1,bonusIniciativa:4,d20:12}]});
 assert.equal(r.status,200);assert.equal(r.dados.combate.participantes[0].nome,'Infectado');assert.equal(r.dados.combate.participantes[0].iniciativa,16);
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:0,participantes:[]});assert.equal(r.status,400);
+painel.apagar('mesa-1');r=painel.atender('Mestre','GET','mesa-1');assert.equal(r.dados.combate.participantes.length,0);
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 {id:'x',nome:'A',agi:1,bonusIniciativa:1,d20:20},{id:'y',nome:'a',agi:1,bonusIniciativa:1,d20:19}]});assert.equal(r.status,400);
 console.log('Painel do Mestre: tudo OK');
