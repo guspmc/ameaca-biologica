@@ -8,7 +8,7 @@ Esta branch mantém o desenvolvimento do Painel do Mestre isolado da `main` e do
 - API e persistência separadas em `servidor/painel-mestre.js` e `servidor/dados/painel-mestre.json`.
 - Primeiro recurso operacional: preparação de combate, participantes, rolagem de Iniciativa, ordem, rodada e avanço de turno.
 - Teste unitário em `testes/teste-painel-mestre.js`, incluído em `npm test`.
-- Cache do Service Worker atualizado para `ab-lab-v3`.
+- Cache do Service Worker atualizado para `ab-lab-v4`.
 
 ## Regras aplicadas
 
@@ -67,6 +67,6 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 
 Ainda pendente:
 - Integrar PV, SA, BI e perícias passivas aos dados autorizados da Ficha Ativa, assim que o modelo de dados da Ficha estiver estável na main. Até lá, o Painel não lê fichas privadas nem inventa uma segunda fonte de verdade.
-- Completar o acompanhamento de condições e durações diretamente na ordem de combate.
+- Evoluir o acompanhamento de condições: já é possível aplicar/remover condições por participante e registrar a duração; a redução automática de duração ao avançar turnos ainda não foi implementada.
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
 - Testes de integração ponta a ponta no servidor e navegador. Os testes unitários estão adicionados à suíte, mas ainda precisam ser executados em um checkout funcional.
