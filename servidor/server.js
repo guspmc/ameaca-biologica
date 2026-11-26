@@ -266,7 +266,10 @@ async function rotasMesas(req, res, url) {
   } else if (partes.length === 2 && metodo === 'POST') {
     if (acao === 'configurar') r = mesas.configurar(usuario, id, await lerCorpo(req));
     else if (acao === 'novo-codigo') r = mesas.novoCodigo(usuario, id);
-    else if (acao === 'encerrar') r = mesas.encerrar(usuario, id);
+    else if (acao === 'encerrar') {
+      r = mesas.encerrar(usuario, id);
+      if (r.ok) painelMestre.apagar(id);
+    }
     else if (acao === 'sair') r = mesas.sair(usuario, id);
   } else if (partes.length === 4 && partes[1] === 'jogadores' && metodo === 'POST') {
     r = mesas.decidir(usuario, id, partes[2], partes[3]);
