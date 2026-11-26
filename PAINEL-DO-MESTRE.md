@@ -8,7 +8,7 @@ Esta branch mantém o desenvolvimento do Painel do Mestre isolado da `main` e do
 - API e persistência separadas em `servidor/painel-mestre.js` e `servidor/dados/painel-mestre.json`.
 - Primeiro recurso operacional: preparação de combate, participantes, rolagem de Iniciativa, ordem, rodada e avanço de turno.
 - Teste unitário em `testes/teste-painel-mestre.js`, incluído em `npm test`.
-- Cache do Service Worker atualizado para `ab-lab-v4`.
+- Cache do Service Worker atualizado para `ab-lab-v5`.
 
 ## Regras aplicadas
 
@@ -53,8 +53,8 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 - Sorteio de composições com criaturas Comuns, Perigosas e Elite do Arquivo do Mestre. Chefes e Perseguidores ficam fora do sorteio automático; o livro trata Perseguidores como ameaça especial e orienta que não sejam inseridos pela tabela de encontros errantes.
 - O encontro sorteado pode ser guardado com cenário e direção tática. O orçamento é uma referência, não garantia matemática: o Mestre ainda deve considerar ferimentos, munição, cura, SA, equipamento, terreno, objetivos e rotas de fuga.
 - Anotações persistentes por Mesa.
-- Cadastro de documentos narrativos (relatórios, e-mails, bilhetes, arquivos e pistas). Documentos marcados para compartilhar ficam disponíveis aos membros aprovados daquela Mesa por uma rota de leitura que retorna somente os documentos publicados; a publicação avisa os Jogadores conectados em tempo real.
-- Cadastro de itens personalizados com categoria, descrição e efeito.
+- Cadastro de documentos narrativos (relatórios, e-mails, bilhetes, arquivos e pistas). Documentos e itens personalizados podem ser publicados/retirados a qualquer momento. Os membros aprovados recebem somente o conteúdo publicado por uma rota de leitura filtrada; mudanças de publicação avisam os Jogadores conectados em tempo real.
+- Cadastro de itens personalizados com categoria, descrição e efeito, com controle individual de publicação/retirada para os Jogadores.
 - Conteúdo persistido em arquivo separado (painel-mestre-conteudo.json), com autorização exclusiva do Mestre para criar, editar e excluir. Jogadores recebem somente os documentos publicados; não recebem anotações, encontros privados ou itens em preparação.
 - Ao encerrar a Mesa, os dados desse módulo também são apagados.
 
