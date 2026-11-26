@@ -151,7 +151,7 @@ function montarConteudoMestre() {
   nivel.value = estado.mesaAtual.limiteNivel || 1;
   const [lj, jogadores] = campoConteudo('Quantidade de personagens', 'encontro-jogadores', 'select');
   for (let i = 1; i <= 9; i++) { const o = elemento('option', String(i)); o.value = i; jogadores.append(o); }
-  jogadores.value = Math.max(1, (estado.mesaAtual.jogadores || []).length);
+  jogadores.value = Math.max(1, (estado.mesaAtual.jogadores || []).filter(j => j.status === 'aprovado').length);
   const [ld, dificuldade] = campoConteudo('Intensidade', 'encontro-dificuldade', 'select');
   for (const [v, t] of [[0, 'Tenso'], [1, 'Difícil'], [2, 'Brutal']]) { const o = elemento('option', t); o.value = v; dificuldade.append(o); }
   const resultado = elemento('p', 'Defina nível, tamanho do grupo e intensidade para calcular o orçamento.', 'dica'); resultado.id = 'encontro-resultado';
