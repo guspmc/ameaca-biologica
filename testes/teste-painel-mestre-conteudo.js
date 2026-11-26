@@ -18,6 +18,8 @@ let r = modulo.atender('Mestre', 'PUT', 'mesa-1', {
 assert.equal(r.status, 200);
 assert.equal(r.dados.conteudo.documentos[0].visivel, true);
 assert.equal(r.dados.conteudo.itens[0].nome, 'Cartão');
+assert.equal(modulo.documentosPublicos('mesa-1')[0].titulo, 'Relatório');
+assert.equal(modulo.documentosPublicos('mesa-1')[0].conteudo, 'Projeto T');
 assert.equal(modulo.atender('Mestre', 'PUT', 'mesa-1', { documentos: Array(61).fill({ titulo: 'x' }) }).status, 400);
 modulo.apagar('mesa-1');
 assert.equal(modulo.atender('Mestre', 'GET', 'mesa-1').dados.conteudo.itens.length, 0);
