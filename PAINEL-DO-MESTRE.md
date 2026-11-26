@@ -70,3 +70,13 @@ Ainda pendente:
 - Evoluir o acompanhamento de condições: já é possível aplicar/remover condições por participante e registrar duração/observação; o painel permite registrar instâncias da mesma condição com durações separadas e avisa que seus efeitos mecânicos não se acumulam; a redução automática de duração ao avançar turnos ainda não foi implementada.
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
 - Testes de integração ponta a ponta no servidor e navegador. Os testes unitários estão adicionados à suíte, mas ainda precisam ser executados em um checkout funcional.
+### Contrato planejado para o resumo das Fichas
+
+A integração com a Ficha deve fornecer ao Painel uma projeção de sessão, nunca o objeto completo da Ficha. Campos previstos:
+- Identificador da Ficha Ativa aprovada e nome do personagem;
+- PV atual/máximo, SA atual/máximo e BI atual/máxima;
+- Nível do personagem;
+- Percepção, Fortitude, Reflexos e Vontade passivas, calculadas pelas regras do livro (10 + valor da Perícia, com ajuste de +5/-5 quando houver Vantagem/Desvantagem aplicável);
+- estado de condições que o Jogador e o Mestre precisam acompanhar durante a cena.
+
+Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos personagens aprovados na Mesa. O Painel não deve receber atributos completos, inventário, histórico, anotações privadas ou campos que não sejam necessários à condução da sessão. O formato definitivo será ajustado após a revisão da implementação de Fichas na main, para não criar um contrato incompatível com o trabalho paralelo.
