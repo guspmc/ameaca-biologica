@@ -345,6 +345,18 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, resultadoPainel.status, resultadoPainel.dados);
     }
 
+    if (url.pathname.startsWith('/api/mesas/') && url.pathname.endsWith('/documentos') && req.method === 'GET') {
+      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\\s+/i, ''));
+      if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
+      const partesDocs = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+      if (partesDocs.length !== 4 || partesDocs[0] !== 'api' || partesDocs[1] !== 'mesas') {
+        return json(res, 404, { erro: 'Rota de documentos não encontrada.' });
+      }
+      const acesso = mesas.detalhe(usuario, partesDocs[2]);
+      if (!acesso.ok) return json(res, acesso.status || 403, { erro: acesso.erro || 'Você não faz parte desta Mesa.' });
+      return json(res, 200, { documentos: conteudoMestre.documentosPublicos(partesDocs[2]) });
+    }
+
     if (url.pathname === '/api/mesas' || url.pathname.startsWith('/api/mesas/')) {
       return await rotasMesas(req, res, url);
     }
