@@ -350,17 +350,17 @@ const servidor = http.createServer(async (req, res) => {
       return json(res, resultadoPainel.status, resultadoPainel.dados);
     }
 
-    if (url.pathname.startsWith('/api/mesas/') && url.pathname.endsWith('/documentos') && req.method === 'GET') {
-      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+    if (url.pathname.startsWith('/api/mesas/') && url.pathname.endsWith('/publicacoes') && req.method === 'GET') {
+      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\\s+/i, ''));
       if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
-      const partesDocs = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
-      if (partesDocs.length !== 4 || partesDocs[0] !== 'api' || partesDocs[1] !== 'mesas') {
-        return json(res, 404, { erro: 'Rota de documentos não encontrada.' });
+      const partesPublicacoes = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+      if (partesPublicacoes.length !== 4 || partesPublicacoes[0] !== 'api' || partesPublicacoes[1] !== 'mesas') {
+        return json(res, 404, { erro: 'Rota de publicações não encontrada.' });
       }
-      const acesso = mesas.detalhe(usuario, partesDocs[2]);
+      const acesso = mesas.detalhe(usuario, partesPublicacoes[2]);
       if (!acesso.ok) return json(res, acesso.status || 403, { erro: acesso.erro || 'Você não faz parte desta Mesa.' });
-      if (acesso.mesa.papel === 'jogador' && acesso.mesa.status !== 'aprovado') return json(res, 403, { erro: 'Aguarde a aprovação do Mestre para acessar os documentos da Mesa.' });
-      return json(res, 200, { documentos: conteudoMestre.documentosPublicos(partesDocs[2]) });
+      if (acesso.mesa.papel === 'jogador' && acesso.mesa.status !== 'aprovado') return json(res, 403, { erro: 'Aguarde a aprovação do Mestre para acessar as publicações da Mesa.' });
+      return json(res, 200, conteudoMestre.publicacoes(partesPublicacoes[2]));
     }
 
     if (url.pathname === '/api/mesas' || url.pathname.startsWith('/api/mesas/')) {
