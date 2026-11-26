@@ -66,7 +66,7 @@ function novoCombateMestre(){
 }
 function empateIniciativaMestre(){
   const a=combateMestre.participantes;
-  return a.some((p,i)=>i>0&&!p.entradaTardia&&!a[i-1].entradaTardia&&p.iniciativa===a[i-1].iniciativa&&p.agi===a[i-1].agi&&p.d20===a[i-1].d20);
+  return a.some((p,i)=>i>0&&p.d20>0&&a[i-1].d20>0&&!p.entradaTardia&&!a[i-1].entradaTardia&&p.iniciativa===a[i-1].iniciativa&&p.agi===a[i-1].agi&&p.d20===a[i-1].d20);
 }
 function desenharCombateMestre(){
   const raiz=$('bloco-combate-mestre');if(!raiz||!combateMestre)return;
