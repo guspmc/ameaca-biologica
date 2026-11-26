@@ -319,7 +319,7 @@ const servidor = http.createServer(async (req, res) => {
     }
 
     if (url.pathname.startsWith('/api/painel-mestre/')) {
-      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\\s+/i, ''));
+      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
       if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
       const partesPainel = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
       if (partesPainel.length !== 4 || partesPainel[1] !== 'painel-mestre' || partesPainel[3] !== 'combate') {
