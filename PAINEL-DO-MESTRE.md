@@ -69,7 +69,7 @@ Ainda pendente:
 - Integrar PV, SA, BI e perícias passivas aos dados autorizados da Ficha Ativa, assim que o modelo de dados da Ficha estiver estável na main. Até lá, o Painel não lê fichas privadas nem inventa uma segunda fonte de verdade.
 - Evoluir o acompanhamento de condições: já é possível aplicar/remover condições por participante e registrar duração/observação; o painel permite registrar instâncias da mesma condição com durações separadas e avisa que seus efeitos mecânicos não se acumulam; a redução automática de duração ao avançar turnos ainda não foi implementada.
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
-- Testes de integração ponta a ponta no servidor e navegador. Os testes unitários estão adicionados à suíte, mas ainda precisam ser executados em um checkout funcional.
+- Testes HTTP de integração para autenticação, aprovação de Jogadores e filtragem das publicações adicionados à suíte; acompanhar o resultado do CI antes de considerar a etapa validada.
 ### Contrato planejado para o resumo das Fichas
 
 A integração com a Ficha deve fornecer ao Painel uma projeção de sessão, nunca o objeto completo da Ficha. Campos previstos:
