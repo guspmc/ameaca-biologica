@@ -15,8 +15,14 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
+const { spawn } = require('child_process');
+const { qrSvg } = require('./qr');
 
-const PORTA = Number(process.env.PORTA) || 3000;
+const NOME_DO_JOGO = 'Ameaça Biológica';
+// Porta preferida. Se estiver ocupada, o servidor tenta as seguintes (até 11 portas: 3000 a 3010).
+let PORTA = Number(process.env.PORTA) || 3000;
+const PORTA_PREFERIDA = PORTA;
+const TENTATIVAS_DE_PORTA = 11;
 const MAX_PESSOAS = 10; // 1 Mestre + 9 Jogadores
 const PASTA_APP = path.join(__dirname, '..', 'app');
 const PASTA_DADOS = path.join(__dirname, 'dados');
@@ -225,12 +231,20 @@ const servidor = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/status' && req.method === 'GET') {
       return json(res, 200, {
-        nome: 'Ameaça Biológica',
+        nome: NOME_DO_JOGO,
         modo: 'local',
         versao: VERSAO,
+        porta: PORTA,
         enderecos: enderecosLocais(),
         conectados: conectados(),
       });
+    }
+
+    if (url.pathname === '/api/qr' && req.method === 'GET') {
+      const texto = url.searchParams.get('texto') || '';
+      if (!/^https?:\/\/\S{4,110}$/i.test(texto)) return json(res, 400, { erro: 'Texto inválido para o QR Code.' });
+      res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=3600', ...CORS });
+      return res.end(qrSvg(texto));
     }
 
     if (url.pathname === '/api/entrar' && req.method === 'POST') {
@@ -257,19 +271,45 @@ const servidor = http.createServer(async (req, res) => {
   }
 });
 
-servidor.on('error', (erro) => {
-  if (erro.code === 'EADDRINUSE') {
-    console.error(`\n  A porta ${PORTA} já está em uso. Feche o outro servidor ou use outra porta:`);
-    console.error('  set PORTA=3001 && node servidor\\server.js\n');
-  } else {
-    console.error(erro);
-  }
-  process.exit(1);
-});
+/* ---------- Início: testa as portas antes de subir ---------- */
 
-servidor.listen(PORTA, '0.0.0.0', () => {
+// Pergunta a uma porta ocupada se quem está lá já é um servidor desta aplicação.
+function jaEhNossoServidor(porta) {
+  return new Promise((resolve) => {
+    const pedido = http.get({ host: '127.0.0.1', port: porta, path: '/api/status', timeout: 1500 }, (resposta) => {
+      let texto = '';
+      resposta.on('data', (parte) => { texto += parte; });
+      resposta.on('end', () => {
+        try { resolve(JSON.parse(texto).nome === NOME_DO_JOGO); } catch { resolve(false); }
+      });
+    });
+    pedido.on('timeout', () => { pedido.destroy(); resolve(false); });
+    pedido.on('error', () => resolve(false));
+  });
+}
+
+// O iniciar.bat liga ABRIR_NAVEGADOR=1 para abrir o Laboratório na porta que realmente ficou valendo.
+function abrirNavegador(endereco) {
+  if (process.env.ABRIR_NAVEGADOR !== '1') return;
+  const [comando, argumentos] =
+    process.platform === 'win32' ? ['cmd', ['/c', 'start', '', endereco]]
+      : process.platform === 'darwin' ? ['open', [endereco]]
+        : ['xdg-open', [endereco]];
+  try {
+    const filho = spawn(comando, argumentos, { detached: true, stdio: 'ignore' });
+    filho.on('error', () => {});
+    filho.unref();
+  } catch {
+    /* sem navegador: o endereço continua aparecendo na janela */
+  }
+}
+
+function anunciar() {
   console.log('\n  AMEAÇA BIOLÓGICA · Laboratório (servidor local)');
   console.log(`  Versão ${VERSAO}\n`);
+  if (PORTA !== PORTA_PREFERIDA) {
+    console.log(`  A porta ${PORTA_PREFERIDA} estava ocupada. Usando a porta ${PORTA}.\n`);
+  }
   console.log(`  Neste computador:  http://localhost:${PORTA}`);
   const enderecos = enderecosLocais();
   if (enderecos.length) {
@@ -279,4 +319,40 @@ servidor.listen(PORTA, '0.0.0.0', () => {
     console.log('  Nenhuma rede encontrada: só este computador consegue acessar.');
   }
   console.log('\n  Se o Windows perguntar sobre o Firewall, permita o acesso em "Redes privadas".\n');
-});
+  abrirNavegador(`http://localhost:${PORTA}`);
+}
+
+function ouvir(porta, restantes) {
+  // Os dois avisos são registrados a cada tentativa e removidos juntos: um callback deixado
+  // por uma tentativa que falhou dispararia depois, anunciando a porta errada.
+  const aoOuvir = () => {
+    servidor.removeListener('error', aoFalhar);
+    PORTA = porta;
+    anunciar();
+  };
+  const aoFalhar = async (erro) => {
+    servidor.removeListener('listening', aoOuvir);
+    // Porta em uso (EADDRINUSE) ou reservada pelo Windows (EACCES): tenta a próxima.
+    if (erro.code !== 'EADDRINUSE' && erro.code !== 'EACCES') {
+      console.error(erro);
+      process.exit(1);
+    }
+    if (await jaEhNossoServidor(porta)) {
+      console.log(`\n  O servidor já está ligado em http://localhost:${porta}. Não é preciso abrir outro.\n`);
+      abrirNavegador(`http://localhost:${porta}`);
+      setTimeout(() => process.exit(0), 1000);
+      return;
+    }
+    if (restantes <= 1) {
+      console.error(`\n  Nenhuma porta livre de ${PORTA_PREFERIDA} a ${porta}. Feche algum programa ou escolha outra faixa:`);
+      console.error('  set PORTA=4000 && node servidor\\server.js\n');
+      process.exit(1);
+    }
+    ouvir(porta + 1, restantes - 1);
+  };
+  servidor.once('error', aoFalhar);
+  servidor.once('listening', aoOuvir);
+  servidor.listen(porta, '0.0.0.0');
+}
+
+ouvir(PORTA, TENTATIVAS_DE_PORTA);

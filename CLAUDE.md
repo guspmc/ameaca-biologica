@@ -19,23 +19,23 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 
 ## Estado
 - v0.1: servidor, login, Laboratório (status Offline/Local), conexão por endereço, presença em tempo real, manifesto + service worker.
-
-## Pendência combinada (fazer junto com a próxima etapa)
-**Testar portas antes de conectar**, para funcionar em qualquer máquina mesmo com a 3000 ocupada:
-- Servidor: tentar `PORTA` (padrão 3000) e, se estiver em uso (`EADDRINUSE`), tentar as seguintes (ex.: 3000–3010), em vez de encerrar. Mostrar na janela a porta realmente usada.
-- `iniciar.bat` abre o navegador numa porta fixa: precisa abrir na porta real (o servidor pode abrir o navegador ou gravar a porta num arquivo).
-- App: `normalizarEndereco` assume `:3000` quando o jogador não digita a porta. Trocar por orientação clara (usar o endereço completo mostrado na tela/QR Code) ou testar as portas candidatas.
-- O QR Code do servidor deve embutir a porta real.
+- v0.2: servidor testa portas (3000 a 3010) e avisa a porta real; detecta servidor já aberto; `iniciar.bat` abre o navegador na porta real (`ABRIR_NAVEGADOR=1`); QR Code gerado no servidor (`/api/qr`, sem biblioteca, validado com leitor OpenCV); app acha a porta sozinho quando o jogador não digita; escolha do endereço do QR quando há várias redes.
+- Ainda **não testado pelo dono no Windows**: abertura do navegador pelo `iniciar.bat` na porta real, QR lido por celular de verdade, troca de porta com a 3000 ocupada.
 
 ## Próximas etapas
-1. QR Code do servidor (gerado no servidor, sem biblioteca) e tela de conexão.
-2. Mesas: criar (vira Mestre), código, entrar, aprovação do Mestre.
-3. Painel do Mestre.
-4. Ficha de Personagem (a partir do livro).
-5. Instalação do PWA no modo local (ver "Limitações" no README).
+1. Mesas: criar (vira Mestre), código aleatório por sessão, entrar, aprovação do Mestre; QR que leva ao servidor e à Mesa.
+2. Painel do Mestre.
+3. Ficha de Personagem (a partir do livro).
+4. Instalação do PWA no modo local (ver "Limitações" no README).
+
+## Como testar (aqui)
+- `npm test`: servidor, rotas, presença em tempo real, portas e QR (só Node).
+- Tela no Chromium (Playwright) e leitura do QR com OpenCV foram feitas à parte; não ficam no repositório.
+- Armadilha já vista: `server.listen(porta, host, callback)` deixa o callback registrado se a porta falhar; use `once('listening')` por tentativa (ver `ouvir` em `server.js`).
 
 ## Mapa do código
-- `servidor/server.js`: HTTP + SSE + JSON. Rotas: `GET /api/status`, `POST /api/entrar`, `GET /api/eventos?token=`.
-- `app/js/app.js`: login, estado Offline/Local, conexão, renderização.
+- `servidor/server.js`: HTTP + SSE + JSON. Rotas: `GET /api/status`, `POST /api/entrar`, `GET /api/eventos?token=`, `GET /api/qr?texto=`. Escolha de porta em `ouvir`.
+- `servidor/qr.js`: gerador de QR (byte, correção M, versões 1 a 9).
+- `app/js/app.js`: login, estado Offline/Local, conexão, descoberta de porta, QR, renderização.
 - `app/sw.js`: cache offline (aumente `VERSAO` ao mudar a lista de arquivos).
-- `ferramentas/gerar-icones.js`: gera `app/icons/*.png`.
+- `testes/`: testes do servidor. `ferramentas/gerar-icones.js`: gera `app/icons/*.png`.

@@ -99,6 +99,10 @@ input:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .mensagem.aviso { color: var(--aviso); border-color: var(--aviso); }
 .mensagem.info { color: var(--suave); }
 
+.qr { display: block; width: 220px; height: 220px; margin: 12px auto; background: #fff; border-radius: 12px; }
+.botao.endereco { width: 100%; text-align: left; font-weight: 500; word-break: break-all; }
+.botao.endereco.ativa { border-color: var(--acento); color: var(--acento); }
+
 .lista { list-style: none; margin: 0; padding: 0; }
 .lista li { padding: 8px 0; border-bottom: 1px solid var(--borda); word-break: break-all; }
 .lista li:last-child { border-bottom: 0; }

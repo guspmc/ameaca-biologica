@@ -13,16 +13,12 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if "%PORTA%"=="" set PORTA=3000
-
 echo.
 echo  Iniciando o servidor do Laboratorio...
 echo  Para encerrar, feche esta janela ou pressione Ctrl+C.
-echo.
 
-rem Abre o Laboratorio no navegador do Mestre depois de 2 segundos
-start "" /min cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:%PORTA%"
-
+rem O servidor escolhe uma porta livre (3000 ou a proxima) e abre o navegador nela.
+set ABRIR_NAVEGADOR=1
 node servidor\server.js
 
 echo.

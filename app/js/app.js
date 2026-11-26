@@ -19,6 +19,7 @@ const estado = {
   fonte: null,     // conexão em tempo real (EventSource)
   quer: false,     // a pessoa quer ficar conectada (liga a reconexão automática)
   enderecos: [],
+  enderecoEscolhido: null, // endereço mostrado no QR Code
   conectados: [],
   tentativa: 0,
   timer: null,
@@ -88,13 +89,34 @@ function sair() {
 
 /* ---------- Rede ---------- */
 
-function normalizarEndereco(texto) {
+// Entende o que a pessoa digitou. `semPorta` é verdadeiro quando ela não informou a porta.
+function interpretarEndereco(texto) {
   let t = texto.trim();
   if (!t) throw new Error('vazio');
   if (!/^https?:\/\//i.test(t)) t = 'http://' + t;
   const url = new URL(t);
-  if (!url.port && url.protocol === 'http:') url.port = '3000';
-  return url.origin;
+  const semPorta = !/^https?:\/\/[^/]*:\d+/i.test(t);
+  return { url, semPorta };
+}
+
+// O servidor usa a 3000 ou, se ela estiver ocupada, a próxima livre (até a 3010).
+const PORTAS_DO_SERVIDOR = Array.from({ length: 11 }, (_, i) => 3000 + i);
+
+// Sem porta digitada, testa as portas possíveis e usa a que responder como servidor do jogo.
+async function descobrirPorta(host) {
+  try {
+    const porta = await Promise.any(PORTAS_DO_SERVIDOR.map(async (p) => {
+      const status = await buscar(`http://${host}:${p}/api/status`, {}, 2500);
+      if (status.nome !== NOME_DO_JOGO) throw new Error('outro programa');
+      return p;
+    }));
+    return `http://${host}:${porta}`;
+  } catch {
+    const https = location.protocol === 'https:' && !/^(localhost|127\.)/.test(host)
+      ? ' Esta página usa https e o navegador bloqueia chamadas http: abra o app pelo endereço do servidor.'
+      : '';
+    throw new Error(`Nenhum servidor da ${NOME_DO_JOGO} foi encontrado em ${host} (portas 3000 a 3010). Confira o endereço mostrado no computador do Mestre.${https}`);
+  }
 }
 
 function textoFalhaDeRede(url) {
@@ -106,16 +128,16 @@ function textoFalhaDeRede(url) {
   return texto;
 }
 
-async function buscar(url, opcoes = {}) {
+async function buscar(url, opcoes = {}, limiteMs = 6000) {
   const controle = new AbortController();
-  const limite = setTimeout(() => controle.abort(), 6000);
+  const relogio = setTimeout(() => controle.abort(), limiteMs);
   let resposta;
   try {
     resposta = await fetch(url, { ...opcoes, signal: controle.signal });
   } catch {
     throw new Error(textoFalhaDeRede(url));
   } finally {
-    clearTimeout(limite);
+    clearTimeout(relogio);
   }
   let dados = null;
   try {
@@ -164,17 +186,24 @@ async function abrirSessao(base) {
 
 async function conectar(endereco) {
   limparReconexao();
-  let base;
+  let alvo;
   try {
-    base = normalizarEndereco(endereco);
+    alvo = interpretarEndereco(endereco);
   } catch {
     return mensagemServidor('Endereço inválido. Exemplo: 192.168.0.10:3000', 'erro');
   }
   estado.quer = true;
-  estado.base = base;
+  estado.base = null;
   renderizar();
-  mensagemServidor('Conectando…', 'info');
   try {
+    let base = alvo.url.origin;
+    if (alvo.semPorta && alvo.url.protocol === 'http:') {
+      mensagemServidor('Procurando o servidor…', 'info');
+      base = await descobrirPorta(alvo.url.hostname);
+    } else {
+      mensagemServidor('Conectando…', 'info');
+    }
+    estado.base = base;
     await abrirSessao(base);
     gravarLS(CHAVES.servidor, base);
   } catch (erro) {
@@ -267,6 +296,46 @@ function preencherLista(lista, itens, marcarVoce = false) {
   }
 }
 
+// Endereços de rede doméstica vêm primeiro; os terminados em .1 costumam ser adaptadores virtuais.
+function pontuarEndereco(endereco) {
+  const ip = endereco.replace(/^http:\/\//, '').split(':')[0];
+  let pontos = 0;
+  if (ip.startsWith('192.168.')) pontos += 3;
+  else if (ip.startsWith('10.')) pontos += 2;
+  else if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) pontos += 1;
+  if (ip.endsWith('.1')) pontos -= 5;
+  return pontos;
+}
+
+// Lista os endereços do servidor e mostra o QR Code do endereço escolhido.
+function renderizarEnderecos() {
+  const lista = [...estado.enderecos].sort((a, b) => pontuarEndereco(b) - pontuarEndereco(a));
+  if (!lista.includes(estado.enderecoEscolhido)) estado.enderecoEscolhido = lista[0] || null;
+
+  const ul = $('enderecos');
+  ul.replaceChildren();
+  for (const endereco of lista) {
+    const li = document.createElement('li');
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'botao endereco' + (endereco === estado.enderecoEscolhido ? ' ativa' : '');
+    botao.textContent = endereco.replace(/^http:\/\//, '');
+    botao.addEventListener('click', () => {
+      estado.enderecoEscolhido = endereco;
+      renderizar();
+    });
+    li.append(botao);
+    ul.append(li);
+  }
+  $('dica-enderecos').hidden = lista.length < 2;
+
+  const qr = $('qr');
+  const fonte = estado.enderecoEscolhido
+    ? `${estado.base}/api/qr?texto=${encodeURIComponent(estado.enderecoEscolhido)}`
+    : '';
+  if (qr.getAttribute('src') !== fonte) qr.setAttribute('src', fonte);
+}
+
 function renderizar() {
   if (!estado.usuario) return;
   $('nome-usuario').textContent = estado.usuario;
@@ -286,7 +355,7 @@ function renderizar() {
 
   const conectado = estado.modo === 'local';
   $('bloco-enderecos').hidden = !(conectado && estado.enderecos.length);
-  preencherLista($('enderecos'), estado.enderecos);
+  if (conectado) renderizarEnderecos();
   $('vazio-conectados').hidden = conectado;
   preencherLista($('lista-conectados'), conectado ? estado.conectados : [], true);
 }

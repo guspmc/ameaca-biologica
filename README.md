@@ -2,7 +2,7 @@
 
 Aplicativo (PWA) para jogar **Ameaça Biológica RPG**: fichas de personagem, Painel do Mestre e Mesas, tudo ligado por um servidor local no computador do Mestre. Gratuito, sem internet e sem bibliotecas externas.
 
-> **Etapa atual (v0.1):** servidor local, login por usuário e senha, tela do Laboratório com status **Offline/Local**, conexão por endereço e presença em tempo real. Mesas, Painel do Mestre e Fichas vêm nas próximas etapas.
+> **Etapa atual (v0.2):** servidor local que escolhe uma porta livre sozinho, login por usuário e senha, tela do Laboratório com status **Offline/Local**, QR Code para convidar jogadores e presença em tempo real. Mesas, Painel do Mestre e Fichas vêm nas próximas etapas.
 
 ## Como iniciar o servidor (Windows, computador do Mestre)
 
@@ -14,22 +14,31 @@ Aplicativo (PWA) para jogar **Ameaça Biológica RPG**: fichas de personagem, Pa
 
 Para encerrar, feche a janela preta.
 
+**Porta:** o servidor usa a 3000. Se ela estiver ocupada por outro programa, usa a 3001, e assim por diante até a 3010, e avisa na janela preta qual ficou valendo. Se você abrir o `iniciar.bat` duas vezes, a segunda janela avisa que o servidor já está ligado e fecha.
+
 ## Como os jogadores entram
 
-Com o celular **na mesma rede Wi-Fi** do computador do Mestre, abra no navegador o endereço mostrado na janela preta. Faça login e o Laboratório mostra **Local**. Também funciona digitando o endereço no campo "Servidor local".
+Com o celular **na mesma rede Wi-Fi** do computador do Mestre, há dois caminhos:
+
+- **QR Code:** no Laboratório do Mestre (conectado ao servidor), aparece o QR Code em "Convidar jogadores". É só escanear com a câmera do celular. Se o computador tiver mais de um endereço de rede, toque em outro endereço da lista quando o celular não abrir.
+- **Endereço:** abra no navegador o endereço mostrado na janela preta, ou digite no campo "Servidor local" do Laboratório. Se não digitar a porta, o app procura o servidor entre as portas 3000 e 3010.
+
+Depois de fazer login, o Laboratório mostra **Local**.
 
 ## Estrutura
 
 | Pasta | O que tem |
 |---|---|
 | `app/` | O aplicativo (PWA): telas, estilo, service worker |
-| `servidor/` | Servidor Node.js (sem dependências) e a pasta `dados/` com o que ele salva |
+| `servidor/` | Servidor Node.js (sem dependências), gerador de QR Code e a pasta `dados/` com o que ele salva |
+| `testes/` | Testes automáticos do servidor (`npm test`) |
 | `ferramentas/` | Utilitários (ex.: gerar os ícones) |
 | `iniciar.bat` | Inicia o servidor no Windows |
 
 ## Para quem desenvolve
 
-- `node servidor/server.js` inicia o servidor (porta 3000, ou a de `PORTA=3001`).
+- `node servidor/server.js` inicia o servidor (porta 3000, ou a de `PORTA=4000`; se ocupada, tenta as 10 seguintes).
+- `npm test` roda os testes do servidor.
 - Os dados ficam em `servidor/dados/*.json` e não vão para o GitHub.
 - Veja `CLAUDE.md` para o contexto do projeto e as decisões já tomadas.
 
