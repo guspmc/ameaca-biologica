@@ -16,7 +16,7 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
     for (const [chave, limite, campos] of [
       ['encontros', 40, ['id', 'nome', 'nivel', 'jogadores', 'dificuldade', 'pontos', 'orcamento', 'composicao', 'cenario', 'direcao']],
       ['documentos', 60, ['id', 'titulo', 'tipo', 'conteudo', 'visivel']],
-      ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito']]
+      ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito', 'visivel']]
     ]) {
       const origem = Array.isArray(corpo[chave]) ? corpo[chave] : [];
       if (origem.length > limite) return { erro: 'Limite de registros excedido em ' + chave + '.' };
@@ -35,8 +35,15 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
   }
 
   return {
+    publicacoes(mesaId) {
+      const mesa = dados[mesaId] || vazio(mesaId);
+      return {
+        documentos: mesa.documentos.filter(doc => doc.visivel).map(({ id, titulo, tipo, conteudo }) => ({ id, titulo, tipo, conteudo })),
+        itens: mesa.itens.filter(item => item.visivel).map(({ id, nome, categoria, descricao, efeito }) => ({ id, nome, categoria, descricao, efeito }))
+      };
+    },
     documentosPublicos(mesaId) {
-      return (dados[mesaId]?.documentos || []).filter(doc => doc.visivel).map(({ id, titulo, tipo, conteudo }) => ({ id, titulo, tipo, conteudo }));
+      return this.publicacoes(mesaId).documentos;
     },
     apagar(mesaId) {
       if (Object.prototype.hasOwnProperty.call(dados, mesaId)) {
