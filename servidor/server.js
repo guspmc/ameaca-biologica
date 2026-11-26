@@ -359,6 +359,7 @@ const servidor = http.createServer(async (req, res) => {
       }
       const acesso = mesas.detalhe(usuario, partesDocs[2]);
       if (!acesso.ok) return json(res, acesso.status || 403, { erro: acesso.erro || 'Você não faz parte desta Mesa.' });
+      if (acesso.mesa.papel === 'jogador' && acesso.mesa.status !== 'aprovado') return json(res, 403, { erro: 'Aguarde a aprovação do Mestre para acessar os documentos da Mesa.' });
       return json(res, 200, { documentos: conteudoMestre.documentosPublicos(partesDocs[2]) });
     }
 
