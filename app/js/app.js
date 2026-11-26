@@ -23,6 +23,12 @@ const estado = {
   conectados: [],
   tentativa: 0,
   timer: null,
+  tela: 'login',
+  mesas: [],             // Mesas do usuário (ver mesas.js)
+  mesaId: null,          // Mesa aberta
+  mesaAtual: null,
+  codigoPendente: null,  // código vindo do QR Code (?mesa=), usado ao conectar
+  redesenharMesa: false,
 };
 
 /* ---------- Armazenamento no aparelho ---------- */
@@ -80,6 +86,7 @@ function restaurarSessao() {
 
 function sair() {
   desconectar(true);
+  limparMesas();
   estado.usuario = null;
   estado.senha = null;
   gravarLS(CHAVES.sessao, null);
@@ -145,7 +152,11 @@ async function buscar(url, opcoes = {}, limiteMs = 6000) {
   } catch {
     /* resposta que não é JSON */
   }
-  if (!resposta.ok || !dados) throw new Error((dados && dados.erro) || 'Resposta inesperada do servidor.');
+  if (!resposta.ok || !dados) {
+    const erro = new Error((dados && dados.erro) || 'Resposta inesperada do servidor.');
+    erro.status = resposta.status;
+    throw erro;
+  }
   return dados;
 }
 
@@ -168,6 +179,7 @@ async function abrirSessao(base) {
       estado.conectados = JSON.parse(e.data).conectados;
       renderizar();
     });
+    fonte.addEventListener('mesa', (e) => aoEventoDeMesa(JSON.parse(e.data)));
     fonte.onopen = () => {
       abriu = true;
       estado.fonte = fonte;
@@ -175,6 +187,7 @@ async function abrirSessao(base) {
       definirModo('local');
       mensagemServidor('');
       ok();
+      aoConectar();
     };
     fonte.onerror = () => {
       fonte.close();
@@ -265,8 +278,9 @@ async function detectarServidorDeOrigem() {
 /* ---------- Tela ---------- */
 
 function mostrarTela(nome) {
-  $('tela-login').hidden = nome !== 'login';
-  $('tela-lab').hidden = nome !== 'lab';
+  estado.tela = nome;
+  for (const id of ['login', 'lab', 'criar', 'mesa']) $('tela-' + id).hidden = nome !== id;
+  window.scrollTo(0, 0);
 }
 
 function mensagem(elemento, texto, tipo = 'info') {
@@ -308,11 +322,11 @@ function pontuarEndereco(endereco) {
 }
 
 // Lista os endereços do servidor e mostra o QR Code do endereço escolhido.
-function renderizarEnderecos() {
+// `sufixo` é acrescentado ao endereço no QR (ex.: /?mesa=ABC123); `aoEscolher` redesenha a tela.
+function renderizarEnderecos(ul, qr, dica, sufixo, aoEscolher) {
   const lista = [...estado.enderecos].sort((a, b) => pontuarEndereco(b) - pontuarEndereco(a));
   if (!lista.includes(estado.enderecoEscolhido)) estado.enderecoEscolhido = lista[0] || null;
 
-  const ul = $('enderecos');
   ul.replaceChildren();
   for (const endereco of lista) {
     const li = document.createElement('li');
@@ -322,16 +336,15 @@ function renderizarEnderecos() {
     botao.textContent = endereco.replace(/^http:\/\//, '');
     botao.addEventListener('click', () => {
       estado.enderecoEscolhido = endereco;
-      renderizar();
+      aoEscolher();
     });
     li.append(botao);
     ul.append(li);
   }
-  $('dica-enderecos').hidden = lista.length < 2;
+  dica.hidden = lista.length < 2;
 
-  const qr = $('qr');
   const fonte = estado.enderecoEscolhido
-    ? `${estado.base}/api/qr?texto=${encodeURIComponent(estado.enderecoEscolhido)}`
+    ? `${estado.base}/api/qr?texto=${encodeURIComponent(estado.enderecoEscolhido + sufixo)}`
     : '';
   if (qr.getAttribute('src') !== fonte) qr.setAttribute('src', fonte);
 }
@@ -355,9 +368,11 @@ function renderizar() {
 
   const conectado = estado.modo === 'local';
   $('bloco-enderecos').hidden = !(conectado && estado.enderecos.length);
-  if (conectado) renderizarEnderecos();
+  if (conectado) renderizarEnderecos($('enderecos'), $('qr'), $('dica-enderecos'), '', renderizar);
   $('vazio-conectados').hidden = conectado;
   preencherLista($('lista-conectados'), conectado ? estado.conectados : [], true);
+  renderizarListaMesas();
+  renderizarMesa();
 }
 
 function abrirLaboratorio() {
@@ -404,6 +419,19 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {
     /* sem service worker (endereço http fora do localhost): o app funciona, só não fica guardado offline */
   });
+}
+
+iniciarMesas();
+
+// Convite por QR Code: o app abre em /?mesa=CODIGO. Guarda o código e tira o parâmetro do endereço.
+try {
+  const convite = new URLSearchParams(location.search).get('mesa');
+  if (convite) {
+    estado.codigoPendente = convite;
+    history.replaceState(null, '', location.pathname);
+  }
+} catch {
+  /* sem suporte: a pessoa digita o código */
 }
 
 if (restaurarSessao()) abrirLaboratorio();

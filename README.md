@@ -2,7 +2,7 @@
 
 Aplicativo (PWA) para jogar **Ameaça Biológica RPG**: fichas de personagem, Painel do Mestre e Mesas, tudo ligado por um servidor local no computador do Mestre. Gratuito, sem internet e sem bibliotecas externas.
 
-> **Etapa atual (v0.2):** servidor local que escolhe uma porta livre sozinho, login por usuário e senha, tela do Laboratório com status **Offline/Local**, QR Code para convidar jogadores e presença em tempo real. Mesas, Painel do Mestre e Fichas vêm nas próximas etapas.
+> **Etapa atual (v0.3):** servidor local que escolhe uma porta livre sozinho, login por usuário e senha, Laboratório com status **Offline/Local**, presença em tempo real e **Mesas**: criar (quem cria vira Mestre), código aleatório, entrar por código ou QR Code, aprovação do Mestre e limites de jogadores e de Nível. O Painel do Mestre completo e as Fichas vêm nas próximas etapas.
 
 ## Como iniciar o servidor (Windows, computador do Mestre)
 
@@ -24,6 +24,13 @@ Com o celular **na mesma rede Wi-Fi** do computador do Mestre, há dois caminhos
 - **Endereço:** abra no navegador o endereço mostrado na janela preta, ou digite no campo "Servidor local" do Laboratório. Se não digitar a porta, o app procura o servidor entre as portas 3000 e 3010.
 
 Depois de fazer login, o Laboratório mostra **Local**.
+
+## Mesas
+
+1. O Mestre conecta ao servidor, toca em **Criar Mesa** e escolhe nome, máximo de jogadores (2 a 9) e Nível máximo de personagem (1 a 10). Ele cai no **Painel do Mestre**, com o código da Mesa (ex.: `ABC-123`) e um QR Code.
+2. O jogador escaneia o QR Code da Mesa (abre o servidor e já pede entrada) ou digita o código em **Entrar em uma Mesa**.
+3. O Mestre vê o pedido no Painel e toca em **Aprovar** ou **Recusar**. Quem foi aprovado vê a Mesa em tempo real.
+4. O Mestre pode gerar um novo código, mudar os limites, remover jogadores e encerrar a Mesa. O Mestre **não acessa as Fichas** dos jogadores.
 
 ## Estrutura
 

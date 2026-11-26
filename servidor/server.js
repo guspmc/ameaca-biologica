@@ -17,6 +17,7 @@ const os = require('os');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { qrSvg } = require('./qr');
+const { criarMesas } = require('./mesas');
 
 const NOME_DO_JOGO = 'Ameaça Biológica';
 // Porta preferida. Se estiver ocupada, o servidor tenta as seguintes (até 11 portas: 3000 a 3010).
@@ -43,7 +44,7 @@ const TIPOS = {
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Private-Network': 'true',
 };
 
@@ -111,6 +112,15 @@ function conectados() {
 function transmitir(evento, dados) {
   const mensagem = `event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`;
   for (const c of conexoes.values()) c.res.write(mensagem);
+}
+
+// Avisa só os usuários indicados (ex.: quem faz parte de uma Mesa que mudou).
+function avisarUsuarios(nomes, evento, dados) {
+  const alvos = new Set(nomes.map((n) => n.toLowerCase()));
+  const mensagem = `event: ${evento}\ndata: ${JSON.stringify(dados)}\n\n`;
+  for (const c of conexoes.values()) {
+    if (alvos.has(c.usuario.toLowerCase())) c.res.write(mensagem);
+  }
 }
 
 function abrirEventos(req, res, url) {
@@ -218,6 +228,46 @@ function servirArquivo(req, res, url) {
   });
 }
 
+/* ---------- Mesas ---------- */
+
+const mesas = criarMesas({
+  carregar: () => lerDados('mesas.json', {}),
+  salvar: (dados) => salvarDados('mesas.json', dados),
+});
+
+// Rotas: GET/POST /api/mesas, POST /api/mesas/entrar, GET /api/mesas/:id e ações do Mestre/Jogador.
+async function rotasMesas(req, res, url) {
+  const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+  if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
+
+  const partes = url.pathname.split('/').filter(Boolean).slice(2).map(decodeURIComponent);
+  const metodo = req.method;
+  const [id, acao] = partes;
+  let r = null;
+
+  if (partes.length === 0) {
+    if (metodo === 'GET') r = mesas.listar(usuario);
+    else if (metodo === 'POST') r = mesas.criar(usuario, await lerCorpo(req));
+  } else if (id === 'entrar' && partes.length === 1 && metodo === 'POST') {
+    r = mesas.entrar(usuario, (await lerCorpo(req)).codigo);
+  } else if (partes.length === 1 && metodo === 'GET') {
+    r = mesas.detalhe(usuario, id);
+  } else if (partes.length === 2 && metodo === 'POST') {
+    if (acao === 'configurar') r = mesas.configurar(usuario, id, await lerCorpo(req));
+    else if (acao === 'novo-codigo') r = mesas.novoCodigo(usuario, id);
+    else if (acao === 'encerrar') r = mesas.encerrar(usuario, id);
+    else if (acao === 'sair') r = mesas.sair(usuario, id);
+  } else if (partes.length === 4 && partes[1] === 'jogadores' && metodo === 'POST') {
+    r = mesas.decidir(usuario, id, partes[2], partes[3]);
+  }
+
+  if (!r) return json(res, 404, { erro: 'Rota não encontrada.' });
+  if (!r.ok) return json(res, r.status, { erro: r.erro });
+  if (r.avisar) avisarUsuarios(r.avisar, 'mesa', { id: r.id });
+  const { ok, status, avisar, ...resposta } = r;
+  return json(res, status, resposta);
+}
+
 /* ---------- Rotas ---------- */
 
 const servidor = http.createServer(async (req, res) => {
@@ -255,6 +305,10 @@ const servidor = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/eventos' && req.method === 'GET') {
       return abrirEventos(req, res, url);
+    }
+
+    if (url.pathname === '/api/mesas' || url.pathname.startsWith('/api/mesas/')) {
+      return await rotasMesas(req, res, url);
     }
 
     if (url.pathname.startsWith('/api/')) {

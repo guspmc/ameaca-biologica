@@ -103,6 +103,46 @@ input:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .botao.endereco { width: 100%; text-align: left; font-weight: 500; word-break: break-all; }
 .botao.endereco.ativa { border-color: var(--acento); color: var(--acento); }
 
+select {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  color: var(--texto);
+  background: var(--fundo);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+}
+select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
+.linha input { flex: 1; min-width: 0; }
+
+.botao.largo { width: 100%; margin: 12px 0; }
+.botao.pequeno { padding: 8px 12px; min-height: 36px; font-size: 0.9rem; }
+.botao.perigo { color: var(--erro); border-color: var(--erro); }
+#form-criar-mesa .botao { margin-top: 16px; }
+
+.mesa-item { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.mesa-nome { font-weight: 700; word-break: break-word; }
+.mesa-info { font-weight: 400; color: var(--suave); font-size: 0.85rem; }
+
+.codigo-mesa {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-align: center;
+  color: var(--acento);
+  margin: 6px 0 10px;
+}
+
+.linha-jogador { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.linha-jogador .nome { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.linha-jogador .acoes { display: flex; gap: 8px; flex-shrink: 0; }
+
+.ponto { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+.ponto.on { background: var(--acento); }
+.ponto.off { background: transparent; border: 1px solid var(--suave); }
+.etiqueta { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--painel-2); border: 1px solid var(--borda); color: var(--suave); font-size: 0.75rem; }
+
 .lista { list-style: none; margin: 0; padding: 0; }
 .lista li { padding: 8px 0; border-bottom: 1px solid var(--borda); word-break: break-all; }
 .lista li:last-child { border-bottom: 0; }

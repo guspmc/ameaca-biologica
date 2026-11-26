@@ -20,13 +20,13 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 ## Estado
 - v0.1: servidor, login, Laboratório (status Offline/Local), conexão por endereço, presença em tempo real, manifesto + service worker.
 - v0.2: servidor testa portas (3000 a 3010) e avisa a porta real; detecta servidor já aberto; `iniciar.bat` abre o navegador na porta real (`ABRIR_NAVEGADOR=1`); QR Code gerado no servidor (`/api/qr`, sem biblioteca, validado com leitor OpenCV); app acha a porta sozinho quando o jogador não digita; escolha do endereço do QR quando há várias redes.
+- v0.3: Mesas. `servidor/mesas.js` (regras) + rotas `/api/mesas*` (auth `Authorization: Bearer <token>`; evento SSE `mesa` só para membros). Cliente em `app/js/mesas.js` (carregado antes de `app.js`; DOM por `h()`, sem innerHTML). Código de 6 caracteres (`ABC-123`), QR da Mesa = `endereço/?mesa=CODIGO` (o app entra sozinho após conectar). Limites: jogadores 2–9, Nível 1–10 (o livro tem 10 Níveis), 5 Mesas por Mestre, 30 por servidor. Painel do Mestre por enquanto: convite/QR, aprovações, jogadores, configurações, encerrar; visão do Jogador: status e lista da Mesa. Testes: `testes/teste-mesas.js` + UI no Chromium (fora do repositório).
 - Ainda **não testado pelo dono no Windows**: abertura do navegador pelo `iniciar.bat` na porta real, QR lido por celular de verdade, troca de porta com a 3000 ocupada.
 
 ## Próximas etapas
-1. Mesas: criar (vira Mestre), código aleatório por sessão, entrar, aprovação do Mestre; QR que leva ao servidor e à Mesa.
-2. Painel do Mestre.
-3. Ficha de Personagem (a partir do livro).
-4. Instalação do PWA no modo local (ver "Limitações" no README).
+1. Ficha de Personagem (a partir do livro, últimas páginas): rascunhos ≤5, ativas ≤3, aprovação do Mestre, limite de Nível, barras PV/SA/BI e atalhos, Manual/Automático.
+2. Painel do Mestre: resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
+3. Instalação do PWA no modo local (ver "Limitações" no README).
 
 ## Como testar (aqui)
 - `npm test`: servidor, rotas, presença em tempo real, portas e QR (só Node).
@@ -34,7 +34,9 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - Armadilha já vista: `server.listen(porta, host, callback)` deixa o callback registrado se a porta falhar; use `once('listening')` por tentativa (ver `ouvir` em `server.js`).
 
 ## Mapa do código
-- `servidor/server.js`: HTTP + SSE + JSON. Rotas: `GET /api/status`, `POST /api/entrar`, `GET /api/eventos?token=`, `GET /api/qr?texto=`. Escolha de porta em `ouvir`.
+- `servidor/server.js`: HTTP + SSE + JSON. Rotas: `GET /api/status`, `POST /api/entrar`, `GET /api/eventos?token=`, `GET /api/qr?texto=`, `/api/mesas*` (ver `servidor/mesas.js`). Escolha de porta em `ouvir`.
+- `servidor/mesas.js`: regras das Mesas (código, limites, aprovação), guarda em `mesas.json`.
+- `app/js/mesas.js`: telas de Mesas (lista, criar, Painel do Mestre, visão do Jogador).
 - `servidor/qr.js`: gerador de QR (byte, correção M, versões 1 a 9).
 - `app/js/app.js`: login, estado Offline/Local, conexão, descoberta de porta, QR, renderização.
 - `app/sw.js`: cache offline (aumente `VERSAO` ao mudar a lista de arquivos).
