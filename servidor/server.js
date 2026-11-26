@@ -19,6 +19,7 @@ const { spawn } = require('child_process');
 const { qrSvg } = require('./qr');
 const { criarMesas } = require('./mesas');
 const { criarPainelMestre } = require('./painel-mestre');
+const { criarConteudoMestre } = require('./painel-mestre-conteudo');
 
 const NOME_DO_JOGO = 'Ameaça Biológica';
 // Porta preferida. Se estiver ocupada, o servidor tenta as seguintes (até 11 portas: 3000 a 3010).
@@ -44,7 +45,7 @@ const TIPOS = {
 // Permite que o app, aberto de outro endereço, converse com este servidor.
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Private-Network': 'true',
 };
@@ -246,6 +247,15 @@ const painelMestre = criarPainelMestre({
   },
 });
 
+const conteudoMestre = criarConteudoMestre({
+  carregar: () => lerDados('painel-mestre-conteudo.json', {}),
+  salvar: (dados) => salvarDados('painel-mestre-conteudo.json', dados),
+  ehMestre: (usuario, id) => {
+    const r = mesas.detalhe(usuario, id);
+    return Boolean(r.ok && r.mesa && r.mesa.papel === 'mestre');
+  },
+});
+
 // Rotas: GET/POST /api/mesas, POST /api/mesas/entrar, GET /api/mesas/:id e ações do Mestre/Jogador.
 async function rotasMesas(req, res, url) {
   const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
@@ -268,7 +278,7 @@ async function rotasMesas(req, res, url) {
     else if (acao === 'novo-codigo') r = mesas.novoCodigo(usuario, id);
     else if (acao === 'encerrar') {
       r = mesas.encerrar(usuario, id);
-      if (r.ok) painelMestre.apagar(id);
+      if (r.ok) { painelMestre.apagar(id); conteudoMestre.apagar(id); }
     }
     else if (acao === 'sair') r = mesas.sair(usuario, id);
   } else if (partes.length === 4 && partes[1] === 'jogadores' && metodo === 'POST') {
@@ -325,11 +335,12 @@ const servidor = http.createServer(async (req, res) => {
       const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
       if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
       const partesPainel = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
-      if (partesPainel.length !== 4 || partesPainel[1] !== 'painel-mestre' || partesPainel[3] !== 'combate') {
+      if (partesPainel.length !== 4 || partesPainel[1] !== 'painel-mestre' || !['combate', 'conteudo'].includes(partesPainel[3])) {
         return json(res, 404, { erro: 'Rota do Painel do Mestre não encontrada.' });
       }
       const corpoPainel = req.method === 'PUT' ? await lerCorpo(req) : undefined;
-      const resultadoPainel = painelMestre.atender(usuario, req.method, partesPainel[2], corpoPainel);
+      const modulo = partesPainel[3] === 'combate' ? painelMestre : conteudoMestre;
+      const resultadoPainel = modulo.atender(usuario, req.method, partesPainel[2], corpoPainel);
       if (resultadoPainel.status === 200 && req.method === 'PUT') avisarUsuarios([usuario], 'mesa', { id: partesPainel[2] });
       return json(res, resultadoPainel.status, resultadoPainel.dados);
     }
