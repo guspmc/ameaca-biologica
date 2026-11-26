@@ -34,6 +34,12 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
     return { valor:{ mesaId,combateAtivo:Boolean(corpo.combateAtivo),rodada,turnoAtual,participantes:ordenar(participantes),atualizadoEm:new Date().toISOString() } };
   }
   return {
+    apagar(mesaId) {
+      if (Object.prototype.hasOwnProperty.call(dados, mesaId)) {
+        delete dados[mesaId];
+        salvar(dados);
+      }
+    },
     atender(usuario,metodo,mesaId,corpo) {
       if (!ehMestre(usuario,mesaId)) return {status:403,dados:{erro:'Somente o Mestre desta Mesa pode acessar o Painel do Mestre.'}};
       const atual=dados[mesaId] || vazio(mesaId);
