@@ -14,7 +14,7 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
     const anotacoes = validarTexto(corpo.anotacoes, 12000);
     const listas = {};
     for (const [chave, limite, campos] of [
-      ['encontros', 40, ['id', 'nome', 'nivel', 'jogadores', 'dificuldade', 'pontos', 'composicao', 'cenario', 'direcao']],
+      ['encontros', 40, ['id', 'nome', 'nivel', 'jogadores', 'dificuldade', 'pontos', 'orcamento', 'composicao', 'cenario', 'direcao']],
       ['documentos', 60, ['id', 'titulo', 'tipo', 'conteudo', 'visivel']],
       ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito']]
     ]) {
@@ -24,7 +24,7 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
         const novo = {};
         for (const campo of campos) {
           if (campo === 'visivel') novo.visivel = Boolean(item.visivel);
-          else if (['nivel', 'jogadores', 'pontos'].includes(campo)) novo[campo] = Number.isFinite(Number(item[campo])) ? Math.max(0, Math.min(100, Math.round(Number(item[campo])))) : 0;
+          else if (['nivel', 'jogadores', 'pontos', 'orcamento'].includes(campo)) novo[campo] = Number.isFinite(Number(item[campo])) ? Math.max(0, Math.min(100, Math.round(Number(item[campo])))) : 0;
           else novo[campo] = validarTexto(item[campo], campo === 'conteudo' || campo === 'descricao' || campo === 'direcao' || campo === 'cenario' || campo === 'efeito' || campo === 'composicao' ? 12000 : 100);
         }
         if (!novo.id) novo.id = require('crypto').randomUUID();
