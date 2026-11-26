@@ -18,6 +18,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { qrSvg } = require('./qr');
 const { criarMesas } = require('./mesas');
+const { criarPainelMestre } = require('./painel-mestre');
 
 const NOME_DO_JOGO = 'Ameaça Biológica';
 // Porta preferida. Se estiver ocupada, o servidor tenta as seguintes (até 11 portas: 3000 a 3010).
@@ -235,6 +236,16 @@ const mesas = criarMesas({
   salvar: (dados) => salvarDados('mesas.json', dados),
 });
 
+// Dados operacionais do Mestre ficam separados dos dados e das Fichas dos Jogadores.
+const painelMestre = criarPainelMestre({
+  carregar: () => lerDados('painel-mestre.json', {}),
+  salvar: (dados) => salvarDados('painel-mestre.json', dados),
+  ehMestre: (usuario, id) => {
+    const r = mesas.detalhe(usuario, id);
+    return Boolean(r.ok && r.mesa && r.mesa.papel === 'mestre');
+  },
+});
+
 // Rotas: GET/POST /api/mesas, POST /api/mesas/entrar, GET /api/mesas/:id e ações do Mestre/Jogador.
 async function rotasMesas(req, res, url) {
   const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
@@ -305,6 +316,19 @@ const servidor = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/eventos' && req.method === 'GET') {
       return abrirEventos(req, res, url);
+    }
+
+    if (url.pathname.startsWith('/api/painel-mestre/')) {
+      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\\s+/i, ''));
+      if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
+      const partesPainel = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+      if (partesPainel.length !== 4 || partesPainel[1] !== 'painel-mestre' || partesPainel[3] !== 'combate') {
+        return json(res, 404, { erro: 'Rota do Painel do Mestre não encontrada.' });
+      }
+      const corpoPainel = req.method === 'PUT' ? await lerCorpo(req) : undefined;
+      const resultadoPainel = painelMestre.atender(usuario, req.method, partesPainel[2], corpoPainel);
+      if (resultadoPainel.status === 200 && req.method === 'PUT') avisarUsuarios([usuario], 'mesa', { id: partesPainel[2] });
+      return json(res, resultadoPainel.status, resultadoPainel.dados);
     }
 
     if (url.pathname === '/api/mesas' || url.pathname.startsWith('/api/mesas/')) {
