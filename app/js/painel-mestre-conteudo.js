@@ -212,7 +212,7 @@ function montarConteudoMestre() {
   desenharConteudoMestre();
 }
 
-const renderizarMesaComConteudoBase = renderizarMesa;
-const carregarMesaComConteudoBase = carregarMesaAtual;
-function renderizarMesa() { renderizarMesaComConteudoBase(); if (estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') montarConteudoMestre(); }
-async function carregarMesaAtual() { await carregarMesaComConteudoBase(); if (estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true); }
+const renderizarMesaConteudoOriginal = window.renderizarMesa;
+const carregarMesaConteudoOriginal = window.carregarMesaAtual;
+window.renderizarMesa = function () { renderizarMesaConteudoOriginal(); if (estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') montarConteudoMestre(); };
+window.carregarMesaAtual = async function () { await carregarMesaConteudoOriginal(); if (estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true); };
