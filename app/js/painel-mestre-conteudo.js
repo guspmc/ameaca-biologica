@@ -122,9 +122,11 @@ function desenharConteudoMestre() {
   for (const item of conteudoMestre.documentos) {
     const li = elemento('li', '', 'registro-mestre');
     li.append(elemento('strong', item.titulo), elemento('p', item.tipo + (item.visivel ? ' · marcado para compartilhar' : ' · privado')));
+    const publicar = elemento('button', item.visivel ? 'Retirar publicação' : 'Publicar', 'botao pequeno');
+    publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
-    remover.type = 'button'; remover.addEventListener('click', () => { conteudoMestre.documentos = conteudoMestre.documentos.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(remover); documentos.append(li);
+    remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este documento?')) return; conteudoMestre.documentos = conteudoMestre.documentos.filter(x => x.id !== item.id); salvarConteudoMestre(); });
+    li.append(publicar, remover); documentos.append(li);
   }
   const itens = $('itens-mestre'); itens.replaceChildren();
   for (const item of conteudoMestre.itens) {
