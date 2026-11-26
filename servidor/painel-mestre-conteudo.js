@@ -35,6 +35,9 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
   }
 
   return {
+    documentosPublicos(mesaId) {
+      return (dados[mesaId]?.documentos || []).filter(doc => doc.visivel).map(({ id, titulo, tipo, conteudo }) => ({ id, titulo, tipo, conteudo }));
+    },
     apagar(mesaId) {
       if (Object.prototype.hasOwnProperty.call(dados, mesaId)) {
         delete dados[mesaId];
