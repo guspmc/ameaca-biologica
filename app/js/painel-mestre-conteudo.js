@@ -130,9 +130,12 @@ function desenharConteudoMestre() {
   for (const item of conteudoMestre.itens) {
     const li = elemento('li', '', 'registro-mestre');
     li.append(elemento('strong', item.nome), elemento('p', (item.categoria || 'Item') + ' · ' + (item.efeito || item.descricao || 'Sem efeito descrito')));
+    const estadoPublicacao = elemento('span', item.visivel ? 'Publicado para Jogadores' : 'Privado', 'dica');
+    const publicar = elemento('button', item.visivel ? 'Retirar publicação' : 'Publicar', 'botao pequeno');
+    publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
-    remover.type = 'button'; remover.addEventListener('click', () => { conteudoMestre.itens = conteudoMestre.itens.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(remover); itens.append(li);
+    remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este item personalizado?')) return; conteudoMestre.itens = conteudoMestre.itens.filter(x => x.id !== item.id); salvarConteudoMestre(); });
+    li.append(estadoPublicacao, publicar, remover); itens.append(li);
   }
 }
 
@@ -203,10 +206,12 @@ function montarConteudoMestre() {
   for (const t of ['Arma', 'Proteção', 'Consumível', 'Chave', 'Equipamento', 'Outro']) { const o = elemento('option', t); o.value = t; catItem.append(o); }
   const [lid, descItem] = campoConteudo('Descrição', 'item-descricao', 'textarea'); descItem.rows = 3;
   const [lie, efeitoItem] = campoConteudo('Efeito / regra', 'item-efeito', 'textarea'); efeitoItem.rows = 3;
+  const publicarItem = elemento('input'); publicarItem.type = 'checkbox'; publicarItem.id = 'item-publicar';
+  const labelPublicarItem = elemento('label', 'Compartilhar item com os Jogadores'); labelPublicarItem.prepend(publicarItem);
   const guardarItem = elemento('button', 'Salvar item', 'botao'); guardarItem.type = 'submit';
-  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, guardarItem);
+  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, labelPublicarItem, guardarItem);
   fi.addEventListener('submit', e => { e.preventDefault(); if (!nomeItem.value.trim()) return;
-    conteudoMestre.itens.unshift({ id: novoIdConteudo(), nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value }); salvarConteudoMestre(); fi.reset(); });
+    conteudoMestre.itens.unshift({ id: novoIdConteudo(), nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, visivel: publicarItem.checked }); salvarConteudoMestre(); fi.reset(); });
   itensSec.append(fi, elemento('ul', '', 'lista')); itensSec.lastChild.id = 'itens-mestre'; card.append(itensSec);
 
   const ulE = elemento('ul', '', 'lista'); ulE.id = 'encontros-mestre';
@@ -216,28 +221,40 @@ function montarConteudoMestre() {
 }
 
 let documentosPublicosMesa = [];
+let itensPublicosMesa = [];
 let carregandoDocumentosPublicos = false;
 async function carregarDocumentosPublicos() {
   if (!estado.mesaId || estado.modo !== 'local' || estado.mesaAtual?.papel !== 'jogador' || carregandoDocumentosPublicos) return;
   carregandoDocumentosPublicos = true;
   try {
-    const r = await buscar(estado.base + '/api/mesas/' + encodeURIComponent(estado.mesaId) + '/documentos', {
+    const r = await buscar(estado.base + '/api/mesas/' + encodeURIComponent(estado.mesaId) + '/publicacoes', {
       headers: { Authorization: 'Bearer ' + estado.token }
     });
     documentosPublicosMesa = r.documentos || [];
-  } catch { documentosPublicosMesa = []; }
+    itensPublicosMesa = r.itens || [];
+  } catch { documentosPublicosMesa = []; itensPublicosMesa = []; }
   finally { carregandoDocumentosPublicos = false; }
 }
 function montarDocumentosPublicos() {
   if (estado.mesaAtual?.papel !== 'jogador' || $('documentos-publicos-mesa')) return;
   const card = elemento('section', '', 'cartao'); card.id = 'documentos-publicos-mesa';
   card.append(elemento('h2', 'Documentos compartilhados pelo Mestre'));
-  if (!documentosPublicosMesa.length) card.append(elemento('p', 'Nenhum documento foi compartilhado nesta Mesa.', 'dica'));
+  if (!documentosPublicosMesa.length && !itensPublicosMesa.length) card.append(elemento('p', 'Nenhum documento ou item foi compartilhado nesta Mesa.', 'dica'));
   for (const doc of documentosPublicosMesa) {
     const sec = elemento('article', '', 'subpainel-mestre');
     sec.append(elemento('h3', doc.titulo), elemento('p', doc.tipo, 'dica'));
     const corpo = elemento('p', doc.conteudo); corpo.style.whiteSpace = 'pre-wrap'; sec.append(corpo);
     card.append(sec);
+  }
+  if (itensPublicosMesa.length) {
+    card.append(elemento('h2', 'Itens disponibilizados pelo Mestre'));
+    for (const item of itensPublicosMesa) {
+      const sec = elemento('article', '', 'subpainel-mestre');
+      sec.append(elemento('h3', item.nome), elemento('p', item.categoria || 'Item', 'dica'));
+      if (item.descricao) sec.append(elemento('p', item.descricao));
+      if (item.efeito) sec.append(elemento('p', item.efeito));
+      card.append(sec);
+    }
   }
   $('conteudo-mesa').append(card);
 }
@@ -251,12 +268,12 @@ window.renderizarMesa = function () {
 };
 let mesaConteudoCarregada = null;
 window.carregarMesaAtual = async function () {
-  if (estado.mesaId !== mesaConteudoCarregada) { conteudoMestre = CONTEUDO_MESTRE_VAZIO(); documentosPublicosMesa = []; mesaConteudoCarregada = estado.mesaId; }
+  if (estado.mesaId !== mesaConteudoCarregada) { conteudoMestre = CONTEUDO_MESTRE_VAZIO(); documentosPublicosMesa = []; itensPublicosMesa = []; mesaConteudoCarregada = estado.mesaId; }
   await carregarMesaConteudoOriginal();
   if (estado.tela !== 'mesa') return;
   if (estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true);
   else {
-    documentosPublicosMesa = [];
+    documentosPublicosMesa = []; itensPublicosMesa = [];
     await carregarDocumentosPublicos();
     window.renderizarMesa();
   }
