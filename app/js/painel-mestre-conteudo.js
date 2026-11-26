@@ -33,6 +33,7 @@ const ORCAMENTO_AB = {
 let conteudoMestre = CONTEUDO_MESTRE_VAZIO();
 let carregandoConteudoMestre = false;
 let salvandoConteudoMestre = false;
+let salvarConteudoPendente = false;
 
 function apiConteudoMestre(metodo = 'GET', corpo) {
   return buscar(estado.base + '/api/painel-mestre/' + encodeURIComponent(estado.mesaId) + '/conteudo', {
@@ -55,15 +56,23 @@ async function carregarConteudoMestre(silencioso = true) {
 }
 
 async function salvarConteudoMestre() {
-  if (salvandoConteudoMestre) return;
+  if (salvandoConteudoMestre) { salvarConteudoPendente = true; return; }
   salvandoConteudoMestre = true;
+  let erro = null;
   try {
-    const r = await apiConteudoMestre('PUT', conteudoMestre);
-    conteudoMestre = r.conteudo;
+    do {
+      salvarConteudoPendente = false;
+      const copia = JSON.parse(JSON.stringify(conteudoMestre));
+      const r = await apiConteudoMestre('PUT', copia);
+      if (!salvarConteudoPendente) conteudoMestre = r.conteudo;
+    } while (salvarConteudoPendente);
+  } catch (e) { erro = e; }
+  finally {
+    salvandoConteudoMestre = false;
     desenharConteudoMestre();
-    mensagem($('conteudo-msg'), 'Alterações salvas.', 'info');
-  } catch (e) { mensagem($('conteudo-msg'), e.message, 'erro'); }
-  finally { salvandoConteudoMestre = false; }
+    if (erro) mensagem($('conteudo-msg'), erro.message, 'erro');
+    else mensagem($('conteudo-msg'), 'Alterações salvas.', 'info');
+  }
 }
 
 function calcularOrcamentoAB(nivel, jogadores, dificuldade) {
