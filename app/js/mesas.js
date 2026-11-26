@@ -133,6 +133,10 @@ async function entrarNaMesa(codigo) {
     mensagem($('msg-mesas'), '');
     await carregarMesas();
     abrirMesa(r.id);
+    // O servidor identifica a pessoa só pelo nome de usuário: o mesmo usuário em outro aparelho continua sendo o Mestre.
+    if (r.papel === 'mestre') {
+      mensagem($('aviso-mesa'), `Você entrou como "${estado.usuario}", que é o Mestre desta Mesa (o mesmo usuário vale em qualquer aparelho). Para entrar como Jogador, toque em Sair no Laboratório e entre com outro usuário.`, 'aviso');
+    }
   } catch (erro) {
     mensagem($('msg-mesas'), erro.message, 'erro');
   }
@@ -346,7 +350,7 @@ function renderizarMesa() {
     return;
   }
   $('titulo-mesa').textContent = m.nome;
-  $('subtitulo-mesa').textContent = m.papel === 'mestre' ? 'Painel do Mestre' : `Mesa · Mestre: ${m.mestre}`;
+  $('subtitulo-mesa').textContent = (m.papel === 'mestre' ? 'Painel do Mestre' : `Mesa · Mestre: ${m.mestre}`) + ` · você: ${estado.usuario}`;
   raiz.replaceChildren(...[aviso, ...(m.papel === 'mestre' ? painelDoMestre(m) : visaoDoJogador(m))].filter(Boolean));
 }
 
