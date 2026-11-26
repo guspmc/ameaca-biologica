@@ -341,7 +341,12 @@ const servidor = http.createServer(async (req, res) => {
       const corpoPainel = req.method === 'PUT' ? await lerCorpo(req) : undefined;
       const modulo = partesPainel[3] === 'combate' ? painelMestre : conteudoMestre;
       const resultadoPainel = modulo.atender(usuario, req.method, partesPainel[2], corpoPainel);
-      if (resultadoPainel.status === 200 && req.method === 'PUT') avisarUsuarios([usuario], 'mesa', { id: partesPainel[2] });
+      if (resultadoPainel.status === 200 && req.method === 'PUT') {
+        const destinatarios = partesPainel[3] === 'conteudo'
+          ? [usuario, ...(mesas.detalhe(usuario, partesPainel[2]).mesa?.jogadores || []).filter(j => j.status === 'aprovado').map(j => j.usuario)]
+          : [usuario];
+        avisarUsuarios(destinatarios, 'mesa', { id: partesPainel[2] });
+      }
       return json(res, resultadoPainel.status, resultadoPainel.dados);
     }
 
