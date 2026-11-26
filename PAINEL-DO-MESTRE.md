@@ -26,7 +26,7 @@ Fonte: Arquivo do Jogador v1.0, capítulo 4 — Regras e Combate, p. 76; Arquivo
 - Para Personagens, o bônus de Iniciativa acompanha a AGI; para Criaturas, o bônus é informado conforme a ficha da Criatura. A AGI fica disponível para desempate.
 - A rolagem automática usa o gerador aleatório do navegador; o resultado pode ser corrigido manualmente.
 - O painel consulta o estado salvo periodicamente para refletir mudanças entre aparelhos. A integração por evento em tempo real pode ser refinada depois.
-- A exclusão dos dados operacionais ao encerrar uma Mesa ainda precisa ser integrada ao fluxo de encerramento.
+- Os dados operacionais são apagados quando o Mestre encerra a Mesa.
 
 ## API
 
