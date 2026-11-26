@@ -53,7 +53,7 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 - Sorteio de composições com criaturas Comuns, Perigosas e Elite do Arquivo do Mestre. Chefes e Perseguidores ficam fora do sorteio automático; o livro trata Perseguidores como ameaça especial e orienta que não sejam inseridos pela tabela de encontros errantes.
 - O encontro sorteado pode ser guardado com cenário e direção tática. O orçamento é uma referência, não garantia matemática: o Mestre ainda deve considerar ferimentos, munição, cura, SA, equipamento, terreno, objetivos e rotas de fuga.
 - Anotações persistentes por Mesa.
-- Cadastro de documentos narrativos (relatórios, e-mails, bilhetes, arquivos e pistas). Documentos marcados para compartilhar ficam disponíveis aos membros daquela Mesa por uma rota de leitura que retorna somente os documentos publicados.
+- Cadastro de documentos narrativos (relatórios, e-mails, bilhetes, arquivos e pistas). Documentos marcados para compartilhar ficam disponíveis aos membros aprovados daquela Mesa por uma rota de leitura que retorna somente os documentos publicados; a publicação avisa os Jogadores conectados em tempo real.
 - Cadastro de itens personalizados com categoria, descrição e efeito.
 - Conteúdo persistido em arquivo separado (painel-mestre-conteudo.json), com autorização exclusiva do Mestre para criar, editar e excluir. Jogadores recebem somente os documentos publicados; não recebem anotações, encontros privados ou itens em preparação.
 - Ao encerrar a Mesa, os dados desse módulo também são apagados.
@@ -67,6 +67,6 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 
 Ainda pendente:
 - Integrar PV, SA, BI e perícias passivas aos dados autorizados da Ficha Ativa, assim que o modelo de dados da Ficha estiver estável na main. Até lá, o Painel não lê fichas privadas nem inventa uma segunda fonte de verdade.
-- Evoluir o acompanhamento de condições: já é possível aplicar/remover condições por participante e registrar a duração; a redução automática de duração ao avançar turnos ainda não foi implementada.
+- Evoluir o acompanhamento de condições: já é possível aplicar/remover condições por participante e registrar duração/observação; o painel impede duplicar a mesma condição no mesmo participante, mas a redução automática de duração ao avançar turnos ainda não foi implementada.
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
 - Testes de integração ponta a ponta no servidor e navegador. Os testes unitários estão adicionados à suíte, mas ainda precisam ser executados em um checkout funcional.
