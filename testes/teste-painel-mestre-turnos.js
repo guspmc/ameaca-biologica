@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 
 const codigo = fs.readFileSync(path.join(__dirname, '../app/js/painel-mestre.js'), 'utf8');
-const raizPainel = { contains: (el) => el && el.dentroDoPainel === true };
+const raizPainel = { contains: (el) => el && el.dentroDoPainel === true, scrollIntoView() {} };
 const documento = { hidden: false, activeElement: null, addEventListener() {}, getElementById: (id) => id === 'bloco-combate-mestre' ? raizPainel : null };
 const contexto = vm.createContext({
   document: documento,
@@ -14,7 +14,9 @@ const contexto = vm.createContext({
   estado: { mesaId: 'mesa-teste' },
   setInterval() {},
   renderizarMesa() {},
-  carregarMesaAtual() {}
+  carregarMesaAtual() {},
+  crypto: { randomUUID: () => 'ficha-combate-id' },
+  mensagem() {}
 });
 vm.runInContext(codigo, contexto, { filename: 'painel-mestre.js' });
 
@@ -98,6 +100,24 @@ vm.runInContext('combateMestre.versao = 7; salvarCombateMestre = () => {}; novoC
 assert.equal(estado().versao, 7);
 assert.equal(estado().participantes.length, 0);
 
+
+// Uma Ficha Ativa aprovada pode entrar na iniciativa com nome e AGI calculada.
+preparar([], null, 1);
+vm.runInContext("adicionarFichaAtivaAoCombate({ personagem: 'Claire', iniciativa: 4 })", contexto);
+let combateFicha = estado();
+assert.equal(combateFicha.participantes.length, 1);
+assert.equal(combateFicha.participantes[0].nome, 'Claire');
+assert.equal(combateFicha.participantes[0].tipo, 'personagem');
+assert.equal(combateFicha.participantes[0].agi, 4);
+assert.equal(combateFicha.participantes[0].bonusIniciativa, 4);
+assert.equal(combateFicha.participantes[0].d20, 0);
+assert.equal(combateFicha.participantes[0].entradaTardia, true);
+// Não duplica um personagem já adicionado.
+vm.runInContext("adicionarFichaAtivaAoCombate({ personagem: 'claire', iniciativa: 4 })", contexto);
+assert.equal(estado().participantes.length, 1);
+// Não aceita AGI fora dos limites do rastreador.
+vm.runInContext("adicionarFichaAtivaAoCombate({ personagem: 'Chris', iniciativa: 99 })", contexto);
+assert.equal(estado().participantes.length, 1);
 
 // O catálogo contém exatamente as 20 condições listadas nas pp. 81–83 do Arquivo do Jogador.
 const catalogoCondicoes = JSON.parse(vm.runInContext('JSON.stringify(CONDICOES_OFICIAIS_AB)', contexto));
