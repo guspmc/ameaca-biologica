@@ -9,6 +9,7 @@ const raizPainel = { contains: (el) => el && el.dentroDoPainel === true };
 const documento = { hidden: false, activeElement: null, addEventListener() {}, getElementById: (id) => id === 'bloco-combate-mestre' ? raizPainel : null };
 const contexto = vm.createContext({
   document: documento,
+  $: (id) => documento.getElementById(id),
   setInterval() {},
   renderizarMesa() {},
   carregarMesaAtual() {}
