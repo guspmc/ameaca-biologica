@@ -68,13 +68,37 @@ function ordenarCombateMestre(){
     return b.iniciativa-a.iniciativa||b.agi-a.agi||b.d20-a.d20||a.ordem-b.ordem;
   });
 }
+function preencherSeletorCriaturasCombate(){
+  const seletor=$('combate-criatura-catalogo');
+  if(!seletor)return;
+  const atual=seletor.value;
+  seletor.replaceChildren();
+  const vazio=document.createElement('option');vazio.value='';vazio.textContent='Selecionar do Bestiário (opcional)';seletor.append(vazio);
+  for(const criatura of (window.BESTIARIO_AB||[])){
+    const op=document.createElement('option');op.value=criatura.id;op.textContent=criatura.nome+' · '+criatura.categoria;seletor.append(op);
+  }
+  seletor.value=atual;
+}
+function selecionarCriaturaIniciativa(){
+  const id=$('combate-criatura-catalogo')?.value;
+  const criatura=(window.BESTIARIO_AB||[]).find(x=>x.id===id);
+  if(!criatura)return;
+  $('combate-tipo').value='criatura';
+  $('combate-nome').value=criatura.nome;
+  $('combate-agi').value=criatura.atributos.agi;
+  $('combate-bonus').value=criatura.iniciativa;
+}
 function adicionarParticipanteCombate(ev){
   ev.preventDefault();
-  const nome=$('combate-nome').value.trim(),tipo=$('combate-tipo').value,agi=Number($('combate-agi').value),bonus=Number($('combate-bonus').value);
+  const criatura=(window.BESTIARIO_AB||[]).find(x=>x.id===$('combate-criatura-catalogo')?.value);
+  const nome=$('combate-nome').value.trim()||(criatura?.nome||''),tipo=criatura?'criatura':$('combate-tipo').value;
+  const agi=criatura?criatura.atributos.agi:Number($('combate-agi').value),bonus=criatura?criatura.iniciativa:Number($('combate-bonus').value);
   if(!nome||!Number.isInteger(agi)||agi < -10||agi>30||!Number.isInteger(bonus)||bonus < -10||bonus>30){mensagem($('combate-msg'),'Informe nome, AGI e bônus de Iniciativa válidos.','erro');return;}
   if(combateMestre.participantes.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){mensagem($('combate-msg'),'Já existe um participante com esse nome.','erro');return;}
-  combateMestre.participantes.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo,agi,bonusIniciativa:bonus,d20:0,iniciativa:0,entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length});
-  $('combate-nome').value='';ordenarCombateMestre();salvarCombateMestre();
+  const participante={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo,agi,bonusIniciativa:bonus,d20:0,iniciativa:0,entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length};
+  if(criatura)Object.assign(participante,{criaturaId:criatura.id,pvAtual:criatura.pv,pvMaximo:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento});
+  combateMestre.participantes.push(participante);
+  $('combate-nome').value='';$('combate-criatura-catalogo').value='';ordenarCombateMestre();salvarCombateMestre();
 }
 function rolarIniciativasCombate(){
   if(!combateMestre.participantes.length)return;
@@ -155,6 +179,12 @@ function desenharCombateMestre(){
     const d20=document.createElement('input');d20.type='number';d20.min='1';d20.max='20';d20.value=p.d20||'';d20.placeholder='d20';d20.setAttribute('aria-label','Resultado natural do d20 de '+p.nome);d20.addEventListener('change',()=>ajustarD20Combate(p.id,d20.value));
     const remover=document.createElement('button');remover.type='button';remover.className='botao pequeno perigo';remover.textContent='Remover';remover.addEventListener('click',()=>removerParticipanteCombate(p.id));
     li.append(identidade,dados,d20,remover);
+    if(p.tipo==='criatura'&&p.pvMaximo!==undefined){
+      const ficha=document.createElement('p');ficha.className='dica';ficha.textContent='PV '+p.pvAtual+'/'+p.pvMaximo+' · Defesa '+p.defesa+' · Movimento '+p.movimento;
+      const pv=document.createElement('input');pv.type='number';pv.min='0';pv.max=String(p.pvMaximo);pv.value=p.pvAtual;pv.setAttribute('aria-label','PV atuais de '+p.nome);
+      pv.addEventListener('change',()=>{const valor=Number(pv.value);if(Number.isInteger(valor)&&valor>=0&&valor<=p.pvMaximo){p.pvAtual=valor;salvarCombateMestre();}else pv.value=p.pvAtual;});
+      li.append(ficha,pv);
+    }
     const condicoes=document.createElement('div');condicoes.className='combate-condicoes';
     for(const condicao of (p.condicoes||[])){
       const tag=document.createElement('div');tag.className='condicao-combate';
@@ -215,13 +245,15 @@ function montarPainelCombateMestre(){
     const rerrolar=document.createElement('button');rerrolar.type='button';rerrolar.id='combate-rerrolar';rerrolar.className='botao pequeno';rerrolar.textContent='Rerrolar desempate';rerrolar.hidden=true;rerrolar.addEventListener('click',rerrolarEmpatesIniciativaMestre);
     const form=document.createElement('form');form.id='combate-form';form.className='combate-form';form.addEventListener('submit',adicionarParticipanteCombate);
     function campo(rotulo,id,tipo,valor){const l=document.createElement('label');l.textContent=rotulo;const e=document.createElement(tipo);e.id=id;if(tipo==='input'){e.type='number';e.min='-10';e.max='30';e.value=valor;e.required=true;}return [l,e];}
-    const ln=document.createElement('label');ln.textContent='Participante';const nome=document.createElement('input');nome.id='combate-nome';nome.required=true;nome.maxLength=40;nome.placeholder='Nome';
+    const lc=document.createElement('label');lc.textContent='Criatura do Bestiário';const catalogo=document.createElement('select');catalogo.id='combate-criatura-catalogo';catalogo.addEventListener('change',selecionarCriaturaIniciativa);
+    const ln=document.createElement('label');ln.textContent='Participante';const nome=document.createElement('input');nome.id='combate-nome';nome.required=true;nome.maxLength=40;nome.placeholder='Nome do personagem ou criatura';
     const lt=document.createElement('label');lt.textContent='Tipo';const tipo=document.createElement('select');tipo.id='combate-tipo';
     for(const x of [['personagem','Personagem'],['criatura','Criatura']]){const o=document.createElement('option');o.value=x[0];o.textContent=x[1];tipo.append(o);}
     const [la,agi]=campo('AGI (desempate)','combate-agi','input','0');const [lb,bonus]=campo('Bônus de Iniciativa','combate-bonus','input','0');
     agi.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
     tipo.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
-    const add=document.createElement('button');add.type='submit';add.className='botao primario';add.textContent='Adicionar';form.append(ln,nome,lt,tipo,la,agi,lb,bonus,add);
+    const add=document.createElement('button');add.type='submit';add.className='botao primario';add.textContent='Adicionar';form.append(lc,catalogo,ln,nome,lt,tipo,la,agi,lb,bonus,add);
+    preencherSeletorCriaturasCombate();
     const msg=document.createElement('p');msg.id='combate-msg';msg.className='mensagem';msg.hidden=true;
     const acoes=document.createElement('div');acoes.className='linha combate-acoes';
     function acao(texto,classe,fn,id){const b=document.createElement('button');b.type='button';b.className='botao '+classe;b.textContent=texto;if(id)b.id=id;b.addEventListener('click',fn);return b;}
