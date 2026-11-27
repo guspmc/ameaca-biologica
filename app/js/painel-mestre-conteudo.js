@@ -195,15 +195,15 @@ function desenharConteudoMestre() {
   for (const item of conteudoMestre.documentos) {
     const li = elemento('li', '', 'registro-mestre');
     li.append(elemento('strong', item.titulo), elemento('p', item.tipo + (item.visivel ? ' · marcado para compartilhar' : ' · privado')));
-    const editar = elemento('button', 'Editar', 'botao pequeno');
-    editar.type = 'button'; editar.addEventListener('click', () => editarDocumentoMestre(item.id));
-    const editar = elemento('button', 'Editar', 'botao pequeno');
-    editar.type = 'button'; editar.addEventListener('click', () => editarItemMestre(item.id));
+    const editarDoc = elemento('button', 'Editar', 'botao pequeno');
+    editarDoc.type = 'button'; editarDoc.addEventListener('click', () => editarDocumentoMestre(item.id));
+    const editarItem = elemento('button', 'Editar', 'botao pequeno');
+    editarItem.type = 'button'; editarItem.addEventListener('click', () => editarItemMestre(item.id));
     const publicar = elemento('button', item.visivel ? 'Retirar publicação' : 'Publicar', 'botao pequeno');
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este documento?')) return; conteudoMestre.documentos = conteudoMestre.documentos.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(editar, publicar, remover); documentos.append(li);
+    li.append(editarDoc, publicar, remover); documentos.append(li);
   }
   const itens = $('itens-mestre'); itens.replaceChildren();
   for (const item of conteudoMestre.itens) {
@@ -214,7 +214,7 @@ function desenharConteudoMestre() {
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este item personalizado?')) return; conteudoMestre.itens = conteudoMestre.itens.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(estadoPublicacao, editar, publicar, remover); itens.append(li);
+    li.append(estadoPublicacao, editarItem, publicar, remover); itens.append(li);
   }
 }
 
