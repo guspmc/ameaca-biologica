@@ -16,7 +16,7 @@ Fonte: Arquivo do Jogador v1.0, capítulo 4 — Regras e Combate, p. 76; Arquivo
 
 - Personagens: Iniciativa = 1d20 + AGI.
 - Criaturas: 1d20 + Iniciativa indicada na ficha da Criatura.
-- Ordem: maior resultado primeiro; empate é resolvido por AGI, depois pelo resultado natural do d20; persistindo, os empatados rolam novamente.
+- Ordem: maior resultado primeiro; empate é resolvido por AGI, depois pelo resultado natural do d20; persistindo, os empatados rolam novamente. O Painel identifica os empates persistentes e oferece a rerrolagem apenas para os participantes empatados.
 - Participante que entra em combate já iniciado vai ao final da ordem.
 - Próximo turno percorre a ordem e aumenta a rodada ao retornar ao primeiro participante.
 
