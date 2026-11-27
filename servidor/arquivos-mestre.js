@@ -31,6 +31,12 @@ function criarArquivosMestre({ pasta }) {
     if (!tipo || tipo.mime !== String(mimeInformado || '').toLowerCase()) {
       return { ok: false, status: 415, erro: 'Formato não permitido. Use PDF, PNG, JPG, WEBP ou TXT.' };
     }
+    const assinaturaValida = ext === '.txt'
+      || (ext === '.pdf' && buffer.subarray(0, 5).toString() === '%PDF-')
+      || (ext === '.png' && buffer.subarray(0, 8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a])))
+      || (ext === '.jpg' || ext === '.jpeg') && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
+      || (ext === '.webp' && buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP');
+    if (!assinaturaValida) return { ok: false, status: 415, erro: 'O conteúdo do arquivo não corresponde ao formato informado.' };
     const dir = pastaMesa(mesaId);
     fs.mkdirSync(dir, { recursive: true });
     const id = crypto.randomUUID();
