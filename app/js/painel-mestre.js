@@ -233,7 +233,7 @@ function desenharCombateMestre(){
         const perto=document.createElement('span');perto.textContent='ALCANÇANDO';
         const longe=document.createElement('span');longe.textContent='DISTANTE';legenda.append(perto,longe);
         const trilho=document.createElement('div');trilho.className='regua-trilho';trilho.setAttribute('role','meter');trilho.setAttribute('aria-label','Distância relativa do perseguidor');trilho.setAttribute('aria-valuemin','0');trilho.setAttribute('aria-valuemax','10');trilho.setAttribute('aria-valuenow',String(valorDistancia));
-        const preenchimento=document.createElement('div');preenchimento.className='regua-preenchimento';preenchimento.style.width=(valorDistancia*10)+'%';
+        const preenchimento=document.createElement('div');preenchimento.className='regua-preenchimento';preenchimento.style.width=Math.max(2,valorDistancia*10)+'%';
         const marcador=document.createElement('span');marcador.className='regua-marcador';marcador.textContent=String(valorDistancia);preenchimento.append(marcador);trilho.append(preenchimento);
         const estadoDistancia=document.createElement('p');estadoDistancia.className='regua-estado';estadoDistancia.textContent=valorDistancia===0?'O perseguidor alcançou o grupo':valorDistancia<=2?'Perigo iminente':valorDistancia<=4?'Está muito próximo':valorDistancia<=7?'A perseguição continua':'O grupo abriu distância';
         const controles=document.createElement('div');controles.className='regua-controles';
