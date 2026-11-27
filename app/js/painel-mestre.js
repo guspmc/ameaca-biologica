@@ -90,23 +90,18 @@ function empateIniciativaMestre(){
   const a=combateMestre.participantes;
   return a.some((p,i)=>i>0&&p.d20>0&&a[i-1].d20>0&&!p.entradaTardia&&!a[i-1].entradaTardia&&p.iniciativa===a[i-1].iniciativa&&p.agi===a[i-1].agi&&p.d20===a[i-1].d20);
 }
-function adicionarCondicaoCombate(id,nomeSelecionado){
+function adicionarCondicaoCombate(id){
   const p=combateMestre.participantes.find(x=>x.id===id);if(!p)return;
-  const select=$('condicao-selecao-'+id);
-  let nome=nomeSelecionado||select?.value||'';
-  if(nome==='__manual__'||!nome){
-    nome=prompt('Nome da condição personalizada:');if(!nome||!nome.trim())return;
-    nome=nome.trim();
-  }
-  const oficial=CONDICOES_OFICIAIS_AB.find(x=>x.nome===nome);
-  const duracao=prompt('Duração ou momento de término (consulte a referência da condição):',oficial?.duracao||'Conforme a fonte');
-  if(duracao===null)return;
-  const observacao=prompt('Observação opcional:')||'';
+  const select=$('condicao-selecao-'+id),manualInput=$('condicao-manual-'+id);
+  const nome=select?.value==='__manual__'?manualInput?.value.trim():select?.value;
+  if(!nome){mensagem($('aviso-mesa'),'Selecione uma condição ou informe o nome personalizado.','erro');return;}
+  const duracao=$('condicao-duracao-'+id)?.value.trim()||'Conforme a fonte';
+  const observacao=$('condicao-observacao-'+id)?.value.trim()||'';
   p.condicoes=p.condicoes||[];
   if(p.condicoes.some(x=>x.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){
     alert('Os efeitos mecânicos da mesma condição não se acumulam; esta nova instância terá sua duração acompanhada separadamente.');
   }
-  p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),nome,duracao:duracao.trim()||'Conforme a fonte',observacao:observacao.trim()});
+  p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),nome,duracao,observacao});
   salvarCombateMestre();
 }
 function removerCondicaoCombate(id,condicaoId){
@@ -141,9 +136,13 @@ function desenharCombateMestre(){
     for(const item of CONDICOES_OFICIAIS_AB){const opcao=document.createElement('option');opcao.value=item.nome;opcao.textContent=item.nome;seletor.append(opcao);}
     const manual=document.createElement('option');manual.value='__manual__';manual.textContent='Outra condição (inserir manualmente)';seletor.append(manual);
     const referencia=document.createElement('div');referencia.className='condicao-referencia dica';referencia.setAttribute('aria-live','polite');referencia.textContent='Selecione uma condição para consultar seu efeito e a orientação de duração do livro.';
-    seletor.addEventListener('change',()=>{const item=CONDICOES_OFICIAIS_AB.find(x=>x.nome===seletor.value);referencia.replaceChildren();if(item){const efeito=document.createElement('p');efeito.textContent='Efeito: '+item.efeito;const dur=document.createElement('p');dur.textContent='Duração/remoção: '+item.duracao;referencia.append(efeito,dur);}else referencia.textContent=seletor.value==='__manual__'?'A condição personalizada será registrada sem referência automática ao livro.':'Selecione uma condição para consultar seu efeito e a orientação de duração do livro.';});
+    const manualInput=document.createElement('input');manualInput.id='condicao-manual-'+p.id;manualInput.type='text';manualInput.maxLength=60;manualInput.placeholder='Nome da condição personalizada';manualInput.setAttribute('aria-label','Nome da condição personalizada');manualInput.hidden=true;
+    const duracaoRotulo=document.createElement('label');duracaoRotulo.textContent='Duração / término';const duracao=document.createElement('input');duracao.id='condicao-duracao-'+p.id;duracao.type='text';duracao.maxLength=80;duracao.placeholder='Ex.: até o fim do próximo turno';duracao.setAttribute('aria-label','Duração ou momento de término');
+    const observacaoRotulo=document.createElement('label');observacaoRotulo.textContent='Observação (opcional)';const observacao=document.createElement('textarea');observacao.id='condicao-observacao-'+p.id;observacao.rows=2;observacao.maxLength=300;observacao.placeholder='Fonte, teste necessário ou detalhe da cena';observacao.setAttribute('aria-label','Observação da condição');
+    function atualizarReferencia(){const item=CONDICOES_OFICIAIS_AB.find(x=>x.nome===seletor.value);referencia.replaceChildren();if(item){const efeito=document.createElement('p');efeito.textContent='Efeito: '+item.efeito;const dur=document.createElement('p');dur.textContent='Duração/remoção no livro: '+item.duracao;referencia.append(efeito,dur);duracao.value=item.duracao;}else{referencia.textContent=seletor.value==='__manual__'?'Condição personalizada: registre o efeito e o término nas observações.':'Selecione uma condição para consultar seu efeito e a orientação de duração do livro.';duracao.value='';}manualInput.hidden=seletor.value!=='__manual__';}
+    seletor.addEventListener('change',atualizarReferencia);
     const adicionar=document.createElement('button');adicionar.type='button';adicionar.className='botao pequeno';adicionar.textContent='Aplicar condição';adicionar.addEventListener('click',()=>adicionarCondicaoCombate(p.id));
-    condicoes.append(seletor,referencia,adicionar);li.append(condicoes);lista.append(li);
+    condicoes.append(seletor,referencia,manualInput,duracaoRotulo,duracao,observacaoRotulo,observacao,adicionar);li.append(condicoes);lista.append(li);
   }
   $('combate-rodada').textContent=String(combateMestre.rodada);
   $('combate-status').textContent=combateMestre.combateAtivo?'Combate em andamento':'Preparação';
