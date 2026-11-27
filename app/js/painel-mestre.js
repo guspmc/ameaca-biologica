@@ -93,7 +93,10 @@ function prepararEncontroNoCombate(encontro){
       while(combateMestre.participantes.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))||novas.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){nome=criatura.nome+' ('+sufixo+')';sufixo++;}
       novas.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo:'criatura',
         agi:criatura.atributos.agi,bonusIniciativa:criatura.iniciativa,d20:0,iniciativa:0,
-        criaturaId:criatura.id,pvAtual:criatura.pv,pvMaximo:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
+        criaturaId:criatura.id,pvAtual:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,
+        pvMaximo:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
+        ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,
+          pvCombateMaximo:(window.BESTIARIO_AB||[]).find(x=>x.id===criatura.formaCombateId)?.pv||null}:{}),
         entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length+novas.length});
     }
   }
@@ -206,10 +209,18 @@ function desenharCombateMestre(){
     const remover=document.createElement('button');remover.type='button';remover.className='botao pequeno perigo';remover.textContent='Remover';remover.addEventListener('click',()=>removerParticipanteCombate(p.id));
     li.append(identidade,dados,d20,remover);
     if(p.tipo==='criatura'&&p.pvMaximo!==undefined){
-      const ficha=document.createElement('p');ficha.className='dica';ficha.textContent='PV '+p.pvAtual+'/'+p.pvMaximo+' · Defesa '+p.defesa+' · Movimento '+p.movimento;
+      const ficha=document.createElement('p');ficha.className='dica';ficha.textContent=(p.perseguidor&&p.fase==='perseguicao'?'PV de Perseguição ':'PV ')+p.pvAtual+'/'+p.pvMaximo+' · Defesa '+p.defesa+' · Movimento '+p.movimento;
       const pv=document.createElement('input');pv.type='number';pv.min='0';pv.max=String(p.pvMaximo);pv.value=p.pvAtual;pv.setAttribute('aria-label','PV atuais de '+p.nome);
       pv.addEventListener('change',()=>{const valor=Number(pv.value);if(Number.isInteger(valor)&&valor>=0&&valor<=p.pvMaximo){p.pvAtual=valor;salvarCombateMestre();}else pv.value=p.pvAtual;});
       li.append(ficha,pv);
+      if(p.perseguidor&&p.fase==='perseguicao'){
+        const regra=document.createElement('p');regra.className='dica';regra.textContent='Durante a perseguição: não pode sofrer Morte Instantânea normalmente nem fica Vulnerável. Efeito direto de Morte Instantânea reduz PV de Perseguição a 0.';
+        li.append(regra);
+        const avancar=document.createElement('button');avancar.type='button';avancar.className='botao pequeno';avancar.textContent='Declarar Forma de Combate';
+        avancar.disabled=!Number.isInteger(p.pvCombateMaximo)||p.pvCombateMaximo<1;
+        avancar.addEventListener('click',()=>{if(!confirm('Encerrar a Fase de Perseguição e iniciar a Forma de Combate com '+p.pvCombateMaximo+' PV?'))return;p.fase='combate';p.pvAtual=p.pvCombateMaximo;p.pvMaximo=p.pvCombateMaximo;salvarCombateMestre();});
+        li.append(avancar);
+      }
     }
     const condicoes=document.createElement('div');condicoes.className='combate-condicoes';
     for(const condicao of (p.condicoes||[])){
