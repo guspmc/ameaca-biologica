@@ -482,7 +482,7 @@ window.carregarMesaAtual = async function () {
   if (estado.mesaId !== mesaConteudoCarregada) { conteudoMestre = CONTEUDO_MESTRE_VAZIO(); documentosPublicosMesa = []; itensPublicosMesa = []; mesaConteudoCarregada = estado.mesaId; }
   await carregarMesaConteudoOriginal();
   if (estado.tela !== 'mesa') return;
-  await carregarBestiarioMestre();
+  if (estado.mesaAtual?.papel === 'mestre') await carregarBestiarioMestre();
   if (estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true);
   else {
     documentosPublicosMesa = []; itensPublicosMesa = [];
