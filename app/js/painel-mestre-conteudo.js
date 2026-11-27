@@ -187,9 +187,50 @@ function desenharConteudoMestre() {
     li.append(elemento('p', avaliacao.leitura, 'dica'));
     if (item.cenario) li.append(elemento('p', 'Cenário: ' + item.cenario));
     if (item.direcao) li.append(elemento('p', 'Direção: ' + item.direcao));
+    const acoes = elemento('div', '', 'linha');
+    const editar = elemento('button', 'Editar encontro', 'botao pequeno');
+    editar.type = 'button';
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
-    remover.type = 'button'; remover.addEventListener('click', () => { conteudoMestre.encontros = conteudoMestre.encontros.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(remover); encontros.append(li);
+    remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este encontro preparado?')) return; conteudoMestre.encontros = conteudoMestre.encontros.filter(x => x.id !== item.id); salvarConteudoMestre(); });
+    const editor = elemento('form', '', 'editor-encontro-mestre'); editor.hidden = true;
+    const campos = {};
+    const adicionarCampo = (chave, rotulo, tipo = 'text') => {
+      const label = elemento('label', rotulo);
+      const input = elemento('input'); input.type = tipo; input.value = item[chave] ?? '';
+      input.maxLength = chave === 'composicao' || chave === 'cenario' || chave === 'direcao' ? 12000 : 100;
+      if (tipo === 'number') { input.min = '0'; input.max = '100'; input.step = '1'; }
+      label.append(input); editor.append(label); campos[chave] = input;
+    };
+    adicionarCampo('nome','Nome do encontro');
+    adicionarCampo('nivel','Nível','number');
+    adicionarCampo('jogadores','Quantidade de personagens','number');
+    const labelDificuldade = elemento('label','Intensidade');
+    const selectDificuldade = elemento('select');
+    for (const valor of ['Tenso','Difícil','Brutal']) { const op = elemento('option',valor); op.value = valor; selectDificuldade.append(op); }
+    selectDificuldade.value = item.dificuldade || 'Tenso'; labelDificuldade.append(selectDificuldade); editor.append(labelDificuldade); campos.dificuldade = selectDificuldade;
+    adicionarCampo('pontos','Pontos da composição','number');
+    adicionarCampo('orcamento','Orçamento','number');
+    adicionarCampo('composicao','Composição');
+    adicionarCampo('cenario','Cenário');
+    adicionarCampo('direcao','Direção / comportamento');
+    const salvar = elemento('button','Salvar alterações','botao pequeno primario'); salvar.type = 'submit';
+    const cancelar = elemento('button','Cancelar','botao pequeno'); cancelar.type = 'button'; cancelar.addEventListener('click',()=>{editor.hidden=true;});
+    editor.append(salvar,cancelar);
+    editar.addEventListener('click',()=>{editor.hidden=!editor.hidden;});
+    editor.addEventListener('submit',e=>{
+      e.preventDefault();
+      for (const chave of ['nome','composicao','cenario','direcao']) item[chave] = campos[chave].value.trim();
+      for (const chave of ['nivel','jogadores','pontos','orcamento']) {
+        const valor = Number(campos[chave].value);
+        if (!Number.isInteger(valor) || valor < 0 || valor > 100) { mensagem($('conteudo-msg'),'Informe valores inteiros entre 0 e 100 nos campos numéricos.','aviso'); campos[chave].focus(); return; }
+        item[chave] = valor;
+      }
+      item.dificuldade = campos.dificuldade.value;
+      if (!item.nome) { mensagem($('conteudo-msg'),'Informe um nome para o encontro.','aviso'); campos.nome.focus(); return; }
+      salvarConteudoMestre();
+    });
+    acoes.append(editar,remover);
+    li.append(acoes,editor); encontros.append(li);
   }
   const documentos = $('documentos-mestre'); documentos.replaceChildren();
   for (const item of conteudoMestre.documentos) {
