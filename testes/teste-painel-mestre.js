@@ -22,4 +22,39 @@ r=painel.atender('Mestre','PUT','mesa-1',{rodada:0,participantes:[]});assert.equ
 painel.apagar('mesa-1');r=painel.atender('Mestre','GET','mesa-1');assert.equal(r.dados.combate.participantes.length,0);
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 {id:'x',nome:'A',agi:1,bonusIniciativa:1,d20:20},{id:'y',nome:'a',agi:1,bonusIniciativa:1,d20:19}]});assert.equal(r.status,400);
+
+// Participantes que entram depois do início permanecem no fim da ordem,
+// mesmo que tenham iniciativa superior, inclusive após uma nova gravação.
+r=painel.atender('Mestre','PUT','mesa-1',{combateAtivo:true,rodada:2,turnoAtual:'p1',participantes:[
+{id:'p1',nome:'Alice',tipo:'personagem',agi:1,bonusIniciativa:1,d20:5},
+{id:'p2',nome:'Criatura tardia',tipo:'criatura',agi:3,bonusIniciativa:10,d20:20,entradaTardia:true}
+]});
+assert.equal(r.status,200);
+assert.deepEqual(r.dados.combate.participantes.map(p=>p.id),['p1','p2']);
+r=painel.atender('Mestre','PUT','mesa-1',{combateAtivo:true,rodada:2,turnoAtual:'p1',participantes:[
+{id:'p1',nome:'Alice',tipo:'personagem',agi:1,bonusIniciativa:1,d20:5},
+{id:'p2',nome:'Criatura tardia',tipo:'criatura',agi:3,bonusIniciativa:10,d20:20}
+]});
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.participantes[1].entradaTardia,true);
+assert.equal(r.dados.combate.participantes[1].iniciativa,30);
+
+// O servidor não aceita turno apontando para participante inexistente.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:2,turnoAtual:'inexistente',participantes:[
+{id:'p1',nome:'Alice',agi:1,bonusIniciativa:1,d20:5}
+]});
+assert.equal(r.status,400);
+
+// Dados de condições são limitados e normalizados no servidor.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'p1',nome:'Alice',agi:1,bonusIniciativa:1,d20:5,condicoes:[
+{id:'c1',nome:'  Exposto  ',duracao:'x'.repeat(100),observacao:'y'.repeat(400)}
+]}
+]});
+assert.equal(r.status,200);
+const condicao=r.dados.combate.participantes[0].condicoes[0];
+assert.equal(condicao.nome,'Exposto');
+assert.equal(condicao.duracao.length,80);
+assert.equal(condicao.observacao.length,300);
+
 console.log('Painel do Mestre: tudo OK');
