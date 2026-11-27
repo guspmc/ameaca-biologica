@@ -145,3 +145,14 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - O Mestre não recebe atributos, perícias completas, habilidades, conceito, história, inventário ou anotações da Ficha.
 - A integração lê o arquivo persistido de Fichas e injeta o cálculo oficial de `REGRAS`; não modifica os dados da Ficha.
 - Até o merge com a implementação de Fichas da `main`, a rota responde HTTP 503 quando as dependências oficiais ainda não estão disponíveis nesta branch isolada.
+
+
+## Quarta etapa — catálogo de itens e arquivos narrativos
+
+- O conteúdo do Mestre agora possui navegação por abas: **Itens personalizados**, **Documentações / Files** e **Encontros e anotações**.
+- Itens personalizados aceitam nome, categoria, descrição, efeito/regra e URL de imagem. O Mestre visualiza uma prévia ao preencher a URL; itens publicados exibem a imagem aos Jogadores junto da descrição e do efeito.
+- Documentos narrativos aceitam título, tipo, texto e link opcional para um arquivo anexo (PDF, imagem ou outro arquivo hospedado). O Mestre pode manter o documento privado ou publicá-lo para a Mesa; os Jogadores recebem o texto e o link somente quando publicado.
+- URLs de imagens e anexos são validadas no servidor para aceitar apenas HTTP/HTTPS. Links externos abrem em nova aba com proteção `noopener noreferrer`.
+- As imagens e os anexos são referenciados por URL; o Painel ainda não hospeda arquivos enviados do dispositivo. Para a primeira versão, o Mestre pode usar imagens/arquivos hospedados em um serviço acessível aos Jogadores.
+- A aba de Encontros reúne o criador, encontros preparados e anotações; as outras duas abas isolam seus respectivos formulários e listas.
+- Testes do módulo verificam a publicação dos campos de mídia e a rejeição de esquemas de URL inseguros.
