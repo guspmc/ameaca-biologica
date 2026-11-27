@@ -190,7 +190,7 @@ function adicionarCondicaoCombate(id){
   const observacao=$('condicao-observacao-'+id)?.value.trim()||'';
   p.condicoes=p.condicoes||[];
   if(p.condicoes.some(x=>x.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){
-    alert('Os efeitos mecânicos da mesma condição não se acumulam; esta nova instância terá sua duração acompanhada separadamente.');
+    mensagem($('aviso-mesa'),'Os efeitos mecânicos da mesma condição não se acumulam; esta nova instância terá sua duração acompanhada separadamente.','aviso');
   }
   p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),nome,duracao,observacao});
   salvarCombateMestre();
