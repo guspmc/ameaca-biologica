@@ -21,6 +21,7 @@ const { criarMesas } = require('./mesas');
 const { criarPainelMestre } = require('./painel-mestre');
 const { criarConteudoMestre } = require('./painel-mestre-conteudo');
 const { criarResumoFichasMestre } = require('./painel-mestre-fichas');
+const { criarArquivosMestre } = require('./arquivos-mestre');
 
 const NOME_DO_JOGO = 'Ameaça Biológica';
 // Porta preferida. Se estiver ocupada, o servidor tenta as seguintes (até 11 portas: 3000 a 3010).
@@ -257,6 +258,26 @@ const conteudoMestre = criarConteudoMestre({
     return Boolean(r.ok && r.mesa && r.mesa.papel === 'mestre');
   },
 });
+
+const arquivosMestre = criarArquivosMestre({ pasta: path.join(PASTA_DADOS, 'arquivos-mesas') });
+
+function lerArquivoUpload(req, limite) {
+  return new Promise((resolve, reject) => {
+    const partes = [];
+    let total = 0;
+    req.on('data', parte => {
+      total += parte.length;
+      if (total > limite) {
+        reject(Object.assign(new Error('Arquivo grande demais.'), { status: 413 }));
+        req.destroy();
+        return;
+      }
+      partes.push(parte);
+    });
+    req.on('end', () => resolve(Buffer.concat(partes)));
+    req.on('error', reject);
+  });
+}
  
 // Projeção operacional: somente dados necessários ao Mestre, nunca a Ficha completa.
 // As regras e o catálogo chegam com a implementação de Fichas da main do Claude.
@@ -299,7 +320,7 @@ async function rotasMesas(req, res, url) {
     else if (acao === 'novo-codigo') r = mesas.novoCodigo(usuario, id);
     else if (acao === 'encerrar') {
       r = mesas.encerrar(usuario, id);
-      if (r.ok) { painelMestre.apagar(id); conteudoMestre.apagar(id); }
+      if (r.ok) { painelMestre.apagar(id); conteudoMestre.apagar(id); arquivosMestre.apagarMesa(id); }
     }
     else if (acao === 'sair') r = mesas.sair(usuario, id);
   } else if (partes.length === 4 && partes[1] === 'jogadores' && metodo === 'POST') {
@@ -376,6 +397,45 @@ const servidor = http.createServer(async (req, res) => {
         avisarUsuarios(destinatarios, 'mesa', { id: partesPainel[2] });
       }
       return json(res, resultadoPainel.status, resultadoPainel.dados);
+    }
+
+    if (url.pathname.startsWith('/api/mesas/') && url.pathname.includes('/arquivos')) {
+      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\\s+/i, ''));
+      if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
+      const partesArquivo = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+      if (partesArquivo.length < 4 || partesArquivo.length > 5 || partesArquivo[0] !== 'api' || partesArquivo[1] !== 'mesas' || partesArquivo[3] !== 'arquivos') {
+        return json(res, 404, { erro: 'Rota de arquivos não encontrada.' });
+      }
+      const mesaId = partesArquivo[2];
+      const acesso = mesas.detalhe(usuario, mesaId);
+      if (!acesso.ok) return json(res, acesso.status || 403, { erro: acesso.erro || 'Você não faz parte desta Mesa.' });
+      if (acesso.mesa.papel === 'jogador' && acesso.mesa.status !== 'aprovado') return json(res, 403, { erro: 'Aguarde a aprovação do Mestre.' });
+
+      if (partesArquivo.length === 4 && req.method === 'POST') {
+        if (acesso.mesa.papel !== 'mestre') return json(res, 403, { erro: 'Somente o Mestre pode enviar arquivos.' });
+        const tamanho = Number(req.headers['content-length'] || 0);
+        if (tamanho > arquivosMestre.MAX_BYTES) return json(res, 413, { erro: 'O arquivo excede o limite de 10 MB.' });
+        const buffer = await lerArquivoUpload(req, arquivosMestre.MAX_BYTES);
+        const salvo = arquivosMestre.salvar(mesaId, req.headers['x-file-name'], req.headers['content-type'], buffer);
+        if (!salvo.ok) return json(res, salvo.status, { erro: salvo.erro });
+        return json(res, 201, { arquivo: salvo.arquivo, nome: salvo.nome, tamanho: salvo.tamanho, url: '/api/mesas/' + encodeURIComponent(mesaId) + '/arquivos/' + encodeURIComponent(salvo.arquivo) });
+      }
+
+      if (partesArquivo.length === 5 && req.method === 'GET') {
+        const arquivo = arquivosMestre.ler(mesaId, partesArquivo[4]);
+        if (!arquivo) return json(res, 404, { erro: 'Arquivo não encontrado.' });
+        if (acesso.mesa.papel === 'jogador') {
+          const publicados = conteudoMestre.publicacoes(mesaId).documentos;
+          const rota = '/api/mesas/' + encodeURIComponent(mesaId) + '/arquivos/' + encodeURIComponent(partesArquivo[4]);
+          const autorizado = publicados.some(doc => {
+            try { return new URL(doc.arquivoUrl).pathname === rota; } catch { return doc.arquivoUrl === rota; }
+          });
+          if (!autorizado) return json(res, 404, { erro: 'Arquivo não encontrado.' });
+        }
+        res.writeHead(200, { 'Content-Type': arquivo.mime, 'Content-Length': arquivo.dados.length, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Disposition': 'inline', ...CORS });
+        return res.end(arquivo.dados);
+      }
+      return json(res, 405, { erro: 'Método não permitido.' });
     }
 
     if (url.pathname.startsWith('/api/mesas/') && url.pathname.endsWith('/publicacoes') && req.method === 'GET') {
