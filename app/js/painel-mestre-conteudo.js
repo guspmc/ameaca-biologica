@@ -90,7 +90,7 @@ function sortearEncontroAB(nivel, jogadores, dificuldade) {
   const limite = calcularOrcamentoAB(nivel, jogadores, dificuldade);
   const escolhidas = [];
   let pontos = 0;
-  const elegiveis = CRIATURAS_AB.filter(c => c.pontos <= limite && c.pontos < 8);
+  const elegiveis = CRIATURAS_AB.filter(c => c.categoria !== 'Perseguidor' && c.categoria !== 'Chefe' && c.pontos <= limite);
   for (let i = 0; i < 12; i++) {
     const disponiveis = elegiveis.filter(c => pontos + c.pontos <= limite);
     if (!disponiveis.length) break;
@@ -351,10 +351,48 @@ function montarConteudoMestre() {
     resultado.textContent = 'Orçamento: ' + r.limite + ' pontos · Sorteio: ' + r.pontos + ' pontos (' + r.percentual + '%) · ' + r.composicao + '. ' + r.leitura + ' Perseguidores e Chefes não entram no sorteio automático. A leitura do aproveitamento é apenas uma referência prática, não uma regra adicional do livro.';
     form.dataset.sorteio = JSON.stringify({ nivel: n, jogadores: j, dificuldade: ['Tenso', 'Difícil', 'Brutal'][d], ...r });
   });
+  const manual = elemento('fieldset','','composicao-manual-mestre');
+  manual.append(elemento('legend','Montagem manual da composição'));
+  manual.append(elemento('p','Escolha criaturas, chefes e Perseguidores. Perseguidores não consomem pontos do orçamento e não entram no sorteio automático.', 'dica'));
+  const linhasManual = elemento('div'); linhasManual.id='encontro-composicao-linhas';
+  const adicionarLinhaManual = (id='',qtd=1) => {
+    const linha=elemento('div','','linha composicao-manual-linha');
+    const seletor=elemento('select'); seletor.setAttribute('aria-label','Criatura da composição');
+    const vazio=elemento('option','Selecione uma criatura');vazio.value='';seletor.append(vazio);
+    for(const criatura of BESTIARIO_AB){const op=elemento('option',criatura.nome+' · '+criatura.categoria);op.value=criatura.id;seletor.append(op);}
+    seletor.value=id;
+    const quantidade=elemento('input');quantidade.type='number';quantidade.min='1';quantidade.max='20';quantidade.value=String(qtd);quantidade.setAttribute('aria-label','Quantidade');
+    const remover=elemento('button','Remover','botao pequeno perigo');remover.type='button';remover.addEventListener('click',()=>linha.remove());
+    linha.append(seletor,quantidade,remover);linhasManual.append(linha);
+  };
+  adicionarLinhaManual();
+  const mais=elemento('button','Adicionar criatura','botao pequeno');mais.type='button';mais.addEventListener('click',()=>adicionarLinhaManual());
+  const calcularManual=elemento('button','Calcular composição manual','botao');calcularManual.type='button';
+  calcularManual.addEventListener('click',()=>{
+    const criaturas=[];let pontos=0;let erro=false;
+    for(const linha of linhasManual.children){
+      const id=linha.querySelector('select').value,qtd=Number(linha.querySelector('input').value);
+      if(!id)continue;
+      const criatura=BESTIARIO_AB.find(x=>x.id===id);
+      if(!criatura||!Number.isInteger(qtd)||qtd<1||qtd>20){erro=true;break;}
+      const atual=criaturas.find(x=>x.id===id);
+      if(atual)atual.quantidade+=qtd;else criaturas.push({id,quantidade:qtd});
+      if(criatura.categoria!=='Perseguidor')pontos+=criatura.pontos*qtd;
+    }
+    if(erro||!criaturas.length){mensagem(msg,'Selecione ao menos uma criatura e use quantidades inteiras entre 1 e 20.','aviso');return;}
+    const n=Number(nivel.value),j=Number(jogadores.value),d=Number(dificuldade.value),limite=calcularOrcamentoAB(n,j,d);
+    const nomes=criaturas.map(x=>x.quantidade+' × '+BESTIARIO_AB.find(c=>c.id===x.id).nome);
+    const perseguidores=criaturas.filter(x=>BESTIARIO_AB.find(c=>c.id===x.id).categoria==='Perseguidor').length;
+    const resumo=nomes.join(', ');
+    const avaliacao=avaliarUsoOrcamentoAB(pontos,limite);
+    resultado.textContent='Composição manual: '+resumo+'. Pontos: '+pontos+' / '+limite+' ('+avaliacao.percentual+'%).'+(perseguidores?' Perseguidores incluídos fora do orçamento comum.':'')+' '+avaliacao.leitura;
+    form.dataset.sorteio=JSON.stringify({nivel:n,jogadores:j,dificuldade:['Tenso','Difícil','Brutal'][d],pontos,limite,criaturas,composicao:resumo});
+  });
+  manual.append(linhasManual,mais,calcularManual);
   const [lc, cenario] = campoConteudo('Cenário', 'encontro-cenario');
   const [ldir, direcao] = campoConteudo('Direção / comportamento', 'encontro-direcao', 'textarea');
   const salvarEncontro = elemento('button', 'Guardar encontro', 'botao'); salvarEncontro.type = 'submit';
-  form.append(ln, nivel, lj, jogadores, ld, dificuldade, gerar, resultado, lc, cenario, ldir, direcao, salvarEncontro);
+  form.append(ln, nivel, lj, jogadores, ld, dificuldade, gerar, resultado, manual, lc, cenario, ldir, direcao, salvarEncontro);
   form.addEventListener('submit', e => {
     e.preventDefault();
     let s; try { s = JSON.parse(form.dataset.sorteio || 'null'); } catch {}
