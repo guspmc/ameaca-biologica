@@ -699,5 +699,78 @@
       "Nódulos de Regeneração: 3 nódulos. Ataque usando Mirar + Dano Massivo destrói 1. Enquanto restar nódulo, recupera 15 PV no início do turno.",
       "Chefe de Cenário: derrota definitiva também depende da arma/mecanismo especial da cena."
     ]
+  },
+  {
+    "id": "tirano-t103-perseguidor",
+    "nome": "Tirano (T-103) — Perseguidor",
+    "categoria": "Perseguidor",
+    "pontos": null,
+    "funcao": "Pressão / força bruta",
+    "tamanho": "Grande",
+    "pvPerseguicao": 80,
+    "defesa": 18,
+    "movimento": "9 m",
+    "atributos": {
+      "for": 5,
+      "agi": 1,
+      "vig": 5,
+      "ast": 1
+    },
+    "iniciativa": 1,
+    "resistencias": {
+      "fortitude": 8,
+      "reflexos": 3,
+      "vontade": 6,
+      "percepcao": 5
+    },
+    "ataques": [
+      "Soco Esmagador. +8 • 2d4+5 • Corpo a Corpo. Se causar Dano Massivo, o alvo fica Caído.",
+      "Arremesso. Corpo a Corpo. Após agarrar, pode arremessar o alvo até 1d6 metros."
+    ],
+    "tracos": [
+      "Passos Pesados. Quando a ficção permitir, sua aproximação deve ser precedida por sinais perceptíveis: passos, impactos, portas sendo abertas ou outros indícios de sua presença.",
+      "Fase de Perseguição: não pode sofrer Morte Instantânea normalmente nem fica Vulnerável. Se um efeito causar Morte Instantânea diretamente, reduza os PV de Perseguição a 0 em vez de matá-lo.",
+      "Forma de Combate: quando o encontro se tornar um confronto destinado a derrotar, destruir ou fazê-lo avançar de forma, o Narrador declara Forma de Combate e utiliza os PV normais da ficha correspondente."
+    ],
+    "faseInicial": "perseguicao",
+    "pvAtual": 80,
+    "formaCombateId": "tirano-t103-forma-ii"
+  },
+  {
+    "id": "nemesis-t-type-perseguidor",
+    "nome": "Nemesis T-Type — Perseguidor",
+    "categoria": "Perseguidor",
+    "pontos": null,
+    "funcao": "Perseguidor de alto nível / ofensiva",
+    "tamanho": "Grande",
+    "pvPerseguicao": 100,
+    "defesa": 19,
+    "movimento": "12 m",
+    "atributos": {
+      "for": 8,
+      "agi": 3,
+      "vig": 8,
+      "ast": 2
+    },
+    "iniciativa": 3,
+    "resistencias": {
+      "fortitude": 12,
+      "reflexos": 6,
+      "vontade": 8,
+      "percepcao": 7
+    },
+    "ataques": [
+      "Soco Mutante. +10 • 2d6+5 • Corpo a Corpo.",
+      "Agarrar com Tentáculo. Alcance Corpo a Corpo 4,5 m. Pode puxar o alvo até 3 m em sua direção e deixá-lo Agarrado.",
+      "Lança-Foguetes. Ação • Até Alcance Longo • Raio 3 m. Escolha um ponto dentro do alcance e com Linha de Efeito. Criaturas na área fazem Reflexos DT 17. Falha: 4d8. Sucesso: metade."
+    ],
+    "tracos": [
+      "S.T.A.R.S. Quando a ficção determinar um alvo prioritário, recebe +2 em Percepção para encontrá-lo.",
+      "Fase de Perseguição: não pode sofrer Morte Instantânea normalmente nem fica Vulnerável. Se um efeito causar Morte Instantânea diretamente, reduza os PV de Perseguição a 0 em vez de matá-lo.",
+      "Forma de Combate: quando o encontro se tornar um confronto destinado a derrotar, destruir ou fazê-lo avançar de forma, o Narrador declara Forma de Combate e utiliza os PV normais da ficha correspondente."
+    ],
+    "faseInicial": "perseguicao",
+    "pvAtual": 100,
+    "formaCombateId": "nemesis-t-type-forma-ii"
   }
 ]
