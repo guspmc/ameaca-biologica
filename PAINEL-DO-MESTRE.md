@@ -52,6 +52,7 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 - Criador de encontros com orçamento por nível (Tenso / Difícil / Brutal), ajustado em aproximadamente 25% por personagem acima ou abaixo de quatro.
 - Sorteio de composições com criaturas Comuns, Perigosas e Elite do Arquivo do Mestre. Chefes e Perseguidores ficam fora do sorteio automático; o livro trata Perseguidores como ameaça especial e orienta que não sejam inseridos pela tabela de encontros errantes.
 - O encontro sorteado pode ser guardado com cenário e direção tática. O orçamento é uma referência, não garantia matemática: o Mestre ainda deve considerar ferimentos, munição, cura, SA, equipamento, terreno, objetivos e rotas de fuga.
+- O criador agora mostra o percentual de aproveitamento do orçamento e uma leitura prática quando a composição fica muito abaixo dele. Essa leitura é heurística da ferramenta, não uma regra adicional do sistema; o livro não define faixas percentuais de aproveitamento.
 - Anotações persistentes por Mesa.
 - Cadastro de documentos narrativos (relatórios, e-mails, bilhetes, arquivos e pistas). Documentos e itens personalizados podem ser publicados/retirados a qualquer momento. Os membros aprovados recebem somente o conteúdo publicado por uma rota de leitura filtrada; mudanças de publicação avisam os Jogadores conectados em tempo real.
 - Cadastro de itens personalizados com categoria, descrição e efeito, com controle individual de publicação/retirada para os Jogadores.
