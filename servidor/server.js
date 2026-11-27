@@ -20,6 +20,7 @@ const { qrSvg } = require('./qr');
 const { criarMesas } = require('./mesas');
 const { criarPainelMestre } = require('./painel-mestre');
 const { criarConteudoMestre } = require('./painel-mestre-conteudo');
+const { criarResumoFichasMestre } = require('./painel-mestre-fichas');
 
 const NOME_DO_JOGO = 'Ameaça Biológica';
 // Porta preferida. Se estiver ocupada, o servidor tenta as seguintes (até 11 portas: 3000 a 3010).
@@ -255,6 +256,25 @@ const conteudoMestre = criarConteudoMestre({
     return Boolean(r.ok && r.mesa && r.mesa.papel === 'mestre');
   },
 });
+ 
+// Projeção operacional: somente dados necessários ao Mestre, nunca a Ficha completa.
+// As regras e o catálogo chegam com a implementação de Fichas da main do Claude.
+// A guarda mantém esta branch executável isoladamente enquanto essas dependências não existem.
+let regrasResumoFichas = null;
+let condicoesResumoFichas = [];
+try {
+  regrasResumoFichas = require('../app/js/regras.js');
+  condicoesResumoFichas = require('../app/js/dados-livro.js').CONDICOES || [];
+} catch {
+  // A integração final com a main fornecerá esses módulos.
+}
+const resumoFichasMestre = criarResumoFichasMestre({
+  carregar: () => lerDados('fichas.json', {}),
+  infoMesa: (mesaId) => mesas.info(mesaId),
+  calcular: regrasResumoFichas?.calcular || (() => { throw new Error('Módulo de regras das Fichas indisponível.'); }),
+  condicoesCatalogo: condicoesResumoFichas,
+});
+
 
 // Rotas: GET/POST /api/mesas, POST /api/mesas/entrar, GET /api/mesas/:id e ações do Mestre/Jogador.
 async function rotasMesas(req, res, url) {
@@ -335,8 +355,15 @@ const servidor = http.createServer(async (req, res) => {
       const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
       if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
       const partesPainel = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
-      if (partesPainel.length !== 4 || partesPainel[1] !== 'painel-mestre' || !['combate', 'conteudo'].includes(partesPainel[3])) {
+      if (partesPainel.length !== 4 || partesPainel[1] !== 'painel-mestre' || !['combate', 'conteudo', 'fichas'].includes(partesPainel[3])) {
         return json(res, 404, { erro: 'Rota do Painel do Mestre não encontrada.' });
+      }
+      if (partesPainel[3] === 'fichas') {
+        if (req.method !== 'GET') return json(res, 405, { erro: 'Método não permitido.' });
+        if (!regrasResumoFichas?.calcular) return json(res, 503, { erro: 'Integração com o módulo de Fichas ainda não está disponível.' });
+        const resultado = resumoFichasMestre.listar(partesPainel[2], usuario);
+        if (!resultado.ok) return json(res, resultado.status, { erro: resultado.erro });
+        return json(res, 200, { fichas: resultado.fichas });
       }
       const corpoPainel = req.method === 'PUT' ? await lerCorpo(req) : undefined;
       const modulo = partesPainel[3] === 'combate' ? painelMestre : conteudoMestre;
