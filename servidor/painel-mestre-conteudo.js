@@ -14,7 +14,7 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
     const anotacoes = validarTexto(corpo.anotacoes, 12000);
     const listas = {};
     for (const [chave, limite, campos] of [
-      ['encontros', 40, ['id', 'nome', 'nivel', 'jogadores', 'dificuldade', 'pontos', 'orcamento', 'composicao', 'cenario', 'direcao']],
+      ['encontros', 40, ['id', 'nome', 'nivel', 'jogadores', 'dificuldade', 'pontos', 'orcamento', 'composicao', 'criaturas', 'cenario', 'direcao']],
       ['documentos', 60, ['id', 'titulo', 'tipo', 'conteudo', 'arquivoUrl', 'visivel']],
       ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito', 'imagemUrl', 'visivel']]
     ]) {
@@ -23,7 +23,14 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
       listas[chave] = origem.map((item) => {
         const novo = {};
         for (const campo of campos) {
-          if (campo === 'visivel') novo.visivel = Boolean(item.visivel);
+          if (campo === 'criaturas') {
+            if (Array.isArray(item.criaturas) && item.criaturas.length > 30) return { erro: 'Um encontro pode conter até 30 tipos de criaturas.' };
+            novo.criaturas = Array.isArray(item.criaturas) ? item.criaturas.slice(0,30).map(c => ({
+              id: validarTexto(c?.id, 80),
+              quantidade: Number.isInteger(Number(c?.quantidade)) ? Math.max(1, Math.min(20, Number(c.quantidade))) : 1
+            })).filter(c => c.id) : [];
+          }
+          else if (campo === 'visivel') novo.visivel = Boolean(item.visivel);
           else if (campo === 'imagemUrl' || campo === 'arquivoUrl') {
             const url = validarTexto(item[campo], 1000);
             try { const parsed = new URL(url); novo[campo] = ['http:', 'https:'].includes(parsed.protocol) ? url : ''; }
