@@ -195,7 +195,7 @@ function desenharBestiarioMestre(filtro = '') {
   if (!criaturas.length) { lista.append(elemento('p', BESTIARIO_AB.length ? 'Nenhuma criatura encontrada.' : 'Carregando catálogo…', 'dica')); return; }
   for (const c of criaturas) {
     const detalhe = elemento('details', '', 'bestiario-criatura');
-    const resumo = elemento('summary', c.nome + ' · ' + c.categoria + ' (' + c.pontos + ' pts)');
+    const resumo = elemento('summary', c.nome + ' · ' + c.categoria + (c.categoria === 'Perseguidor' ? ' · ameaça especial' : ' (' + c.pontos + ' pts)'));
     detalhe.append(resumo);
     detalhe.append(elemento('p', c.funcao + ' · ' + c.tamanho, 'dica'));
     detalhe.append(elemento('p', 'PV ' + c.pv + ' · Defesa ' + c.defesa + ' · Movimento ' + c.movimento));
