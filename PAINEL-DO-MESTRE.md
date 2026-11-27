@@ -67,6 +67,10 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 - Instâncias repetidas da mesma condição podem ter suas durações acompanhadas separadamente, mas seus efeitos mecânicos não se acumulam, conforme a regra de Acúmulo de Condições na p. 81.
 - A duração não é decrementada automaticamente ao avançar turnos. Corrosão e Queimadura, por exemplo, exigem testes no início do turno e dano ao final; outras condições dependem da fonte que as aplicou. O Mestre registra manualmente o término para evitar automações que contrariem esses gatilhos.
 
+## Encontros preparados
+
+Os encontros salvos podem ser editados individualmente: nome, nível, quantidade de personagens, intensidade, pontos, orçamento, composição, cenário e direção/comportamento. A edição preserva o identificador do encontro e valida os campos numéricos antes de salvar. A exclusão exige confirmação.
+
 ## Gerenciamento de condições
 
 O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquivo do Jogador, consulta rápida de efeitos e duração/remoção, cadastro manual e campos diretos para duração/momento de término e observações. Cada aplicação mantém sua própria duração e observação. O Mestre pode editar esses dois campos depois da aplicação ou remover a condição. A ferramenta não decrementa automaticamente os prazos, pois os gatilhos dependem da condição e da fonte.
