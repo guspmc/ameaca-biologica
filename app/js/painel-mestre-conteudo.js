@@ -81,6 +81,16 @@ function calcularOrcamentoAB(nivel, jogadores, dificuldade) {
   return Math.max(1, Math.round(base * (1 + (jogadores - 4) * 0.25)));
 }
 
+function avaliarUsoOrcamentoAB(pontos, limite) {
+  const percentual = limite > 0 ? Math.round((pontos / limite) * 100) : 0;
+  let leitura;
+  if (pontos === 0) leitura = 'Nenhuma criatura foi selecionada.';
+  else if (percentual >= 90) leitura = 'Orçamento bem aproveitado.';
+  else if (percentual >= 70) leitura = 'Encontro abaixo do orçamento; há margem para reforçar a composição.';
+  else leitura = 'Encontro consideravelmente abaixo do orçamento; considere adicionar ameaças ou assumir um combate mais leve.';
+  return { percentual, leitura };
+}
+
 function sortearEncontroAB(nivel, jogadores, dificuldade) {
   const limite = calcularOrcamentoAB(nivel, jogadores, dificuldade);
   const escolhidas = [];
@@ -96,7 +106,7 @@ function sortearEncontroAB(nivel, jogadores, dificuldade) {
   }
   const contagem = {};
   for (const nome of escolhidas) contagem[nome] = (contagem[nome] || 0) + 1;
-  return { pontos, limite, composicao: Object.entries(contagem).map(([nome, qtd]) => qtd + ' × ' + nome).join(', ') };
+  return { pontos, limite, ...avaliarUsoOrcamentoAB(pontos, limite), composicao: Object.entries(contagem).map(([nome, qtd]) => qtd + ' × ' + nome).join(', ') };
 }
 
 function elemento(tag, texto, classe) {
@@ -122,7 +132,13 @@ function desenharConteudoMestre() {
   const encontros = $('encontros-mestre'); encontros.replaceChildren();
   for (const item of conteudoMestre.encontros) {
     const li = elemento('li', '', 'registro-mestre');
-    li.append(elemento('strong', item.nome || 'Encontro sem título'), elemento('p', (item.pontos || 0) + ' / ' + (item.orcamento || '—') + ' pontos · ' + (item.dificuldade || '—') + ' · ' + (item.composicao || 'Sem composição')));
+    li.append(elemento('strong', item.nome || 'Encontro sem título'));
+    li.append(elemento('p', 'Nível ' + (item.nivel || '—') + ' · ' + (item.jogadores || '—') + ' personagens · ' + (item.dificuldade || '—')));
+    const avaliacao = avaliarUsoOrcamentoAB(item.pontos || 0, item.orcamento || 0);
+    li.append(elemento('p', (item.pontos || 0) + ' / ' + (item.orcamento || '—') + ' pontos (' + avaliacao.percentual + '%) · ' + (item.composicao || 'Sem composição')));
+    li.append(elemento('p', avaliacao.leitura, 'dica'));
+    if (item.cenario) li.append(elemento('p', 'Cenário: ' + item.cenario));
+    if (item.direcao) li.append(elemento('p', 'Direção: ' + item.direcao));
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { conteudoMestre.encontros = conteudoMestre.encontros.filter(x => x.id !== item.id); salvarConteudoMestre(); });
     li.append(remover); encontros.append(li);
@@ -173,7 +189,7 @@ function montarConteudoMestre() {
   gerar.addEventListener('click', () => {
     const n = Number(nivel.value), j = Number(jogadores.value), d = Number(dificuldade.value);
     const r = sortearEncontroAB(n, j, d);
-    resultado.textContent = 'Orçamento: ' + r.limite + ' pontos · Sorteio: ' + r.pontos + ' pontos · ' + r.composicao + '. Perseguidores e Chefes não entram no sorteio automático.';
+    resultado.textContent = 'Orçamento: ' + r.limite + ' pontos · Sorteio: ' + r.pontos + ' pontos (' + r.percentual + '%) · ' + r.composicao + '. ' + r.leitura + ' Perseguidores e Chefes não entram no sorteio automático. A leitura do aproveitamento é apenas uma referência prática, não uma regra adicional do livro.';
     form.dataset.sorteio = JSON.stringify({ nivel: n, jogadores: j, dificuldade: ['Tenso', 'Difícil', 'Brutal'][d], ...r });
   });
   const [lc, cenario] = campoConteudo('Cenário', 'encontro-cenario');
