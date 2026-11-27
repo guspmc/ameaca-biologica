@@ -232,8 +232,90 @@ function montarPainelCombateMestre(){
   }
   if(combateMestre)desenharCombateMestre();
 }
-function renderizarMesa(){const ativo=document.activeElement,raiz=$('conteudo-mesa');if(ativo&&raiz&&raiz.contains(ativo)&&['INPUT','TEXTAREA','SELECT'].includes(ativo.tagName)){estado.redesenharMesa=true;return;}renderizarMesaBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')montarPainelCombateMestre();}
+function renderizarMesa(){const ativo=document.activeElement,raiz=$('conteudo-mesa');if(ativo&&raiz&&raiz.contains(ativo)&&['INPUT','TEXTAREA','SELECT'].includes(ativo.tagName)){estado.redesenharMesa=true;return;}renderizarMesaBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')montarResumoFichasMestre();montarPainelCombateMestre();}
 let mesaCombateCarregada=null;
-async function carregarMesaAtual(){const id=estado.mesaId;if(id!==mesaCombateCarregada){combateMestre=null;conflitoCombate=false;mesaCombateCarregada=id;}await carregarMesaAtualBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')await carregarCombateMestre(true);}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')carregarCombateMestre(true);});
-setInterval(()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre'&&!salvandoCombate&&!painelMestreEmEdicao())carregarCombateMestre(true);},4000);
+async function carregarMesaAtual(){const id=estado.mesaId;if(id!==mesaCombateCarregada){combateMestre=null;conflitoCombate=false;mesaCombateCarregada=id;}await carregarMesaAtualBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre'){await carregarCombateMestre(true);await carregarResumoFichasMestre();}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')carregarCombateMestre(true);carregarResumoFichasMestre();});
+setInterval(()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre'&&!salvandoCombate&&!painelMestreEmEdicao())carregarCombateMestre(true);carregarResumoFichasMestre();},4000);
+ 
+// Resumo operacional das Fichas: a API entrega somente a projeção autorizada,
+// nunca o conteúdo completo que permanece privado do Jogador.
+let resumoFichasMestre = [];
+let carregandoResumoFichasMestre = false;
+async function carregarResumoFichasMestre() {
+  if (!estado.mesaId || estado.modo !== 'local' || estado.mesaAtual?.papel !== 'mestre' || carregandoResumoFichasMestre) return;
+  carregandoResumoFichasMestre = true;
+  try {
+    const r = await buscar(estado.base + '/api/painel-mestre/' + encodeURIComponent(estado.mesaId) + '/fichas', {
+      headers: { Authorization: 'Bearer ' + estado.token },
+    });
+    resumoFichasMestre = Array.isArray(r.fichas) ? r.fichas : [];
+    montarResumoFichasMestre();
+  } catch {
+    // Compatibilidade durante a integração entre branches: a rota só existe
+    // quando o servidor recebe também os módulos de Ficha da main.
+  } finally {
+    carregandoResumoFichasMestre = false;
+  }
+}
+function montarResumoFichasMestre() {
+  if (estado.mesaAtual?.papel !== 'mestre' || estado.tela !== 'mesa') return;
+  const raiz = $('conteudo-mesa');
+  if (!raiz) return;
+  let card = $('bloco-resumo-fichas-mestre');
+  if (!card) {
+    card = document.createElement('section');
+    card.id = 'bloco-resumo-fichas-mestre';
+    card.className = 'cartao painel-combate';
+    const titulo = document.createElement('h2');
+    titulo.textContent = 'Personagens da Mesa';
+    const ajuda = document.createElement('p');
+    ajuda.className = 'dica';
+    ajuda.textContent = 'Resumo operacional das Fichas Ativas aprovadas. O conteúdo completo das Fichas continua privado dos Jogadores.';
+    const lista = document.createElement('div');
+    lista.id = 'resumo-fichas-lista';
+    card.append(titulo, ajuda, lista);
+    raiz.prepend(card);
+  }
+  const lista = $('resumo-fichas-lista');
+  lista.replaceChildren();
+  if (!resumoFichasMestre.length) {
+    const vazio = document.createElement('p');
+    vazio.className = 'dica';
+    vazio.textContent = 'Nenhuma Ficha Ativa aprovada nesta Mesa.';
+    lista.append(vazio);
+    return;
+  }
+  for (const ficha of resumoFichasMestre) {
+    const item = document.createElement('article');
+    item.className = 'subpainel-mestre';
+    const nome = document.createElement('h3');
+    nome.textContent = ficha.personagem + ' · Nível ' + ficha.nivel;
+    const jogador = document.createElement('p');
+    jogador.className = 'dica';
+    jogador.textContent = 'Jogador: ' + ficha.jogador;
+    const recursos = document.createElement('p');
+    recursos.textContent = 'PV ' + ficha.pv.atual + '/' + ficha.pv.maximo +
+      (ficha.pv.temporarios ? ' (+' + ficha.pv.temporarios + ' temporários)' : '') +
+      ' · SA ' + ficha.sa.atual + '/' + ficha.sa.maximo +
+      ' · BI ' + ficha.bi.atual + '/' + ficha.bi.maximo +
+      (ficha.bi.fase ? ' (Fase ' + ficha.bi.fase + ')' : ' (Colapso)');
+    const combate = document.createElement('p');
+    combate.textContent = 'Defesa ' + ficha.defesa + ' · RD ' + ficha.reducaoDano +
+      ' · Iniciativa +' + ficha.iniciativa + ' · Movimento ' + ficha.movimento + ' m';
+    const passivos = ficha.periciasPassivas || {};
+    const testes = document.createElement('p');
+    testes.textContent = 'Passivos — Percepção ' + (passivos.percepcao ?? '—') +
+      ' · Fortitude ' + (passivos.fortitude ?? '—') +
+      ' · Reflexos ' + (passivos.reflexos ?? '—') +
+      ' · Vontade ' + (passivos.vontade ?? '—');
+    const condicoes = document.createElement('p');
+    condicoes.className = 'dica';
+    condicoes.textContent = ficha.condicoes?.length
+      ? 'Condições: ' + ficha.condicoes.map(c => c.nome).join(', ')
+      : 'Condições: nenhuma';
+    item.append(nome, jogador, recursos, combate, testes, condicoes);
+    lista.append(item);
+  }
+}
+
