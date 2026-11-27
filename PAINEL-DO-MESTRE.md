@@ -123,3 +123,15 @@ Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos pers
 
 - A proteção também cobre o evento SSE da Mesa: o redesenho geral é adiado enquanto o foco estiver em INPUT, TEXTAREA ou SELECT dentro do conteúdo da Mesa. Ao sair do campo, o redesenho pendente é executado.
 - Ao iniciar um novo combate, a versão recebida do servidor é preservada; assim, a gravação continua sujeita à verificação de concorrência (não cai no modo de compatibilidade de clientes antigos).
+
+
+## Projeção operacional de Fichas (preparação para integração)
+
+O módulo `servidor/painel-mestre-fichas.js` prepara uma projeção restrita para o Painel:
+- somente Fichas no estado `ativa`;
+- somente fichas de jogadores que continuam aprovados na Mesa;
+- somente o Mestre daquela Mesa pode consultar;
+- lista explícita de campos operacionais: identificação, nível, PV/SA/BI atuais e máximos, PV temporários, fase de BI, Defesa, Redução de Dano, Iniciativa, Movimento e condições;
+- não retorna atributos, perícias, habilidades, conceito, história, inventário ou anotações.
+
+A projeção está isolada e testada, mas ainda não foi ligada a uma rota HTTP ou à interface. A branch da Jill ainda não contém o módulo `servidor/fichas.js`, que está na `main`; a ligação será feita quando as branches forem integradas, evitando duplicar ou modificar o código de Fichas mantido pelo Claude.
