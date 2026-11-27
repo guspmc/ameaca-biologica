@@ -175,3 +175,21 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - Arquivo do Mestre v1.0, p. 21: categorias, pontos, orçamento para quatro Personagens e ajuste aproximado de 25% por personagem acima/abaixo de quatro.
 - Arquivo do Mestre v1.0, pp. 28–49: catálogo de B.O.Ws. incluído nesta etapa.
 - Arquivo do Mestre v1.0, pp. 50–55: Perseguidores e suas regras específicas ainda não foram integrados ao Bestiário comum.
+
+
+## Sexta etapa — Perseguidores e montagem manual de encontros
+
+- O Bestiário agora contém duas fichas especiais de Perseguidor: Tirano (T-103) e Nemesis T-Type, com os valores de PV de Perseguição, Defesa, Movimento, Atributos, Iniciativa, resistências, ataques e traços das pp. 54–55 do Arquivo do Mestre.
+- Perseguidores aparecem na aba do Bestiário, mas não recebem pontuação comum e não são incluídos no sorteio automático. Isso preserva a orientação da p. 22: Perseguidores entram pelo sistema próprio de Som e perseguição, não pela tabela de encontros errantes.
+- O criador de encontros agora permite montagem manual: adicionar/remover linhas, selecionar qualquer criatura do catálogo e definir quantidade de 1 a 20. Chefes podem ser incluídos manualmente e contam com seus 8 pontos por unidade. Perseguidores podem ser adicionados, mas não consomem pontos do orçamento comum.
+- A composição manual apresenta o total de pontos e compara com o orçamento da Mesa, sinalizando quando há Perseguidores fora do orçamento.
+- Ao preparar um encontro, os Perseguidores entram na iniciativa com seus PV de Perseguição. O rastreador identifica a fase e mostra as restrições da p. 52: durante a Fase de Perseguição, não podem sofrer Morte Instantânea normalmente nem ficam Vulneráveis; um efeito direto de Morte Instantânea reduz os PV de Perseguição a 0.
+- O Mestre pode declarar **Forma de Combate** no rastreador. O sistema então passa aos PV da ficha normal correspondente presente no catálogo (Tirano T-103 Forma II ou Nemesis T-Type Forma II). A transição exige confirmação e reinicia os PV para o máximo da ficha de combate. Essa ação é manual, conforme a decisão narrativa do Mestre.
+- As fichas de Perseguidor preservam os dados da fase de perseguição separadamente dos PV da forma de combate. As regras de fases posteriores e eventuais adaptações narrativas continuam sob controle do Mestre; não foram automatizadas.
+- Testes cobrem a presença das duas fichas, seus PV de perseguição e a persistência da fase no estado de combate.
+
+### Referências
+
+- Arquivo do Mestre v1.0, p. 22: Perseguidores não entram pela tabela de encontros errantes; usam o sistema próprio de Som e Perseguição.
+- Arquivo do Mestre v1.0, p. 52: regras da Fase de Perseguição e transição para Forma de Combate.
+- Arquivo do Mestre v1.0, pp. 54–55: fichas do Tirano (T-103) e Nemesis T-Type.
