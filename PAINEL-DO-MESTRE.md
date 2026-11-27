@@ -193,3 +193,12 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - Arquivo do Mestre v1.0, p. 22: Perseguidores não entram pela tabela de encontros errantes; usam o sistema próprio de Som e Perseguição.
 - Arquivo do Mestre v1.0, p. 52: regras da Fase de Perseguição e transição para Forma de Combate.
 - Arquivo do Mestre v1.0, pp. 54–55: fichas do Tirano (T-103) e Nemesis T-Type.
+
+
+## Régua de proximidade do Perseguidor
+
+- Cada Perseguidor em Fase de Perseguição possui uma régua visual de proximidade, independente dos PV de Perseguição.
+- A escala vai de 0 a 10: 0 indica que o Perseguidor alcançou o grupo; 10 indica que o grupo abriu a maior distância representada pela régua. O valor inicial é 5, como posição neutra de acompanhamento.
+- Os controles **− Aproximar** e **+ Afastar** movem o marcador em uma unidade por vez. A interface apresenta uma leitura textual do risco e impede ultrapassar os limites.
+- A escala é um recurso de acompanhamento narrativo do Painel, não uma medida mecânica nem uma regra adicional do livro. O Mestre decide quando e quanto a posição muda.
+- O valor fica salvo no estado do combate e sincronizado entre as sessões do Mestre.
