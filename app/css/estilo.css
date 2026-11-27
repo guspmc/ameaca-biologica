@@ -226,3 +226,11 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .menu-conteudo-mestre [role="tab"][aria-selected="true"]{border-color:var(--acento);outline:2px solid var(--acento);outline-offset:1px}
 .item-imagem-mestre{display:block;max-width:min(100%,280px);max-height:220px;object-fit:contain;margin:10px 0;border:1px solid var(--borda);border-radius:8px;background:var(--fundo)}
 #item-imagem-preview[hidden]{display:none}
+
+
+/* Bestiário do Painel do Mestre */
+.lista-bestiario{display:grid;gap:10px;margin-top:12px}
+.bestiario-criatura{border:1px solid var(--borda);border-radius:8px;padding:10px;background:var(--fundo)}
+.bestiario-criatura summary{cursor:pointer;font-weight:700}
+.bestiario-criatura p{margin:8px 0;white-space:pre-wrap}
+#bestiario-busca{width:100%;margin-top:8px}
