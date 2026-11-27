@@ -329,14 +329,19 @@ function desenharConteudoMestre() {
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este documento?')) return; conteudoMestre.documentos = conteudoMestre.documentos.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    if (item.arquivoUrl) { const link = elemento('a', 'Abrir arquivo anexo'); link.href = item.arquivoUrl; link.target = '_blank'; link.rel = 'noopener noreferrer'; li.append(link); }
+    if (item.arquivoUrl) { const link = elemento('a', 'Abrir arquivo anexo'); link.href = item.arquivoUrl; if (item.arquivoUrl.includes('/api/mesas/')) link.addEventListener('click', e => { e.preventDefault(); abrirArquivoMesa(item.arquivoUrl); }); else { link.target = '_blank'; link.rel = 'noopener noreferrer'; } li.append(link); }
     li.append(editarDoc, publicar, remover); documentos.append(li);
   }
   const itens = $('itens-mestre'); itens.replaceChildren();
   for (const item of conteudoMestre.itens) {
     const li = elemento('li', '', 'registro-mestre');
     li.append(elemento('strong', item.nome), elemento('p', (item.categoria || 'Item') + ' · ' + (item.efeito || item.descricao || 'Sem efeito descrito')));
-    if (item.imagemUrl) { const img = elemento('img'); img.src = item.imagemUrl; img.alt = 'Imagem de ' + item.nome; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.className = 'item-imagem-mestre'; li.append(img); }
+    if (item.imagemUrl) {
+      const img = elemento('img'); img.alt = 'Imagem de ' + item.nome; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.className = 'item-imagem-mestre';
+      if (item.imagemUrl.includes('/api/mesas/')) fetch(item.imagemUrl, { headers: { Authorization: 'Bearer ' + estado.token } }).then(r => r.ok ? r.blob() : Promise.reject()).then(blob => { img.src = URL.createObjectURL(blob); }).catch(() => {});
+      else img.src = item.imagemUrl;
+      li.append(img);
+    }
     const estadoPublicacao = elemento('span', item.visivel ? 'Publicado para Jogadores' : 'Privado', 'dica');
     const editar = elemento('button', 'Editar', 'botao pequeno');
     editar.type = 'button'; editar.addEventListener('click', () => editarItemMestre(item.id));
