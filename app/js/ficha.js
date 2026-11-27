@@ -16,6 +16,7 @@
 /* ---------- API ---------- */
 
 function apiFichas(rota, metodo = 'GET', corpo) {
+  if (fichasOffline) return apiFichasOffline(rota, metodo, corpo); // Fichas deste aparelho (fichas-offline.js)
   if (!estado.base || !estado.token || estado.modo !== 'local') {
     throw new Error('Conecte-se a um servidor local primeiro.');
   }
@@ -34,6 +35,8 @@ function apiFichas(rota, metodo = 'GET', corpo) {
 
 // Fichas do Jogador (array) ou solicitações do Mestre (array) — carregadas ao entrar na Mesa.
 let fichasDoJogador = [];
+// true enquanto o Jogador usa as Fichas Offline (guardadas só neste aparelho, sem Mesa nem aprovação).
+let fichasOffline = false;
 // Ficha sendo editada agora.
 let fichaAtual = null; // { id, estado, dados }
 let secaoAtual = 'identificacao';
@@ -556,7 +559,7 @@ function redesenhar() {
 
 // Salva dados completos (rascunho) ou só jogo (ativa).
 async function salvarFichaAgora() {
-  if (!fichaAtual || !estado.mesaId) return;
+  if (!fichaAtual || (!estado.mesaId && !fichasOffline)) return;
   const dd = fichaAtual.dados;
   const corpo = fichaAtual.estado === 'ativa'
     ? { jogo: dd.jogo, itens: dd.itens, municoes: dd.municoes, kendo: dd.kendo, moedas: dd.moedas, anotacoes: dd.anotacoes }
@@ -602,7 +605,7 @@ function renderizarEditor() {
   calc = REGRAS.calcular(d);
 
   const v = fichaAtual.estado !== 'ativa'
-    ? REGRAS.validar(d, { limiteNivel: estado.mesaAtual && estado.mesaAtual.limiteNivel })
+    ? REGRAS.validar(d, { limiteNivel: fichasOffline ? REGRAS.LIMITES.nivelMax : estado.mesaAtual && estado.mesaAtual.limiteNivel })
     : { erros: [], pendencias: [] };
 
   const avisosEl = [];
@@ -627,13 +630,17 @@ function renderizarEditor() {
     botoesEstado.push(botaoFicha('Retirar pedido de aprovação', '', retirarPedido));
   }
   if (fichaAtual.estado === 'ativa') {
+    const teto = Math.min(estado.mesaAtual ? estado.mesaAtual.limiteNivel : 1, REGRAS.LIMITES.nivelMax);
+    if (d.nivel < teto) botoesEstado.push(botaoFicha(`Subir para o Nível ${d.nivel + 1}`, 'primario', evoluirFicha));
     botoesEstado.push(botaoFicha('Desativar ficha', 'perigo', desativarFicha));
   }
+  if (fichaAtual.estado !== 'pendente') botoesEstado.push(botaoFicha('Duplicar', '', duplicarFicha));
+  botoesEstado.push(botaoFicha('Exportar arquivo', '', exportarFicha));
   if (fichaAtual.estado !== 'ativa') {
-    botoesEstado.push(botaoFicha('Excluir rascunho', 'perigo', excluirFicha));
+    botoesEstado.push(botaoFicha(fichaAtual.estado === 'offline' ? 'Excluir ficha' : 'Excluir rascunho', 'perigo', excluirFicha));
   }
 
-  const estadoLabel = { rascunho: 'Rascunho', pendente: 'Aguardando aprovação', ativa: 'Ficha Ativa' };
+  const estadoLabel = { rascunho: 'Rascunho', pendente: 'Aguardando aprovação', ativa: 'Ficha Ativa', offline: 'Ficha Offline' };
   const bloqueado = fichaAtual.estado === 'pendente';
 
   raiz.replaceChildren(
@@ -647,6 +654,11 @@ function renderizarEditor() {
 
       ...avisosEl,
       ...botoesEstado,
+
+      fichaAtual.evolucao && fichaAtual.estado !== 'ativa'
+        ? h('p', { class: 'mensagem info' }, 'Evolução de uma Ficha Ativa: quando o Mestre aprovar, esta Ficha substitui a de Nível menor. Distribua os pontos novos do Nível e envie.')
+        : null,
+      fichasOffline ? h('p', { class: 'mensagem info' }, 'Ficha Offline: fica só neste aparelho, sem aprovação do Mestre. Tudo é editável.') : null,
 
       bloqueado ? h('p', { class: 'mensagem aviso' }, 'Esta ficha está aguardando aprovação do Mestre. Retire o pedido para editá-la.') : null,
 
@@ -682,10 +694,12 @@ async function abrirEditorFicha(id) {
   }
 }
 
-function voltarParaListaFichas() {
+// Volta à lista já recarregada (a lista guardada pode estar velha: aprovação, evolução, exclusão...).
+async function voltarParaListaFichas() {
   fichaAtual = null;
   calc = null;
   naListaDeFichas = true;
+  await carregarFichas();
   renderizarListaFichas();
 }
 
@@ -740,10 +754,68 @@ async function excluirFicha() {
   if (!confirm('Excluir este rascunho? Esta ação não pode ser desfeita.')) return;
   try {
     await apiFichas('/fichas/' + encodeURIComponent(fichaAtual.id), 'DELETE');
-    voltarParaListaFichas();
-    await carregarFichas();
+    await voltarParaListaFichas();
   } catch (e) {
     mensagem($('aviso-mesa'), e.message, 'erro');
+  }
+}
+
+// Grava agora o que ainda esperava o salvamento automático (antes de copiar, evoluir ou exportar).
+async function gravarPendencias() {
+  clearTimeout(timerSalvarJogo);
+  if (fichaAtual && fichaAtual.estado !== 'pendente') await salvarFichaAgora();
+}
+
+async function duplicarFicha() {
+  try {
+    await gravarPendencias();
+    const r = await apiFichas('/fichas/' + encodeURIComponent(fichaAtual.id) + '/duplicar', 'POST', {});
+    await carregarFichas();
+    await abrirEditorFicha(r.id);
+  } catch (e) {
+    mensagem($('aviso-mesa'), e.message, 'erro');
+  }
+}
+
+// Subir de Nível: cria um rascunho com +1 Nível; quando o Mestre aprova, ele substitui a Ficha Ativa de origem.
+async function evoluirFicha() {
+  const novo = fichaAtual.dados.nivel + 1;
+  if (!confirm(`Subir para o Nível ${novo}? Será criado um rascunho com os mesmos dados. A Ficha atual continua Ativa até o Mestre aprovar a nova.`)) return;
+  try {
+    await gravarPendencias();
+    const r = await apiFichas('/fichas/' + encodeURIComponent(fichaAtual.id) + '/evoluir', 'POST', {});
+    await carregarFichas();
+    await abrirEditorFicha(r.id);
+  } catch (e) {
+    mensagem($('aviso-mesa'), e.message, 'erro');
+  }
+}
+
+// Exporta a Ficha como arquivo .json (backup, ou levar para outra Mesa / o modo Offline).
+async function exportarFicha() {
+  await gravarPendencias();
+  const arquivo = { ab: 'ficha-ameaca-biologica', versao: 1, exportadaEm: new Date().toISOString(), dados: fichaAtual.dados };
+  const nome = (fichaAtual.dados.nome || 'personagem').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'personagem';
+  const url = URL.createObjectURL(new Blob([JSON.stringify(arquivo, null, 2)], { type: 'application/json' }));
+  const a = h('a', { href: url, download: `ficha-${nome}.json` });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// Importa uma Ficha de arquivo: entra como rascunho (ou Ficha Offline) e passa pelas mesmas regras de sempre.
+async function importarFicha(arquivo) {
+  try {
+    if (arquivo.size > 100000) throw new Error('Arquivo grande demais para ser uma Ficha.');
+    const json = JSON.parse(await arquivo.text());
+    const dados = json && json.ab === 'ficha-ameaca-biologica' ? json.dados : null;
+    if (!dados || typeof dados !== 'object') throw new Error('Este arquivo não é uma Ficha exportada pelo Laboratório.');
+    const r = await apiFichas('/fichas', 'POST', { dados });
+    await carregarFichas();
+    await abrirEditorFicha(r.id);
+  } catch (e) {
+    mensagem($('aviso-mesa'), e instanceof SyntaxError ? 'Este arquivo não é uma Ficha exportada pelo Laboratório.' : e.message, 'erro');
   }
 }
 
@@ -752,31 +824,49 @@ function renderizarListaFichas() {
   if (!raiz) return;
 
   const mesa = estado.mesaAtual;
-  const limNivel = mesa ? mesa.limiteNivel : 1;
-  const rascunhos = fichasDoJogador.filter((f) => f.estado === 'rascunho').length;
-  const podeNova = rascunhos < 5;
+  const limNivel = fichasOffline ? REGRAS.LIMITES.nivelMax : mesa ? mesa.limiteNivel : 1;
+  const rascunhos = fichasDoJogador.filter((f) => f.estado === 'rascunho' || f.estado === 'offline').length;
+  const podeNova = fichasOffline ? rascunhos < LIMITE_FICHAS_OFFLINE : rascunhos < 5;
 
   raiz.replaceChildren(
     h('div', { class: 'lista-fichas' },
       h('div', { class: 'linha' },
-        h('h2', {}, 'Fichas de Personagem'),
+        h('h2', {}, fichasOffline ? 'Fichas Offline' : 'Fichas de Personagem'),
         h('button', { type: 'button', class: 'botao pequeno' + (podeNova ? ' primario' : ''), onclick: podeNova ? criarNovaFicha : null, disabled: !podeNova }, '+ Nova ficha')),
-      h('p', { class: 'dica' }, `Rascunhos: ${rascunhos}/5 · Fichas ativas: ${fichasDoJogador.filter((f) => f.estado === 'ativa').length}/3 · Nível máximo: ${limNivel}`),
+      h('p', { class: 'dica' }, fichasOffline
+        ? `Fichas neste aparelho: ${rascunhos}/${LIMITE_FICHAS_OFFLINE} · sem Mesa e sem aprovação · Nível até ${limNivel}`
+        : `Rascunhos: ${rascunhos}/5 · Fichas ativas: ${fichasDoJogador.filter((f) => f.estado === 'ativa').length}/3 · Nível máximo: ${limNivel}`),
+      h('input', { id: 'arquivo-ficha', type: 'file', accept: '.json,application/json', hidden: true,
+        onchange: (e) => { const a = e.target.files[0]; e.target.value = ''; if (a) importarFicha(a); } }),
+      h('button', { type: 'button', class: 'botao pequeno', onclick: () => $('arquivo-ficha').click() }, 'Importar ficha de arquivo'),
 
       fichasDoJogador.length === 0
         ? h('p', { class: 'dica' }, 'Você ainda não tem fichas. Crie uma nova acima.')
         : h('ul', { class: 'lista' }, fichasDoJogador.map((f) => {
-            const estadoLabel = { rascunho: 'Rascunho', pendente: 'Aguardando aprovação', ativa: 'Ativa' };
+            const estadoLabel = { rascunho: 'Rascunho', pendente: 'Aguardando aprovação', ativa: 'Ativa', offline: 'Offline' };
             return h('li', {},
               h('button', { type: 'button', class: 'botao mesa-item', onclick: () => abrirEditorFicha(f.id) },
                 h('span', { class: 'mesa-nome' }, f.personagem || '(sem nome)'),
-                h('span', { class: 'mesa-info' }, estadoLabel[f.estado] || f.estado)));
+                h('span', { class: 'mesa-info' }, (estadoLabel[f.estado] || f.estado) + (f.dados ? ` · Nível ${f.dados.nivel}` : '') + (f.evolucao ? ' · evolução' : ''))));
           })),
 
-      h('button', { type: 'button', class: 'botao pequeno', onclick: voltarParaMesa }, '← Voltar para a Mesa')));
+      h('button', { type: 'button', class: 'botao pequeno', onclick: voltarParaMesa }, fichasOffline ? '← Voltar ao Laboratório' : '← Voltar para a Mesa')));
+}
+
+// Sai das Fichas (usada ao voltar ao Laboratório): zera o que ficou aberto.
+function sairDeFichas() {
+  fichaAtual = null;
+  calc = null;
+  naListaDeFichas = false;
+  fichasOffline = false;
 }
 
 function voltarParaMesa() {
+  if (fichasOffline) {
+    sairDeFichas();
+    voltarAoLaboratorio();
+    return;
+  }
   fichaAtual = null;
   calc = null;
   naListaDeFichas = false;
@@ -835,7 +925,7 @@ async function cartaoFichasMestre() {
       h('li', { class: 'linha-jogador' },
         h('div', {},
           h('span', { class: 'nome' }, s.personagem || '(sem nome)'),
-          h('span', { class: 'mesa-info' }, ' — ' + s.usuario)),
+          h('span', { class: 'mesa-info' }, ' — ' + s.usuario + (s.evolucao ? ' (evolução de Nível)' : ''))),
         h('span', { class: 'acoes' },
           botaoFicha('Aprovar', 'primario', () => decidirFicha(s.id, 'aprovar')),
           botaoFicha('Recusar', '', () => decidirFicha(s.id, 'recusar')))))));

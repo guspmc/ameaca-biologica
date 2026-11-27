@@ -92,6 +92,7 @@ function abrirMesa(id) {
 }
 
 function voltarAoLaboratorio(aviso) {
+  if (typeof sairDeFichas === 'function') sairDeFichas(); // fecha Ficha/lista que ficou aberta
   estado.mesaId = null;
   estado.mesaAtual = null;
   mostrarTela('lab');

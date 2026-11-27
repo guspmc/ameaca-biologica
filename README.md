@@ -2,7 +2,9 @@
 
 Aplicativo (PWA) para jogar **Ameaça Biológica RPG**: fichas de personagem, Painel do Mestre e Mesas, tudo ligado por um servidor local no computador do Mestre. Gratuito, sem internet e sem bibliotecas externas.
 
-> **Etapa atual (v0.6):** nova **identidade visual "Dossiê"** (papel escuro, vermelho-carimbo, números em fonte de máquina de escrever, carimbos), **Ficha compacta** (Perícias em seletor de 3 botões, Atributos alinhados) e **telas largas** (Ficha e Laboratório em 2 colunas no PC). O tema fica em `app/css/tema-dossie.css`.
+> **Etapa atual (v0.7):** **Subir de Nível** (a Ficha Ativa gera um rascunho de Nível +1; quando o Mestre aprova, ele substitui a antiga), **Duplicar**, **Exportar/Importar Ficha** em arquivo `.json` e **Fichas Offline** (guardadas só no aparelho, sem servidor, Mesa ou aprovação; até 30).
+>
+> **Antes (v0.6):** nova **identidade visual "Dossiê"** (papel escuro, vermelho-carimbo, números em fonte de máquina de escrever, carimbos), **Ficha compacta** (Perícias em seletor de 3 botões, Atributos alinhados) e **telas largas** (Ficha e Laboratório em 2 colunas no PC). O tema fica em `app/css/tema-dossie.css`.
 >
 > **Antes (v0.5):** adiciona o **Arsenal**: catálogo do capítulo 3 do livro (armas, proteções, Peças Extras, munição, consumíveis) no Inventário da Ficha, com Espaços calculados, carregador e recarga, Defesa e RD pelo colete equipado, Proficiência por Classe e **cartões de ataque** no Combate (teste, dano, crítico, Vantagem/Desvantagem, Mirar, Disparo Cadenciado, Rajada, consumo de munição).
 >

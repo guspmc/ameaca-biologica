@@ -4,7 +4,7 @@
  * Estratégia: rede primeiro (pega atualizações quando há servidor) e cache como reserva.
  * Aumente VERSAO sempre que mudar a lista de ARQUIVOS.
  */
-const VERSAO = 'ab-lab-v5';
+const VERSAO = 'ab-lab-v6';
 const ARQUIVOS = [
   './',
   'index.html',
@@ -17,6 +17,7 @@ const ARQUIVOS = [
   'js/regras.js',
   'js/ficha.js',
   'js/arsenal-ui.js',
+  'js/fichas-offline.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',

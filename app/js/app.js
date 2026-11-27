@@ -281,6 +281,7 @@ async function detectarServidorDeOrigem() {
 function mostrarTela(nome) {
   estado.tela = nome;
   for (const id of ['login', 'lab', 'criar', 'mesa']) $('tela-' + id).hidden = nome !== id;
+  if (nome === 'lab' && typeof atualizarFichasOffline === 'function') atualizarFichasOffline();
   window.scrollTo(0, 0);
 }
 

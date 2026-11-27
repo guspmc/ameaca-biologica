@@ -299,7 +299,7 @@ async function rotasFichas(req, res, url) {
   if (secao === 'fichas') {
     if (!fichaId) {
       if (metodo === 'GET') r = fichas.listar(mesaId, usuario);
-      else if (metodo === 'POST') r = fichas.criar(mesaId, usuario);
+      else if (metodo === 'POST') r = fichas.criar(mesaId, usuario, (await lerCorpo(req)).dados);
     } else if (!acao) {
       if (metodo === 'GET') r = fichas.obter(mesaId, usuario, fichaId);
       else if (metodo === 'PUT') r = fichas.salvar(mesaId, usuario, fichaId, await lerCorpo(req));
@@ -309,6 +309,8 @@ async function rotasFichas(req, res, url) {
         if (acao === 'solicitar') r = fichas.solicitar(mesaId, usuario, fichaId);
         else if (acao === 'retirar') r = fichas.retirar(mesaId, usuario, fichaId);
         else if (acao === 'desativar') r = fichas.desativar(mesaId, usuario, fichaId);
+        else if (acao === 'duplicar') r = fichas.copiar(mesaId, usuario, fichaId, false);
+        else if (acao === 'evoluir') r = fichas.copiar(mesaId, usuario, fichaId, true);
       }
     }
   } else if (secao === 'solicitacoes-fichas') {

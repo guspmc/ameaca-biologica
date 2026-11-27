@@ -207,6 +207,56 @@ function req(metodo, caminho, corpo, token) {
     const rPosRetirar = await req('GET', `/api/mesas/${mesaId}/fichas/${idR}`, null, tokAna);
     confere('Ficha voltou para rascunho após retirar', rPosRetirar.corpo.ficha.estado === 'rascunho');
 
+    // --- Subir de Nível, duplicar e importar (Mesa de Nível 3) ---
+    const rM3 = await req('POST', '/api/mesas', { nome: 'Mesa Nível 3', limiteJogadores: 3, limiteNivel: 2 }, tokMestre);
+    const mesa3 = rM3.corpo.id;
+    const cod3 = (await req('GET', `/api/mesas/${mesa3}`, null, tokMestre)).corpo.mesa.codigoFormatado;
+    await req('POST', '/api/mesas/entrar', { codigo: cod3 }, tokAna);
+    await req('POST', `/api/mesas/${mesa3}/jogadores/Ana/aprovar`, {}, tokMestre);
+    const rImp = await req('POST', `/api/mesas/${mesa3}/fichas`, { dados: dadosValidos }, tokAna);
+    confere('Importar: cria rascunho já preenchido (201)', rImp.status === 201);
+    const idImp = rImp.corpo.id;
+    const lerFicha = async (m, id) => (await req('GET', `/api/mesas/${m}/fichas/${id}`, null, tokAna)).corpo.ficha;
+    confere('Importar: dados normalizados (nome e Nível)', (await lerFicha(mesa3, idImp)).dados.nome === 'Claire');
+    const rImpLixo = await req('POST', `/api/mesas/${mesa3}/fichas`, { dados: { nivel: 99, atributos: { FOR: 50 }, itens: 'x' } }, tokAna);
+    const dLixo = (await lerFicha(mesa3, rImpLixo.corpo.id)).dados;
+    confere('Importar: valores absurdos são limitados', dLixo.nivel === 10 && dLixo.atributos.FOR <= 5 && Array.isArray(dLixo.itens));
+    await req('DELETE', `/api/mesas/${mesa3}/fichas/${rImpLixo.corpo.id}`, null, tokAna);
+
+    const rEvoRasc = await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/evoluir`, {}, tokAna);
+    confere('Evoluir rascunho: recusado (409)', rEvoRasc.status === 409);
+    await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/solicitar`, {}, tokAna);
+    await req('POST', `/api/mesas/${mesa3}/solicitacoes-fichas/${idImp}/aprovar`, {}, tokMestre);
+    const rEvo = await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/evoluir`, {}, tokAna);
+    confere('Evoluir Ficha Ativa: novo rascunho (201)', rEvo.status === 201);
+    const idEvo = rEvo.corpo.id;
+    const fEvo = await lerFicha(mesa3, idEvo);
+    confere('Evolução: rascunho de Nível 2, marcado como evolução, mesmo personagem', fEvo.estado === 'rascunho' && fEvo.dados.nivel === 2 && fEvo.evolucao === true && fEvo.dados.nome === 'Claire');
+    confere('Ficha de origem continua Ativa enquanto isso', (await lerFicha(mesa3, idImp)).estado === 'ativa');
+    const rEvo2 = await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/evoluir`, {}, tokAna);
+    confere('Evolução repetida enquanto há uma em andamento (409)', rEvo2.status === 409);
+
+    // Nível 2 pede uma Habilidade Básica nova: sem ela, a solicitação é recusada com os motivos.
+    const rSolEvo = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/solicitar`, {}, tokAna);
+    confere('Evolução incompleta é recusada com o motivo (422)', rSolEvo.status === 422 && /Habilidade/.test(rSolEvo.corpo.erro), rSolEvo.corpo.erro);
+    await req('PUT', `/api/mesas/${mesa3}/fichas/${idEvo}`, { ...fEvo.dados, habilidades: ['rolamento', 'anatomia-de-combate'] }, tokAna);
+    const rSolEvo2 = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/solicitar`, {}, tokAna);
+    confere('Evolução completa é enviada (200)', rSolEvo2.status === 200, rSolEvo2.corpo.erro);
+    const lista = (await req('GET', `/api/mesas/${mesa3}/solicitacoes-fichas`, null, tokMestre)).corpo.solicitacoes;
+    confere('Mestre vê a evolução marcada, sem o conteúdo', lista.length === 1 && lista[0].evolucao === true && !lista[0].dados);
+    await req('POST', `/api/mesas/${mesa3}/solicitacoes-fichas/${idEvo}/aprovar`, {}, tokMestre);
+    const depois = (await req('GET', `/api/mesas/${mesa3}/fichas`, null, tokAna)).corpo.fichas;
+    confere('Evolução aprovada: a Ficha antiga some e fica só a de Nível 2 Ativa', depois.length === 1 && depois[0].id === idEvo && depois[0].estado === 'ativa' && depois[0].dados.nivel === 2);
+
+    const rDup = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/duplicar`, {}, tokAna);
+    confere('Duplicar: novo rascunho (201) com "(cópia)" e sem marca de evolução', rDup.status === 201 && (await lerFicha(mesa3, rDup.corpo.id)).dados.nome.endsWith('(cópia)') && (await lerFicha(mesa3, rDup.corpo.id)).evolucao === false);
+    const rDupAlheia = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/duplicar`, {}, tokBia);
+    confere('Duplicar Ficha de outro jogador: recusado', rDupAlheia.status === 403);
+    // Limite de rascunhos vale para duplicar/importar
+    let ultimo = 201; let n = 0;
+    while (ultimo === 201 && n < 10) { ultimo = (await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/duplicar`, {}, tokAna)).status; n++; }
+    confere('Limite de 5 rascunhos vale também para duplicar (409)', ultimo === 409);
+
     // --- Purga ao encerrar Mesa ---
     // Ana precisa de fichas listadas antes.
     const rAntesEnc = await req('GET', `/api/mesas/${mesaId}/fichas`, null, tokAna);

@@ -33,11 +33,13 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - v0.6: identidade visual **Dossiê** em `app/css/tema-dossie.css` (carregado depois de `estilo.css`; só sobrescreve cores/tipografia/layout, para não conflitar com o branch do Painel do Mestre). Tokens: papel escuro, `--acento` vermelho-carimbo, `--acento-fundo` para botões, mono do sistema (sem fontes externas). Ficha compacta (Perícias em seletor de 3 botões, "Não Treinada" aparece como "Não"), Atributos em grade, Ficha em 2 colunas no PC (`.ficha-colunas`; barra inferior some ≥980 px), Laboratório em 2 colunas no PC (multicol). Ícones regerados em vermelho (`ferramentas/gerar-icones.js`). `sw.js` v5.
 - Identidade decidida pelo dono: Dossiê / Arquivo. Se o Painel do Mestre do ChatGPT trouxer CSS novo, conferir contra `tema-dossie.css`.
 
+- v0.7: Subir de Nível, Duplicar, Exportar/Importar e Fichas Offline. Servidor (`fichas.js`): `criar` aceita `{dados}` (importação, sempre rascunho normalizado), `copiar` (rotas `POST /fichas/:id/duplicar` e `/evoluir`); a evolução cria rascunho com `substitui: <idAtiva>` e Nível +1 (limite da Mesa), `solicitar` não conta a Ficha substituída no limite de 3, e `decidir(aprovar)` apaga a antiga; listas trazem `evolucao`. Arquivo exportado: `{ab:'ficha-ameaca-biologica', versao:1, dados}`. Cliente: botões no editor (`evoluirFicha`, `duplicarFicha`, `exportarFicha`, `importarFicha`); `app/js/fichas-offline.js` guarda em `localStorage` (`ab-fichas-offline-v1:<usuário>`) e `apiFichas` desvia para lá quando `fichasOffline` é true (mesmo editor, estado `offline`, tudo editável, Nível até 10). Corrigido: a lista de Fichas ficava velha ao voltar do editor (agora recarrega). Campos novos nas Fichas do servidor (`substitui`) não alteram o formato lido pelo Painel do Mestre.
+- Limitação conhecida: Pontos de Perícia/Habilidades ao subir de Nível seguem a lista de criação (o app só valida o que falta, não guia o ganho por Nível).
+
 ## Próximas etapas
-1. Subir de Nível, Exportar/Importar Ficha e Ficha Offline (v0.7, pedido pelo dono).
-2. Painel do Mestre (branch separado, pelo ChatGPT): resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
-3. Instalação do PWA no modo local (ver "Limitações" no README).
-4. Depois: Receitas/criação de itens, regras de Descanso, tabela de Condições com efeitos automáticos.
+1. Painel do Mestre (branch separado, pelo ChatGPT; já existe `origin/jill/painel-do-mestre`, mexe em server.js, index.html, sw.js, package.json e estilo.css: haverá conflitos simples de lista de arquivos ao fazer o merge; não toca em ficha.js/regras.js/fichas.js): resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
+2. Instalação do PWA no modo local (ver "Limitações" no README).
+3. Depois: Receitas/criação de itens, regras de Descanso, tabela de Condições com efeitos automáticos.
 
 ## Como testar (aqui)
 - `npm test`: servidor, rotas, presença em tempo real, portas e QR (só Node).
@@ -48,7 +50,7 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - `servidor/server.js`: HTTP + SSE + JSON. Rotas: `GET /api/status`, `POST /api/entrar`, `GET /api/eventos?token=`, `GET /api/qr?texto=`, `/api/mesas*` (ver `servidor/mesas.js`). Escolha de porta em `ouvir`.
 - `servidor/mesas.js`: regras das Mesas (código, limites, aprovação), guarda em `mesas.json`.
 - `app/js/mesas.js`: telas de Mesas (lista, criar, Painel do Mestre, visão do Jogador).
-- `app/js/ficha.js`, `app/js/arsenal-ui.js`, `app/js/regras.js`, `app/js/dados-livro.js`, `app/js/dados-arsenal.js`: Ficha de Personagem (tela, Arsenal na tela, regras, dados do livro, dados do Arsenal). `servidor/fichas.js`: regras e guarda das Fichas.
+- `app/js/ficha.js`, `app/js/arsenal-ui.js`, `app/js/fichas-offline.js`, `app/js/regras.js`, `app/js/dados-livro.js`, `app/js/dados-arsenal.js`: Ficha de Personagem (tela, Arsenal na tela, regras, dados do livro, dados do Arsenal). `servidor/fichas.js`: regras e guarda das Fichas.
 - `servidor/qr.js`: gerador de QR (byte, correção M, versões 1 a 9).
 - `app/js/app.js`: login, estado Offline/Local, conexão, descoberta de porta, QR, renderização.
 - `app/sw.js`: cache offline (aumente `VERSAO` ao mudar a lista de arquivos).
