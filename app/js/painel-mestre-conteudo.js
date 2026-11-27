@@ -211,7 +211,14 @@ function atualizarPreviewImagemItem() {
   try {
     const parsed = new URL(url);
     if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('URL inválida');
-    preview.src = url; preview.hidden = false;
+    preview.hidden = false;
+    if (url.includes('/api/mesas/')) {
+      preview.removeAttribute('src');
+      fetch(url, { headers: { Authorization: 'Bearer ' + estado.token } })
+        .then(resposta => resposta.ok ? resposta.blob() : Promise.reject())
+        .then(blob => { preview.src = URL.createObjectURL(blob); })
+        .catch(() => { preview.hidden = true; });
+    } else preview.src = url;
   } catch { preview.removeAttribute('src'); preview.hidden = true; }
 }
 
