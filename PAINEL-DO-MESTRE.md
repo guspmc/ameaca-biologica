@@ -103,3 +103,12 @@ Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos pers
 - A suíte também executa testes diretamente sobre as funções de turno do módulo visual, em ambiente isolado do navegador.
 - São verificados: avanço dentro da ordem, fechamento da rodada ao passar pelo último participante, remoção do participante atual no meio/fim da ordem, remoção de participante fora do turno, remoção do último participante e avanço com lista vazia.
 - Os testes validam o comportamento já implementado; não acrescentam regras novas ao sistema.
+
+
+## Concorrência entre sessões do Mestre
+
+- O estado de combate possui um número de versão incrementado a cada gravação aceita.
+- O navegador envia a versão que carregou junto com cada alteração. Se outra aba ou aparelho gravar primeiro, o servidor rejeita a gravação antiga com HTTP 409, em vez de sobrescrever silenciosamente o estado mais recente.
+- O navegador mantém a alteração local e apresenta o erro retornado; o Mestre deve atualizar a Mesa antes de continuar. Não há mesclagem automática de alterações conflitantes.
+- Estados antigos, ainda sem campo de versão, são lidos como versão 0 e passam a receber versão na primeira gravação feita pelo cliente atualizado.
+- A notificação SSE do combate continua direcionada às sessões do próprio Mestre. A visualização dos Jogadores não recebe nem consulta o estado privado do combate nesta etapa.
