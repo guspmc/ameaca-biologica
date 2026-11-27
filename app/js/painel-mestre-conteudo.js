@@ -133,6 +133,7 @@ function cancelarEdicaoDocumento() {
   $('doc-titulo').value = '';
   $('doc-tipo').selectedIndex = 0;
   $('doc-conteudo').value = '';
+  $('doc-arquivo').value = '';
   $('doc-visivel').checked = false;
   $('doc-guardar').textContent = 'Salvar documento';
   $('doc-cancelar').hidden = true;
@@ -144,6 +145,7 @@ function editarDocumentoMestre(id) {
   $('doc-titulo').value = doc.titulo;
   $('doc-tipo').value = doc.tipo;
   $('doc-conteudo').value = doc.conteudo;
+  $('doc-arquivo').value = doc.arquivoUrl || '';
   $('doc-visivel').checked = Boolean(doc.visivel);
   $('doc-guardar').textContent = 'Salvar alterações';
   $('doc-cancelar').hidden = false;
@@ -155,6 +157,8 @@ function cancelarEdicaoItem() {
   $('item-categoria').selectedIndex = 0;
   $('item-descricao').value = '';
   $('item-efeito').value = '';
+  $('item-imagem').value = '';
+  $('item-imagem-preview').hidden = true;
   $('item-publicar').checked = false;
   $('item-guardar').textContent = 'Salvar item';
   $('item-cancelar').hidden = true;
@@ -167,10 +171,22 @@ function editarItemMestre(id) {
   $('item-categoria').value = item.categoria;
   $('item-descricao').value = item.descricao;
   $('item-efeito').value = item.efeito;
+  $('item-imagem').value = item.imagemUrl || '';
+  atualizarPreviewImagemItem();
   $('item-publicar').checked = Boolean(item.visivel);
   $('item-guardar').textContent = 'Salvar alterações';
   $('item-cancelar').hidden = false;
   $('item-nome').focus();
+}
+
+function atualizarPreviewImagemItem() {
+  const preview = $('item-imagem-preview');
+  const url = $('item-imagem')?.value.trim() || '';
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('URL inválida');
+    preview.src = url; preview.hidden = false;
+  } catch { preview.removeAttribute('src'); preview.hidden = true; }
 }
 
 function desenharConteudoMestre() {
@@ -252,12 +268,14 @@ function desenharConteudoMestre() {
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este documento?')) return; conteudoMestre.documentos = conteudoMestre.documentos.filter(x => x.id !== item.id); salvarConteudoMestre(); });
+    if (item.arquivoUrl) { const link = elemento('a', 'Abrir arquivo anexo'); link.href = item.arquivoUrl; link.target = '_blank'; link.rel = 'noopener noreferrer'; li.append(link); }
     li.append(editarDoc, publicar, remover); documentos.append(li);
   }
   const itens = $('itens-mestre'); itens.replaceChildren();
   for (const item of conteudoMestre.itens) {
     const li = elemento('li', '', 'registro-mestre');
     li.append(elemento('strong', item.nome), elemento('p', (item.categoria || 'Item') + ' · ' + (item.efeito || item.descricao || 'Sem efeito descrito')));
+    if (item.imagemUrl) { const img = elemento('img'); img.src = item.imagemUrl; img.alt = 'Imagem de ' + item.nome; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.className = 'item-imagem-mestre'; li.append(img); }
     const estadoPublicacao = elemento('span', item.visivel ? 'Publicado para Jogadores' : 'Privado', 'dica');
     const editar = elemento('button', 'Editar', 'botao pequeno');
     editar.type = 'button'; editar.addEventListener('click', () => editarItemMestre(item.id));
@@ -273,10 +291,16 @@ function montarConteudoMestre() {
   if (estado.mesaAtual?.papel !== 'mestre' || $('bloco-conteudo-mestre')) return;
   const raiz = $('conteudo-mesa');
   const card = elemento('section', '', 'cartao painel-conteudo'); card.id = 'bloco-conteudo-mestre';
-  card.append(elemento('h2', 'Ferramentas da narrativa'));
+  card.append(elemento('h2', 'Painel de conteúdo'));
+  const menu = elemento('nav', '', 'menu-conteudo-mestre'); menu.setAttribute('aria-label', 'Seções do Painel do Mestre');
+  const abas = [['itens','Itens personalizados'],['documentos','Documentações / Files'],['encontros','Encontros e anotações']];
+  const paineis = {};
+  const trocarAba = (nome) => { for (const [chave] of abas) { if (paineis[chave]) paineis[chave].hidden = chave !== nome; const botao = menu.querySelector('[data-aba="' + chave + '"]'); if (botao) { botao.setAttribute('aria-selected', String(chave === nome)); botao.tabIndex = chave === nome ? 0 : -1; } } };
+  for (const [chave, rotulo] of abas) { const botao = elemento('button', rotulo, 'botao pequeno'); botao.type = 'button'; botao.dataset.aba = chave; botao.setAttribute('role','tab'); botao.setAttribute('aria-selected',String(chave==='itens')); botao.addEventListener('click',()=>trocarAba(chave)); menu.append(botao); }
+  card.append(menu);
   const msg = elemento('p', '', 'mensagem'); msg.id = 'conteudo-msg'; msg.hidden = true; card.append(msg);
 
-  const encontro = elemento('section', '', 'subpainel-mestre');
+  const encontro = elemento('section', '', 'subpainel-mestre'); encontro.dataset.secao = 'encontros'; paineis.encontros = encontro;
   encontro.append(elemento('h3', 'Criador de encontros'));
   const form = elemento('form', '', 'form-encontro-mestre');
   const [ln, nivel] = campoConteudo('Nível da Mesa', 'encontro-nivel', 'select');
@@ -308,45 +332,51 @@ function montarConteudoMestre() {
   });
   encontro.append(form); card.append(encontro);
 
-  const anotacoes = elemento('section', '', 'subpainel-mestre'); anotacoes.append(elemento('h3', 'Anotações da Mesa'));
+  const anotacoes = elemento('section', '', 'subpainel-mestre'); anotacoes.dataset.secao = 'encontros'; anotacoes.append(elemento('h3', 'Anotações da Mesa'));
   const notas = elemento('textarea'); notas.id = 'anotacoes-mestre'; notas.rows = 5; notas.maxLength = 12000; notas.placeholder = 'Pistas, decisões, nomes, acontecimentos…';
   const salvarNotas = elemento('button', 'Salvar anotações', 'botao'); salvarNotas.type = 'button';
   salvarNotas.addEventListener('click', () => { conteudoMestre.anotacoes = notas.value; salvarConteudoMestre(); });
   anotacoes.append(notas, salvarNotas); card.append(anotacoes);
 
-  const docs = elemento('section', '', 'subpainel-mestre'); docs.append(elemento('h3', 'Documentos narrativos'));
+  const docs = elemento('section', '', 'subpainel-mestre'); docs.dataset.secao = 'documentos'; paineis.documentos = docs; docs.append(elemento('h3', 'Documentos narrativos'));
   const fd = elemento('form', '', 'form-encontro-mestre');
   const [ldt, tituloDoc] = campoConteudo('Título', 'doc-titulo');
   const [ldtipo, tipoDoc] = campoConteudo('Tipo', 'doc-tipo', 'select');
   for (const t of ['Relatório', 'E-mail', 'Bilhete', 'Arquivo', 'Pista', 'Outro']) { const o = elemento('option', t); o.value = t; tipoDoc.append(o); }
   const [ldc, conteudoDoc] = campoConteudo('Conteúdo', 'doc-conteudo', 'textarea');
   conteudoDoc.rows = 6; conteudoDoc.maxLength = 12000;
+  const [larq, arquivoDoc] = campoConteudo('Link para arquivo anexo (opcional)', 'doc-arquivo');
+  arquivoDoc.type = 'url'; arquivoDoc.placeholder = 'https://…';
   const visivel = elemento('input'); visivel.type = 'checkbox'; visivel.id = 'doc-visivel';
   const lv = elemento('label', 'Preparar para compartilhar com os Jogadores'); lv.prepend(visivel);
   const guardarDoc = elemento('button', 'Salvar documento', 'botao'); guardarDoc.type = 'submit'; guardarDoc.id = 'doc-guardar';
   const cancelarDoc = elemento('button', 'Cancelar edição', 'botao pequeno'); cancelarDoc.type = 'button'; cancelarDoc.id = 'doc-cancelar'; cancelarDoc.hidden = true; cancelarDoc.addEventListener('click', cancelarEdicaoDocumento);
-  fd.append(ldt, tituloDoc, ldtipo, tipoDoc, ldc, conteudoDoc, lv, guardarDoc, cancelarDoc);
+  fd.append(ldt, tituloDoc, ldtipo, tipoDoc, ldc, conteudoDoc, larq, arquivoDoc, lv, guardarDoc, cancelarDoc);
   fd.addEventListener('submit', e => { e.preventDefault(); if (!tituloDoc.value.trim() || !conteudoDoc.value.trim()) return;
-    const dados = { titulo: tituloDoc.value.trim(), tipo: tipoDoc.value, conteudo: conteudoDoc.value, visivel: visivel.checked };
+    const dados = { titulo: tituloDoc.value.trim(), tipo: tipoDoc.value, conteudo: conteudoDoc.value, arquivoUrl: arquivoDoc.value.trim(), visivel: visivel.checked };
     if (documentoEmEdicao) { const doc = conteudoMestre.documentos.find(x => x.id === documentoEmEdicao); if (doc) Object.assign(doc, dados); }
     else conteudoMestre.documentos.unshift({ id: novoIdConteudo(), ...dados });
     cancelarEdicaoDocumento(); salvarConteudoMestre(); });
   docs.append(fd, elemento('ul', '', 'lista')); docs.lastChild.id = 'documentos-mestre'; card.append(docs);
 
-  const itensSec = elemento('section', '', 'subpainel-mestre'); itensSec.append(elemento('h3', 'Itens personalizados'));
+  const itensSec = elemento('section', '', 'subpainel-mestre'); itensSec.dataset.secao = 'itens'; paineis.itens = itensSec; itensSec.append(elemento('h3', 'Itens personalizados'));
   const fi = elemento('form', '', 'form-encontro-mestre');
   const [li, nomeItem] = campoConteudo('Nome do item', 'item-nome');
   const [lic, catItem] = campoConteudo('Categoria', 'item-categoria', 'select');
   for (const t of ['Arma', 'Proteção', 'Consumível', 'Chave', 'Equipamento', 'Outro']) { const o = elemento('option', t); o.value = t; catItem.append(o); }
   const [lid, descItem] = campoConteudo('Descrição', 'item-descricao', 'textarea'); descItem.rows = 3;
   const [lie, efeitoItem] = campoConteudo('Efeito / regra', 'item-efeito', 'textarea'); efeitoItem.rows = 3;
+  const [lim, imagemItem] = campoConteudo('Imagem do item (URL)', 'item-imagem');
+  imagemItem.type = 'url'; imagemItem.placeholder = 'https://…';
+  const previewItem = elemento('img'); previewItem.id = 'item-imagem-preview'; previewItem.alt = 'Prévia da imagem do item'; previewItem.hidden = true; previewItem.loading = 'lazy'; previewItem.referrerPolicy = 'no-referrer';
+  imagemItem.addEventListener('input', atualizarPreviewImagemItem);
   const publicarItem = elemento('input'); publicarItem.type = 'checkbox'; publicarItem.id = 'item-publicar';
   const labelPublicarItem = elemento('label', 'Compartilhar item com os Jogadores'); labelPublicarItem.prepend(publicarItem);
   const guardarItem = elemento('button', 'Salvar item', 'botao'); guardarItem.type = 'submit'; guardarItem.id = 'item-guardar';
   const cancelarItem = elemento('button', 'Cancelar edição', 'botao pequeno'); cancelarItem.type = 'button'; cancelarItem.id = 'item-cancelar'; cancelarItem.hidden = true; cancelarItem.addEventListener('click', cancelarEdicaoItem);
-  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, labelPublicarItem, guardarItem, cancelarItem);
+  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, lim, imagemItem, previewItem, labelPublicarItem, guardarItem, cancelarItem);
   fi.addEventListener('submit', e => { e.preventDefault(); if (!nomeItem.value.trim()) return;
-    const dados = { nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, visivel: publicarItem.checked };
+    const dados = { nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, imagemUrl: imagemItem.value.trim(), visivel: publicarItem.checked };
     if (itemEmEdicao) { const item = conteudoMestre.itens.find(x => x.id === itemEmEdicao); if (item) Object.assign(item, dados); }
     else conteudoMestre.itens.unshift({ id: novoIdConteudo(), ...dados });
     cancelarEdicaoItem(); salvarConteudoMestre(); });
@@ -355,6 +385,7 @@ function montarConteudoMestre() {
   const ulE = elemento('ul', '', 'lista'); ulE.id = 'encontros-mestre';
   const eSec = elemento('section', '', 'subpainel-mestre'); eSec.append(elemento('h3', 'Encontros preparados'), ulE); card.append(eSec);
   raiz.append(card);
+  trocarAba('itens');
   desenharConteudoMestre();
 }
 
@@ -382,6 +413,7 @@ function montarDocumentosPublicos() {
     const sec = elemento('article', '', 'subpainel-mestre');
     sec.append(elemento('h3', doc.titulo), elemento('p', doc.tipo, 'dica'));
     const corpo = elemento('p', doc.conteudo); corpo.style.whiteSpace = 'pre-wrap'; sec.append(corpo);
+    if (doc.arquivoUrl) { const link = elemento('a', 'Abrir arquivo anexo'); link.href = doc.arquivoUrl; link.target = '_blank'; link.rel = 'noopener noreferrer'; sec.append(link); }
     card.append(sec);
   }
   if (itensPublicosMesa.length) {
@@ -389,6 +421,7 @@ function montarDocumentosPublicos() {
     for (const item of itensPublicosMesa) {
       const sec = elemento('article', '', 'subpainel-mestre');
       sec.append(elemento('h3', item.nome), elemento('p', item.categoria || 'Item', 'dica'));
+      if (item.imagemUrl) { const img = elemento('img'); img.src = item.imagemUrl; img.alt = 'Imagem de ' + item.nome; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.className = 'item-imagem-mestre'; sec.append(img); }
       if (item.descricao) sec.append(elemento('p', item.descricao));
       if (item.efeito) sec.append(elemento('p', item.efeito));
       card.append(sec);
