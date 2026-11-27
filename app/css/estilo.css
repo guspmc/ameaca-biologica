@@ -199,3 +199,7 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .condicao-combate .botao { min-height: 28px; padding: 2px 8px; line-height: 1; }
 
 #item-publicar { width: auto; margin-right: 8px; vertical-align: middle; }
+
+.condicao-seletor{max-width:100%;min-width:0;padding:8px;border:1px solid var(--borda);border-radius:8px;background:var(--fundo);color:var(--texto);font:inherit}
+.condicao-referencia{flex:1 1 100%;padding:8px 10px;border-left:3px solid var(--acento);background:var(--painel-2);border-radius:0 8px 8px 0;overflow-wrap:anywhere}
+.condicao-referencia p{margin:4px 0}
