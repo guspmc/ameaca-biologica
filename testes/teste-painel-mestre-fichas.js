@@ -20,6 +20,7 @@ const fichas = {
 const calcular = () => ({
   pv: 5, pvMax: 10, pvTemp: 2, sa: 2, saMax: 4, bi: 1, biMax: 3,
   faseBI: { fase: 1 }, defesa: 14, rd: 1, iniciativa: 3, movimento: 9,
+  passivos: { percepcao: 15, fortitude: 12, reflexos: 14, vontade: 11 },
 });
 const painel = criarResumoFichasMestre({
   carregar: () => fichas,
@@ -39,10 +40,11 @@ assert.equal(resumo.jogador, 'Ana');
 assert.deepEqual(resumo.pv, { atual: 5, maximo: 10, temporarios: 2 });
 assert.deepEqual(resumo.sa, { atual: 2, maximo: 4 });
 assert.deepEqual(resumo.bi, { atual: 1, maximo: 3, fase: 1 });
+assert.deepEqual(resumo.periciasPassivas, { percepcao: 15, fortitude: 12, reflexos: 14, vontade: 11 });
 assert.deepEqual(resumo.condicoes, [{ id: 'cego', nome: 'Cego' }]);
 assert.deepEqual(Object.keys(resumo).sort(), [
   'bi', 'condicoes', 'defesa', 'id', 'iniciativa', 'jogador',
-  'movimento', 'nivel', 'personagem', 'pv', 'reducaoDano', 'sa',
+  'movimento', 'nivel', 'personagem', 'periciasPassivas', 'pv', 'reducaoDano', 'sa',
 ].sort());
 assert.ok(!JSON.stringify(resumo).includes('SEGREDO'));
 assert.ok(!JSON.stringify(resumo).includes('ANOTAÇÃO PRIVADA'));
