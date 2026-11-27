@@ -152,7 +152,9 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - Itens personalizados aceitam nome, categoria, descrição, efeito/regra e URL de imagem. O Mestre visualiza uma prévia ao preencher a URL; itens publicados exibem a imagem aos Jogadores junto da descrição e do efeito.
 - Documentos narrativos aceitam título, tipo, texto e link opcional para um arquivo anexo (PDF, imagem ou outro arquivo hospedado). O Mestre pode manter o documento privado ou publicá-lo para a Mesa; os Jogadores recebem o texto e o link somente quando publicado.
 - URLs de imagens e anexos são validadas no servidor para aceitar apenas HTTP/HTTPS. Links externos abrem em nova aba com proteção `noopener noreferrer`.
-- As imagens e os anexos são referenciados por URL; o Painel ainda não hospeda arquivos enviados do dispositivo. Para a primeira versão, o Mestre pode usar imagens/arquivos hospedados em um serviço acessível aos Jogadores.
+- O Mestre pode enviar anexos diretamente do dispositivo: PDF, PNG, JPG/JPEG, WEBP e TXT, até 10 MB por arquivo. Os arquivos são armazenados em diretório separado por Mesa, com nome aleatório, validação de extensão/MIME/assinatura, e são apagados quando a Mesa é encerrada.
+- O envio está disponível no formulário de documentos narrativos e no formulário de imagem dos itens personalizados. O Mestre pode continuar usando URLs externas HTTP/HTTPS.
+- A leitura dos anexos exige sessão válida e participação aprovada na Mesa. Para Jogadores, o servidor só entrega o arquivo se a URL estiver vinculada a um documento ou imagem de item publicado; anexos privados permanecem inacessíveis.
 - A aba de Encontros reúne o criador, encontros preparados e anotações; as outras duas abas isolam seus respectivos formulários e listas.
 - Testes do módulo verificam a publicação dos campos de mídia e a rejeição de esquemas de URL inseguros.
 
@@ -215,3 +217,19 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 ## Limite definitivo de acesso do Mestre às Fichas
 
 O Painel do Mestre é estritamente de leitura em relação às Fichas dos Jogadores. A projeção do servidor contém somente identificação do Jogador e personagem, PV/SA/BI atuais e máximos, Iniciativa, Defesa e Perícias Passivas (Fortitude, Reflexos, Vontade e Percepção). Não são enviados nível, PV temporários, fase de BI, Redução de Dano, Movimento, condições ou quaisquer outros dados da Ficha. Nenhuma ação do Painel grava alterações na Ficha do Jogador. O resumo é consultado periodicamente (a cada quatro segundos), ao entrar na Mesa e ao retornar à aba.
+
+
+## Sétima etapa — upload de arquivos do dispositivo
+
+- Novo módulo isolado `servidor/arquivos-mestre.js`, com armazenamento em `servidor/dados/arquivos-mesas/<mesaId>/`.
+- Upload binário autenticado, exclusivo do Mestre, com limite de 10 MB por arquivo.
+- Formatos permitidos: PDF, PNG, JPG/JPEG, WEBP e TXT. O servidor valida extensão, MIME declarado e assinatura básica do conteúdo; nomes originais são sanitizados e os nomes físicos são UUIDs.
+- Anexos de documentos e imagens de itens podem ser enviados pelo formulário correspondente. O formulário preenche automaticamente a URL interna do arquivo.
+- A leitura exige sessão e vínculo com a Mesa. Jogadores aprovados só acessam arquivos vinculados a documentos ou imagens de itens publicados; arquivos privados não são expostos. Ao encerrar a Mesa, seu diretório de anexos é removido.
+- Testes unitários cobrem upload, leitura, isolamento entre Mesas, rejeição de caminhos inválidos, tipos não permitidos, arquivos vazios/grandes e limpeza.
+
+## Pendências que dependem da integração com a Ficha da main
+
+1. **Atualização instantânea do resumo de Fichas:** o Painel ainda usa consulta periódica de quatro segundos. Para SSE real, a rota de salvamento de Fichas na implementação do Claude precisa emitir um evento direcionado aos membros aprovados da Mesa após a gravação bem-sucedida. Esta branch não altera `servidor/fichas.js` nem os arquivos de Ficha.
+2. **Distribuição efetiva de itens para o inventário da Ficha:** os itens publicados já são exibidos aos Jogadores como catálogo da Mesa, mas ainda não são inseridos no inventário pessoal. Isso requer um contrato explícito na API da Ficha, com ação do Jogador, validação no servidor e preservação da regra de que o Mestre não edita Fichas.
+3. **Integração final:** após o Claude concluir a main, revisar a rota de salvamento de Fichas, o formato do inventário e os arquivos compartilhados antes do merge. Não sincronizar/rebasear esta branch durante o trabalho paralelo.
