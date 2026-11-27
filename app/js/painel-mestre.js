@@ -95,7 +95,7 @@ function prepararEncontroNoCombate(encontro){
         agi:criatura.atributos.agi,bonusIniciativa:criatura.iniciativa,d20:0,iniciativa:0,
         criaturaId:criatura.id,pvAtual:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,
         pvMaximo:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
-        ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,
+        ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,proximidadePerseguidor:5,
           pvCombateMaximo:(window.BESTIARIO_AB||[]).find(x=>x.id===criatura.formaCombateId)?.pv||null}:{}),
         entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length+novas.length});
     }
@@ -127,7 +127,7 @@ function adicionarParticipanteCombate(ev){
   const participante={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo,agi,bonusIniciativa:bonus,d20:0,iniciativa:0,entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length};
   if(criatura)Object.assign(participante,{criaturaId:criatura.id,pvAtual:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,
     pvMaximo:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
-    ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,
+    ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,proximidadePerseguidor:5,
       pvCombateMaximo:(window.BESTIARIO_AB||[]).find(x=>x.id===criatura.formaCombateId)?.pv||null}:{})});
   combateMestre.participantes.push(participante);
   $('combate-nome').value='';$('combate-criatura-catalogo').value='';ordenarCombateMestre();salvarCombateMestre();
@@ -191,6 +191,13 @@ function adicionarCondicaoCombate(id){
   p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),nome,duracao,observacao});
   salvarCombateMestre();
 }
+function ajustarProximidadePerseguidor(id,delta){
+  const p=combateMestre?.participantes.find(x=>x.id===id);
+  if(!p?.perseguidor||p.fase!=='perseguicao')return;
+  const atual=Number.isInteger(p.proximidadePerseguidor)?p.proximidadePerseguidor:5;
+  p.proximidadePerseguidor=Math.max(0,Math.min(10,atual+delta));
+  salvarCombateMestre();
+}
 function removerCondicaoCombate(id,condicaoId){
   const p=combateMestre.participantes.find(x=>x.id===id);if(!p)return;
   p.condicoes=(p.condicoes||[]).filter(x=>x.id!==condicaoId);salvarCombateMestre();
@@ -219,6 +226,20 @@ function desenharCombateMestre(){
       if(p.perseguidor&&p.fase==='perseguicao'){
         const regra=document.createElement('p');regra.className='dica';regra.textContent='Durante a perseguição: não pode sofrer Morte Instantânea normalmente nem fica Vulnerável. Efeito direto de Morte Instantânea reduz PV de Perseguição a 0.';
         li.append(regra);
+        const distancia=document.createElement('section');distancia.className='regua-perseguidor';
+        const tituloDistancia=document.createElement('strong');tituloDistancia.textContent='Proximidade do perseguidor';
+        const valorDistancia=Number.isInteger(p.proximidadePerseguidor)?p.proximidadePerseguidor:5;
+        const legenda=document.createElement('div');legenda.className='regua-legenda';
+        const perto=document.createElement('span');perto.textContent='ALCANÇANDO';
+        const longe=document.createElement('span');longe.textContent='DISTANTE';legenda.append(perto,longe);
+        const trilho=document.createElement('div');trilho.className='regua-trilho';trilho.setAttribute('role','meter');trilho.setAttribute('aria-label','Distância relativa do perseguidor');trilho.setAttribute('aria-valuemin','0');trilho.setAttribute('aria-valuemax','10');trilho.setAttribute('aria-valuenow',String(valorDistancia));
+        const preenchimento=document.createElement('div');preenchimento.className='regua-preenchimento';preenchimento.style.width=(valorDistancia*10)+'%';
+        const marcador=document.createElement('span');marcador.className='regua-marcador';marcador.textContent=String(valorDistancia);preenchimento.append(marcador);trilho.append(preenchimento);
+        const estadoDistancia=document.createElement('p');estadoDistancia.className='regua-estado';estadoDistancia.textContent=valorDistancia===0?'O perseguidor alcançou o grupo':valorDistancia<=2?'Perigo iminente':valorDistancia<=4?'Está muito próximo':valorDistancia<=7?'A perseguição continua':'O grupo abriu distância';
+        const controles=document.createElement('div');controles.className='regua-controles';
+        const aproximar=document.createElement('button');aproximar.type='button';aproximar.className='botao pequeno perigo';aproximar.textContent='− Aproximar';aproximar.disabled=valorDistancia===0;aproximar.addEventListener('click',()=>ajustarProximidadePerseguidor(p.id,-1));
+        const afastar=document.createElement('button');afastar.type='button';afastar.className='botao pequeno';afastar.textContent='+ Afastar';afastar.disabled=valorDistancia===10;afastar.addEventListener('click',()=>ajustarProximidadePerseguidor(p.id,1));
+        controles.append(aproximar,afastar);distancia.append(tituloDistancia,legenda,trilho,estadoDistancia,controles);li.append(distancia);
         const avancar=document.createElement('button');avancar.type='button';avancar.className='botao pequeno';avancar.textContent='Declarar Forma de Combate';
         avancar.disabled=!Number.isInteger(p.pvCombateMaximo)||p.pvCombateMaximo<1;
         avancar.addEventListener('click',()=>{if(!confirm('Encerrar a Fase de Perseguição e iniciar a Forma de Combate com '+p.pvCombateMaximo+' PV?'))return;p.fase='combate';p.pvAtual=p.pvCombateMaximo;p.pvMaximo=p.pvCombateMaximo;salvarCombateMestre();});
