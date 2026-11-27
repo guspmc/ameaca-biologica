@@ -239,3 +239,6 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .composicao-manual-linha{display:flex;gap:8px;align-items:center;margin:8px 0}
 .composicao-manual-linha select{flex:1;min-width:0}
 .composicao-manual-linha input{width:76px}
+
+/* Régua visual da Fase de Perseguição */
+.regua-perseguidor{grid-column:1/-1;width:100%;padding:12px;background:var(--painel-2);border:1px solid var(--borda);border-radius:12px}.regua-perseguidor>strong{display:block;margin-bottom:8px}.regua-legenda{display:flex;justify-content:space-between;gap:8px;color:var(--suave);font-size:.7rem;font-weight:700;letter-spacing:.06em}.regua-trilho{height:18px;margin:8px 0;background:linear-gradient(90deg,#7f2525 0%,#a66a24 35%,#426b4e 100%);border:1px solid var(--borda);border-radius:999px;overflow:hidden}.regua-preenchimento{height:100%;display:flex;align-items:center;justify-content:flex-end;min-width:0;background:rgba(9,18,12,.42);transition:width .2s ease}.regua-marcador{display:grid;place-items:center;width:24px;height:24px;margin-right:-1px;border-radius:50%;background:#f1f5f2;color:#172018;font-size:.75rem;font-weight:800;border:2px solid #172018}.regua-estado{margin:4px 0 8px;font-size:.88rem;color:var(--texto)}.regua-controles{display:flex;gap:8px;flex-wrap:wrap}.regua-controles .botao{flex:1}
