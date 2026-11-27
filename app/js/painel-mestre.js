@@ -234,6 +234,6 @@ function montarPainelCombateMestre(){
 }
 function renderizarMesa(){renderizarMesaBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')montarPainelCombateMestre();}
 let mesaCombateCarregada=null;
-async function carregarMesaAtual(){const id=estado.mesaId;if(id!==mesaCombateCarregada){combateMestre=null;mesaCombateCarregada=id;}await carregarMesaAtualBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')await carregarCombateMestre(true);}
+async function carregarMesaAtual(){const id=estado.mesaId;if(id!==mesaCombateCarregada){combateMestre=null;conflitoCombate=false;mesaCombateCarregada=id;}await carregarMesaAtualBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')await carregarCombateMestre(true);}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')carregarCombateMestre(true);});
 setInterval(()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre'&&!salvandoCombate&&!painelMestreEmEdicao())carregarCombateMestre(true);},4000);
