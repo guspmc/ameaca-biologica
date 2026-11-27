@@ -2,7 +2,11 @@
 /* Extensão independente do Painel do Mestre. Regras: Arquivo do Jogador p. 76 e Arquivo do Mestre p. 14. */
 const renderizarMesaBase = renderizarMesa;
 const carregarMesaAtualBase = carregarMesaAtual;
-let combateMestre=null, carregandoCombate=false, salvandoCombate=false;
+let combateMestre=null, carregandoCombate=false, salvandoCombate=false, conflitoCombate=false;
+function painelMestreEmEdicao(){
+  const raiz=$('bloco-combate-mestre'),ativo=document.activeElement;
+  return Boolean(raiz&&ativo&&raiz.contains(ativo)&&['INPUT','TEXTAREA','SELECT'].includes(ativo.tagName));
+}
 const CONDICOES_OFICIAIS_AB = [
   {nome:'Agarrado',efeito:'Movimento passa a 0 e não pode receber bônus de Movimento. A criatura que agarra pode arrastar o alvo com Movimento pela metade, salvo alvo 2+ categorias menor.',duracao:'Termina se quem agarra ficar Incapacitado, se o alvo sair do alcance por efeito externo ou se o alvo escapar usando sua Ação e Atletismo/Reflexos contra a DT original do Agarrão.'},
   {nome:'Amedrontado',efeito:'Tem Desvantagem em testes aplicáveis enquanto perceber a fonte do medo, tenta se afastar/fugir dela e não pode se aproximar voluntariamente.',duracao:'Conforme a fonte do medo.'},
@@ -31,10 +35,10 @@ function apiPainelMestre(metodo='GET',corpo) {
     body:corpo?JSON.stringify(corpo):undefined
   });
 }
-async function carregarCombateMestre(silencioso=false) {
-  if(!estado.mesaId||estado.modo!=='local'||estado.mesaAtual?.papel!=='mestre'||carregandoCombate||salvandoCombate)return;
+async function carregarCombateMestre(silencioso=false,forcar=false) {
+  if(!estado.mesaId||estado.modo!=='local'||estado.mesaAtual?.papel!=='mestre'||carregandoCombate||salvandoCombate||(!forcar&&(conflitoCombate||painelMestreEmEdicao())))return;
   carregandoCombate=true;
-  try{const r=await apiPainelMestre();combateMestre=r.combate;desenharCombateMestre();}
+  try{const r=await apiPainelMestre();combateMestre=r.combate;conflitoCombate=false;desenharCombateMestre();}
   catch(e){if(!silencioso)mensagem($('aviso-mesa'),e.message,'erro');}
   finally{carregandoCombate=false;}
 }
@@ -51,7 +55,7 @@ async function salvarCombateMestre() {
       const r=await apiPainelMestre('PUT',copia);
       if(!salvarCombatePendente)combateMestre=r.combate;
     }while(salvarCombatePendente);
-  }catch(e){erro=e;}
+  }catch(e){erro=e;if(e.status===409)conflitoCombate=true;}
   finally{
     salvandoCombate=false;
     desenharCombateMestre();
@@ -185,6 +189,7 @@ function desenharCombateMestre(){
   $('combate-rodada').textContent=String(combateMestre.rodada);
   $('combate-status').textContent=combateMestre.combateAtivo?'Combate em andamento':'Preparação';
   $('combate-avancar').disabled=!combateMestre.combateAtivo||!combateMestre.participantes.length;
+  const conflito=$('combate-conflito');if(conflito)conflito.hidden=!conflitoCombate;
   const haEmpate=empateIniciativaMestre();
   $('combate-empate').hidden=!haEmpate;
   $('combate-rerrolar').hidden=!haEmpate;
@@ -200,6 +205,11 @@ function montarPainelCombateMestre(){
     const status=document.createElement('strong');status.id='combate-status';status.textContent='Preparação';
     const rodada=document.createElement('span');rodada.className='combate-rodada';rodada.append('Rodada ');
     const numero=document.createElement('strong');numero.id='combate-rodada';numero.textContent='1';rodada.append(numero);resumo.append(status,rodada);
+    const conflito=document.createElement('div');conflito.id='combate-conflito';conflito.className='mensagem aviso';conflito.hidden=true;
+    const conflitoTexto=document.createElement('p');conflitoTexto.textContent='Este combate foi alterado em outra aba ou aparelho. Suas alterações locais foram preservadas, mas não foram gravadas. Não continue editando até decidir como recuperar os dados.';
+    const recarregar=document.createElement('button');recarregar.type='button';recarregar.className='botao pequeno';recarregar.textContent='Descartar alterações locais e carregar versão do servidor';
+    recarregar.addEventListener('click',()=>{if(confirm('Isso substituirá os dados locais deste combate pela versão salva no servidor. Deseja continuar?'))carregarCombateMestre(false,true);});
+    conflito.append(conflitoTexto,recarregar);
     const ajuda=document.createElement('p');ajuda.className='dica';ajuda.textContent='Personagens: 1d20 + AGI. Criaturas: 1d20 + Iniciativa da ficha. Empates: AGI, depois resultado natural; persistindo, role novamente.';
     const empate=document.createElement('p');empate.id='combate-empate';empate.className='mensagem aviso';empate.hidden=true;empate.textContent='Empate persistente: os participantes empatados devem rolar novamente.';
     const rerrolar=document.createElement('button');rerrolar.type='button';rerrolar.id='combate-rerrolar';rerrolar.className='botao pequeno';rerrolar.textContent='Rerrolar desempate';rerrolar.hidden=true;rerrolar.addEventListener('click',rerrolarEmpatesIniciativaMestre);
@@ -218,7 +228,7 @@ function montarPainelCombateMestre(){
     acoes.append(acao('Rolar iniciativa','primario',rolarIniciativasCombate),acao('Próximo turno','',avancarTurnoCombate,'combate-avancar'),acao('Novo combate','',novoCombateMestre));
     const vazio=document.createElement('p');vazio.id='combate-vazio';vazio.className='dica';vazio.textContent='Adicione personagens e criaturas para preparar a ordem de iniciativa.';
     const ul=document.createElement('ol');ul.id='combate-lista';ul.className='lista combate-lista';
-    card.append(h,resumo,ajuda,empate,rerrolar,form,msg,acoes,vazio,ul);raiz.append(card);
+    card.append(h,resumo,conflito,ajuda,empate,rerrolar,form,msg,acoes,vazio,ul);raiz.append(card);
   }
   if(combateMestre)desenharCombateMestre();
 }
@@ -226,4 +236,4 @@ function renderizarMesa(){renderizarMesaBase();if(estado.tela==='mesa'&&estado.m
 let mesaCombateCarregada=null;
 async function carregarMesaAtual(){const id=estado.mesaId;if(id!==mesaCombateCarregada){combateMestre=null;mesaCombateCarregada=id;}await carregarMesaAtualBase();if(estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')await carregarCombateMestre(true);}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre')carregarCombateMestre(true);});
-setInterval(()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre'&&!salvandoCombate)carregarCombateMestre(true);},4000);
+setInterval(()=>{if(!document.hidden&&estado.tela==='mesa'&&estado.mesaAtual?.papel==='mestre'&&!salvandoCombate&&!painelMestreEmEdicao())carregarCombateMestre(true);},4000);
