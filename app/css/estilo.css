@@ -214,3 +214,8 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .condicao-edicao{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%;padding-top:6px}
 .condicao-edicao input,.condicao-edicao textarea{flex:1 1 100%;min-width:0;width:100%;padding:8px 10px;font:inherit;color:var(--texto);background:var(--fundo);border:1px solid var(--borda);border-radius:8px}
 .condicao-edicao textarea{resize:vertical}
+
+.editor-encontro-mestre{display:grid;gap:8px;margin-top:10px;padding:10px;border:1px solid var(--borda);border-radius:10px;background:var(--painel-2)}
+.editor-encontro-mestre label{display:grid;gap:4px}
+.editor-encontro-mestre input,.editor-encontro-mestre select{width:100%;min-width:0;padding:9px 10px;font:inherit;color:var(--texto);background:var(--fundo);border:1px solid var(--borda);border-radius:8px}
+.editor-encontro-mestre[hidden]{display:none}
