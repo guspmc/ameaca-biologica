@@ -131,7 +131,7 @@ O módulo `servidor/painel-mestre-fichas.js` prepara uma projeção restrita par
 - somente Fichas no estado `ativa`;
 - somente fichas de jogadores que continuam aprovados na Mesa;
 - somente o Mestre daquela Mesa pode consultar;
-- lista explícita de campos operacionais: identificação, nível, PV/SA/BI atuais e máximos, PV temporários, fase de BI, Defesa, Redução de Dano, Iniciativa, Movimento, Perícias Passivas (Percepção, Fortitude, Reflexos e Vontade) e condições;
+- lista explícita de campos permitidos: identificação (jogador e personagem), PV/SA/BI atuais e máximos, Iniciativa, Defesa e Perícias Passivas (Percepção, Fortitude, Reflexos e Vontade);
 - não retorna atributos, perícias, habilidades, conceito, história, inventário ou anotações.
 
 A projeção está ligada à rota HTTP e à interface do Painel. O servidor consulta `fichas.json` em leitura e usa `REGRAS.calcular` e `LIVRO.CONDICOES` da implementação oficial; não altera nem duplica o módulo `servidor/fichas.js`. O resumo é atualizado ao entrar na Mesa, ao retornar à aba e junto da atualização periódica do Painel.
@@ -141,7 +141,7 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 
 - A rota `GET /api/painel-mestre/:mesaId/fichas` exige sessão válida e valida que o solicitante é o Mestre da Mesa.
 - A projeção inclui somente Fichas `ativa` de jogadores ainda aprovados na Mesa.
-- A interface apresenta identificação, nível, PV/SA/BI, Defesa, RD, Iniciativa, Movimento, Perícias Passivas e condições.
+- A interface apresenta identificação, PV/SA/BI atuais e máximos, Iniciativa, Defesa e Perícias Passivas (Fortitude, Reflexos, Vontade e Percepção).
 - O Mestre não recebe atributos, perícias completas, habilidades, conceito, história, inventário ou anotações da Ficha.
 - A integração lê o arquivo persistido de Fichas e injeta o cálculo oficial de `REGRAS`; não modifica os dados da Ficha.
 - Até o merge com a implementação de Fichas da `main`, a rota responde HTTP 503 quando as dependências oficiais ainda não estão disponíveis nesta branch isolada.
@@ -211,3 +211,8 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - Se o combate já estiver em andamento, o personagem entra como participante tardio, permanecendo no fim da ordem atual.
 - A ação impede nomes duplicados e respeita o limite de 30 participantes. Depois de adicionado, o cartão da Ficha informa que o personagem já está na iniciativa.
 - Esta integração apenas copia nome e AGI para o rastreador. Não altera PV, SA, BI, condições ou qualquer dado da Ficha do Jogador. O resumo continua sendo uma projeção de leitura restrita ao Mestre.
+
+
+## Limite definitivo de acesso do Mestre às Fichas
+
+O Painel do Mestre é estritamente de leitura em relação às Fichas dos Jogadores. A projeção do servidor contém somente identificação do Jogador e personagem, PV/SA/BI atuais e máximos, Iniciativa, Defesa e Perícias Passivas (Fortitude, Reflexos, Vontade e Percepção). Não são enviados nível, PV temporários, fase de BI, Redução de Dano, Movimento, condições ou quaisquer outros dados da Ficha. Nenhuma ação do Painel grava alterações na Ficha do Jogador. O resumo é consultado periodicamente (a cada quatro segundos), ao entrar na Mesa e ao retornar à aba.
