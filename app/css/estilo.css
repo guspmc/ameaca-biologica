@@ -219,3 +219,10 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .editor-encontro-mestre label{display:grid;gap:4px}
 .editor-encontro-mestre input,.editor-encontro-mestre select{width:100%;min-width:0;padding:9px 10px;font:inherit;color:var(--texto);background:var(--fundo);border:1px solid var(--borda);border-radius:8px}
 .editor-encontro-mestre[hidden]{display:none}
+
+
+/* Navegação das ferramentas narrativas e mídia de itens/documentos */
+.menu-conteudo-mestre{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;padding-bottom:10px;border-bottom:1px solid var(--borda)}
+.menu-conteudo-mestre [role="tab"][aria-selected="true"]{border-color:var(--acento);outline:2px solid var(--acento);outline-offset:1px}
+.item-imagem-mestre{display:block;max-width:min(100%,280px);max-height:220px;object-fit:contain;margin:10px 0;border:1px solid var(--borda);border-radius:8px;background:var(--fundo)}
+#item-imagem-preview[hidden]{display:none}
