@@ -125,7 +125,10 @@ function adicionarParticipanteCombate(ev){
   if(!nome||!Number.isInteger(agi)||agi < -10||agi>30||!Number.isInteger(bonus)||bonus < -10||bonus>30){mensagem($('combate-msg'),'Informe nome, AGI e bônus de Iniciativa válidos.','erro');return;}
   if(combateMestre.participantes.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){mensagem($('combate-msg'),'Já existe um participante com esse nome.','erro');return;}
   const participante={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo,agi,bonusIniciativa:bonus,d20:0,iniciativa:0,entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length};
-  if(criatura)Object.assign(participante,{criaturaId:criatura.id,pvAtual:criatura.pv,pvMaximo:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento});
+  if(criatura)Object.assign(participante,{criaturaId:criatura.id,pvAtual:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,
+    pvMaximo:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
+    ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,
+      pvCombateMaximo:(window.BESTIARIO_AB||[]).find(x=>x.id===criatura.formaCombateId)?.pv||null}:{})});
   combateMestre.participantes.push(participante);
   $('combate-nome').value='';$('combate-criatura-catalogo').value='';ordenarCombateMestre();salvarCombateMestre();
 }
