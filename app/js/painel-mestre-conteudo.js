@@ -95,13 +95,15 @@ function sortearEncontroAB(nivel, jogadores, dificuldade) {
     const disponiveis = elegiveis.filter(c => pontos + c.pontos <= limite);
     if (!disponiveis.length) break;
     const c = disponiveis[Math.floor(Math.random() * disponiveis.length)];
-    escolhidas.push(c.nome);
+    escolhidas.push(c.id);
     pontos += c.pontos;
     if (pontos >= limite || Math.random() < 0.28) break;
   }
   const contagem = {};
-  for (const nome of escolhidas) contagem[nome] = (contagem[nome] || 0) + 1;
-  return { pontos, limite, ...avaliarUsoOrcamentoAB(pontos, limite), composicao: Object.entries(contagem).map(([nome, qtd]) => qtd + ' × ' + nome).join(', ') };
+  for (const id of escolhidas) contagem[id] = (contagem[id] || 0) + 1;
+  const criaturas = Object.entries(contagem).map(([id, quantidade]) => ({ id, quantidade }));
+  return { pontos, limite, ...avaliarUsoOrcamentoAB(pontos, limite), criaturas,
+    composicao: criaturas.map(x => x.quantidade + ' × ' + (CRIATURAS_AB.find(c => c.id === x.id)?.nome || x.id)).join(', ') };
 }
 
 function elemento(tag, texto, classe) {
@@ -277,6 +279,14 @@ function desenharConteudoMestre() {
       if (!item.nome) { mensagem($('conteudo-msg'),'Informe um nome para o encontro.','aviso'); campos.nome.focus(); return; }
       salvarConteudoMestre();
     });
+    if (Array.isArray(item.criaturas) && item.criaturas.length) {
+      const preparar = elemento('button', 'Preparar combate', 'botao pequeno primario'); preparar.type = 'button';
+      preparar.addEventListener('click', () => {
+        if (typeof window.prepararEncontroNoCombate !== 'function') { mensagem($('conteudo-msg'), 'O módulo de combate ainda não está pronto nesta tela.', 'aviso'); return; }
+        window.prepararEncontroNoCombate(item);
+      });
+      acoes.append(preparar);
+    }
     acoes.append(editar,duplicar,remover);
     li.append(acoes,editor); encontros.append(li);
   }
@@ -349,7 +359,7 @@ function montarConteudoMestre() {
     e.preventDefault();
     let s; try { s = JSON.parse(form.dataset.sorteio || 'null'); } catch {}
     if (!s) { mensagem(msg, 'Faça um sorteio antes de guardar o encontro.', 'aviso'); return; }
-    conteudoMestre.encontros.unshift({ id: novoIdConteudo(), nome: 'Encontro · Nível ' + s.nivel, nivel: s.nivel, jogadores: s.jogadores, dificuldade: s.dificuldade, pontos: s.pontos, orcamento: s.limite, composicao: s.composicao, cenario: cenario.value, direcao: direcao.value });
+    conteudoMestre.encontros.unshift({ id: novoIdConteudo(), nome: 'Encontro · Nível ' + s.nivel, nivel: s.nivel, jogadores: s.jogadores, dificuldade: s.dificuldade, pontos: s.pontos, orcamento: s.limite, composicao: s.composicao, criaturas: s.criaturas || [], cenario: cenario.value, direcao: direcao.value });
     form.dataset.sorteio = ''; salvarConteudoMestre();
   });
   encontro.append(form); card.append(encontro);
