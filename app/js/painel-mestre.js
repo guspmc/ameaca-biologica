@@ -79,6 +79,32 @@ function preencherSeletorCriaturasCombate(){
   }
   seletor.value=atual;
 }
+function prepararEncontroNoCombate(encontro){
+  if(!combateMestre||!Array.isArray(encontro?.criaturas)){mensagem($('aviso-mesa'),'Não foi possível preparar este encontro.','erro');return;}
+  const catalogo=window.BESTIARIO_AB||[];
+  const novas=[];
+  for(const entrada of encontro.criaturas){
+    const criatura=catalogo.find(x=>x.id===entrada.id);
+    if(!criatura)continue;
+    const quantidade=Math.max(1,Math.min(20,Number(entrada.quantidade)||1));
+    for(let i=0;i<quantidade;i++){
+      let nome=quantidade>1?criatura.nome+' '+(i+1):criatura.nome;
+      let sufixo=2;
+      while(combateMestre.participantes.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))||novas.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){nome=criatura.nome+' ('+sufixo+++')';}
+      novas.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo:'criatura',
+        agi:criatura.atributos.agi,bonusIniciativa:criatura.iniciativa,d20:0,iniciativa:0,
+        criaturaId:criatura.id,pvAtual:criatura.pv,pvMaximo:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
+        entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length+novas.length});
+    }
+  }
+  if(!novas.length){mensagem($('aviso-mesa'),'As criaturas deste encontro não foram encontradas no Bestiário.','aviso');return;}
+  if(combateMestre.participantes.length+novas.length>30){mensagem($('aviso-mesa'),'O combate aceita até 30 participantes. Remova alguém antes de adicionar este encontro.','aviso');return;}
+  combateMestre.participantes.push(...novas);ordenarCombateMestre();salvarCombateMestre();
+  mensagem($('aviso-mesa'),novas.length+' criatura(s) adicionada(s) à ordem de combate. Role a Iniciativa quando estiver pronto.','info');
+  $('bloco-combate-mestre')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+window.prepararEncontroNoCombate=prepararEncontroNoCombate;
+
 function selecionarCriaturaIniciativa(){
   const id=$('combate-criatura-catalogo')?.value;
   const criatura=(window.BESTIARIO_AB||[]).find(x=>x.id===id);
