@@ -112,6 +112,24 @@ assert.deepEqual(catalogoCondicoes.map(c => c.nome), nomesCondicoesEsperados);
 assert.equal(new Set(catalogoCondicoes.map(c => c.nome)).size, 20);
 assert.ok(catalogoCondicoes.every(c => c.efeito && c.duracao));
 
+const condicaoPorNome = nome => catalogoCondicoes.find(c => c.nome === nome);
+// As referências do livro fazem parte da descrição, não do campo de duração.
+// Estas três entradas não trazem duração/remoção própria nas pp. 81–83.
+assert.equal(condicaoPorNome('Colapso Viral').efeito,
+  'Consequência de atingir a BI Máxima. Ver “Colapso”, Capítulo 5 — Bio-Infecção.');
+assert.equal(condicaoPorNome('Cabeça Carmesim').efeito,
+  'Transformação posterior de um Zumbi. Ver “Crimson”, Capítulo 5 — Bio-Infecção.');
+assert.equal(condicaoPorNome('Infectado Especial').efeito,
+  'Transformação causada pela Bio-Infecção. Ver “Infectado”, Capítulo 5 — Bio-Infecção.');
+assert.equal(condicaoPorNome('Colapso Viral').duracao, '—');
+assert.equal(condicaoPorNome('Cabeça Carmesim').duracao, '—');
+assert.equal(condicaoPorNome('Infectado Especial').duracao, '—');
+assert.equal(condicaoPorNome('Desacordado').efeito,
+  'A personagem fica inconsciente: não realiza Ações ou Reações e não percebe conscientemente o ambiente. Ver “0 PV”, Capítulo 4 — Regras e Combate. Ver “Colapso”, Capítulo 5 — Bio-Infecção.');
+assert.equal(condicaoPorNome('Desacordado').duracao,
+  'Em 0 PV, segue Testes de Reanimação. Outras fontes determinam como despertar.');
+
+
 // Avançar o turno não reduz nem encerra automaticamente a duração de condições.
 preparar([{
   id: 'a', nome: 'Alice', iniciativa: 20, agi: 3, d20: 17, ordem: 0,
