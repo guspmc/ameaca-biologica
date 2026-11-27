@@ -12,7 +12,9 @@ for (const criatura of catalogo) {
   assert.ok(criatura.nome && criatura.funcao && criatura.tamanho);
   assert.equal(criatura.pontos, pontos[criatura.categoria], 'Pontuação deve corresponder à categoria de ameaça.');
   if(criatura.categoria==='Perseguidor'){assert.ok(Number.isInteger(criatura.pvPerseguicao));assert.ok(criatura.formaCombateId);}
-  for (const campo of ['pv','defesa','iniciativa']) assert.ok(Number.isInteger(criatura[campo]), criatura.nome + ': ' + campo);
+  for (const campo of ['defesa','iniciativa']) assert.ok(Number.isInteger(criatura[campo]), criatura.nome + ': ' + campo);
+  if(criatura.categoria==='Perseguidor') assert.ok(Number.isInteger(criatura.pvPerseguicao), criatura.nome + ': pvPerseguicao');
+  else assert.ok(Number.isInteger(criatura.pv), criatura.nome + ': pv');
   for (const campo of ['for','agi','vig','ast']) assert.ok(Number.isInteger(criatura.atributos[campo]));
   for (const campo of ['fortitude','reflexos','vontade','percepcao']) assert.ok(Number.isInteger(criatura.resistencias[campo]));
   assert.ok(criatura.ataques.length > 0 && criatura.tracos.length > 0);
