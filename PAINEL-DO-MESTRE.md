@@ -68,7 +68,7 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 
 Ainda pendente:
 - Integrar PV, SA, BI e perícias passivas aos dados autorizados da Ficha Ativa, assim que o modelo de dados da Ficha estiver estável na main. Até lá, o Painel não lê fichas privadas nem inventa uma segunda fonte de verdade.
-- Evoluir o acompanhamento de condições: já é possível aplicar/remover condições por participante e registrar duração/observação; o painel permite registrar instâncias da mesma condição com durações separadas e avisa que seus efeitos mecânicos não se acumulam; a redução automática de duração ao avançar turnos ainda não foi implementada.
+- Gerenciamento de condições: seletor com as 19 condições listadas nas pp. 81–83 do Arquivo do Jogador, consulta rápida do efeito e da duração/remoção descritos no livro, além de cadastro manual de condições personalizadas. A duração aplicada continua registrada separadamente por instância; a redução automática ao avançar turnos não foi implementada porque os gatilhos variam conforme a condição e a fonte.
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
 - Testes HTTP de integração para autenticação, aprovação de Jogadores e filtragem das publicações adicionados à suíte; acompanhar o resultado do CI antes de considerar a etapa validada.
 ### Contrato planejado para o resumo das Fichas
