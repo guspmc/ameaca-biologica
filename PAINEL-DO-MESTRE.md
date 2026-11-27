@@ -25,7 +25,7 @@ Fonte: Arquivo do Jogador v1.0, capítulo 4 — Regras e Combate, p. 76; Arquivo
 - A Ficha de Personagem ainda está sendo desenvolvida por Claude. Por isso, os participantes são cadastrados manualmente nesta primeira versão; não há leitura de PV/SA/BI nem acesso do Mestre às fichas privadas.
 - Para Personagens, o bônus de Iniciativa acompanha a AGI; para Criaturas, o bônus é informado conforme a ficha da Criatura. A AGI fica disponível para desempate.
 - A rolagem automática usa o gerador aleatório do navegador; o resultado pode ser corrigido manualmente.
-- As alterações são avisadas ao Mestre pelo evento SSE da Mesa; uma consulta periódica de segurança atualiza a tela caso algum evento se perca.
+- As alterações são avisadas ao Mestre pelo evento SSE da Mesa; uma consulta periódica de segurança atualiza a tela caso algum evento se perca. O salvamento do combate mantém uma fila de alterações: se novas mudanças ocorrerem enquanto uma gravação estiver em andamento, elas são enviadas em seguida, sem serem descartadas pela resposta anterior.
 - Os dados operacionais são apagados quando o Mestre encerra a Mesa.
 
 ## API
