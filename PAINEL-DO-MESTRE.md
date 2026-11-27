@@ -93,7 +93,7 @@ A integração com a Ficha deve fornecer ao Painel uma projeção de sessão, nu
 - Identificador da Ficha Ativa aprovada e nome do personagem;
 - PV atual/máximo, SA atual/máximo e BI atual/máxima;
 - Nível do personagem;
-- Percepção, Fortitude, Reflexos e Vontade passivas, calculadas pelas regras do livro (10 + valor da Perícia, com ajuste de +5/-5 quando houver Vantagem/Desvantagem aplicável);
+- Percepção, Fortitude, Reflexos e Vontade passivas, calculadas pelo módulo oficial de regras da Ficha;
 - estado de condições que o Jogador e o Mestre precisam acompanhar durante a cena.
 
 Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos personagens aprovados na Mesa. O Painel não deve receber atributos completos, inventário, histórico, anotações privadas ou campos que não sejam necessários à condução da sessão. O formato definitivo será ajustado após a revisão da implementação de Fichas na main, para não criar um contrato incompatível com o trabalho paralelo.
@@ -131,7 +131,7 @@ O módulo `servidor/painel-mestre-fichas.js` prepara uma projeção restrita par
 - somente Fichas no estado `ativa`;
 - somente fichas de jogadores que continuam aprovados na Mesa;
 - somente o Mestre daquela Mesa pode consultar;
-- lista explícita de campos operacionais: identificação, nível, PV/SA/BI atuais e máximos, PV temporários, fase de BI, Defesa, Redução de Dano, Iniciativa, Movimento e condições;
+- lista explícita de campos operacionais: identificação, nível, PV/SA/BI atuais e máximos, PV temporários, fase de BI, Defesa, Redução de Dano, Iniciativa, Movimento, Perícias Passivas (Percepção, Fortitude, Reflexos e Vontade) e condições;
 - não retorna atributos, perícias, habilidades, conceito, história, inventário ou anotações.
 
-A projeção está isolada e testada, mas ainda não foi ligada a uma rota HTTP ou à interface. A branch da Jill ainda não contém o módulo `servidor/fichas.js`, que está na `main`; a ligação será feita quando as branches forem integradas, evitando duplicar ou modificar o código de Fichas mantido pelo Claude.
+A projeção está isolada e testada, incluindo as quatro Perícias Passivas calculadas pela Ficha, mas ainda não foi ligada a uma rota HTTP ou à interface. A branch da Jill ainda não contém o módulo `servidor/fichas.js`, que está na `main`; a ligação será feita quando as branches forem integradas, evitando duplicar ou modificar o código de Fichas mantido pelo Claude.
