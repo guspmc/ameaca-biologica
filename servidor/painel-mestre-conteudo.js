@@ -20,11 +20,11 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
     ]) {
       const origem = Array.isArray(corpo[chave]) ? corpo[chave] : [];
       if (origem.length > limite) return { erro: 'Limite de registros excedido em ' + chave + '.' };
+      if (chave === 'encontros' && origem.some(item => Array.isArray(item?.criaturas) && item.criaturas.length > 30)) return { erro: 'Um encontro pode conter até 30 tipos de criaturas.' };
       listas[chave] = origem.map((item) => {
         const novo = {};
         for (const campo of campos) {
           if (campo === 'criaturas') {
-            if (Array.isArray(item.criaturas) && item.criaturas.length > 30) return { erro: 'Um encontro pode conter até 30 tipos de criaturas.' };
             novo.criaturas = Array.isArray(item.criaturas) ? item.criaturas.slice(0,30).map(c => ({
               id: validarTexto(c?.id, 80),
               quantidade: Number.isInteger(Number(c?.quantidade)) ? Math.max(1, Math.min(20, Number(c.quantidade))) : 1
