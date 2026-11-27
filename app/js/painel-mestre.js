@@ -101,7 +101,7 @@ function removerParticipanteCombate(id){
 }
 function novoCombateMestre(){
   if(!confirm('Iniciar novo combate? A ordem e a rodada atuais serão reiniciadas.'))return;
-  combateMestre={mesaId:estado.mesaId,combateAtivo:false,rodada:1,turnoAtual:null,participantes:[]};salvarCombateMestre();
+  combateMestre={mesaId:estado.mesaId,versao:Number(combateMestre.versao)||0,combateAtivo:false,rodada:1,turnoAtual:null,participantes:[]};salvarCombateMestre();
 }
 function empateIniciativaMestre(){
   const a=combateMestre.participantes;
