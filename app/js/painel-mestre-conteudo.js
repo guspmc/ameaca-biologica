@@ -546,7 +546,15 @@ function montarDocumentosPublicos() {
     for (const item of itensPublicosMesa) {
       const sec = elemento('article', '', 'subpainel-mestre');
       sec.append(elemento('h3', item.nome), elemento('p', item.categoria || 'Item', 'dica'));
-      if (item.imagemUrl) { const img = elemento('img'); img.src = item.imagemUrl; img.alt = 'Imagem de ' + item.nome; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.className = 'item-imagem-mestre'; sec.append(img); }
+      if (item.imagemUrl) {
+        const img = elemento('img'); img.alt = 'Imagem de ' + item.nome; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.className = 'item-imagem-mestre';
+        if (item.imagemUrl.includes('/api/mesas/')) {
+          fetch(item.imagemUrl, { headers: { Authorization: 'Bearer ' + estado.token } })
+            .then(resposta => resposta.ok ? resposta.blob() : Promise.reject())
+            .then(blob => { img.src = URL.createObjectURL(blob); }).catch(() => {});
+        } else img.src = item.imagemUrl;
+        sec.append(img);
+      }
       if (item.descricao) sec.append(elemento('p', item.descricao));
       if (item.efeito) sec.append(elemento('p', item.efeito));
       card.append(sec);
