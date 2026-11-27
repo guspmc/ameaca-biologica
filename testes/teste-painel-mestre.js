@@ -69,6 +69,24 @@ r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 ]});
 assert.equal(r.status,200);
 assert.equal(r.dados.combate.participantes[0].iniciativa,16);
+// Criaturas selecionadas no Bestiário mantêm referência e valores de ficha,
+// permitindo acompanhar PV sem alterar a ficha-base do catálogo.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'b1',nome:'Cerberus',tipo:'criatura',agi:4,bonusIniciativa:4,d20:10,criaturaId:'cerberus',pvAtual:8,pvMaximo:12,defesa:14,movimento:'15 m'}
+]});
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.participantes[0].criaturaId,'cerberus');
+assert.equal(r.dados.combate.participantes[0].pvAtual,8);
+assert.equal(r.dados.combate.participantes[0].pvMaximo,12);
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'b1',nome:'Cerberus',tipo:'criatura',agi:4,bonusIniciativa:4,d20:10,criaturaId:'cerberus',pvAtual:0,pvMaximo:12,defesa:14,movimento:'15 m'}
+]});
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.participantes[0].pvAtual,0);
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'b1',nome:'Cerberus',tipo:'criatura',agi:4,bonusIniciativa:4,d20:10,criaturaId:'cerberus',pvAtual:13,pvMaximo:12,defesa:14,movimento:'15 m'}
+]});
+assert.equal(r.status,400);
 
 
 // Controle otimista de versão: uma segunda sessão não pode sobrescrever
