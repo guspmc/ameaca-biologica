@@ -83,7 +83,7 @@ O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquiv
 - Arquivo do Mestre v1.0, apêndice, p. 70: resumo das condições e lembrete de que durações de fontes diferentes podem ser acompanhadas separadamente.
 
 Ainda pendente:
-- Integrar PV, SA, BI e perícias passivas aos dados autorizados da Ficha Ativa, assim que o modelo de dados da Ficha estiver estável na main. Até lá, o Painel não lê fichas privadas nem inventa uma segunda fonte de verdade.
+- Concluída a projeção e a primeira integração do resumo operacional: a rota `GET /api/painel-mestre/:mesaId/fichas` entrega somente Fichas Ativas de jogadores aprovados, e o Painel exibe PV/SA/BI, Defesa, RD, Iniciativa, Movimento, Perícias Passivas e condições. A rota depende dos módulos oficiais de Ficha/Regras da `main`; enquanto as branches estiverem separadas, responde 503 de forma explícita.
 
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
 - Testes HTTP de integração para autenticação, aprovação de Jogadores e filtragem das publicações adicionados à suíte; acompanhar o resultado do CI antes de considerar a etapa validada.
@@ -134,4 +134,14 @@ O módulo `servidor/painel-mestre-fichas.js` prepara uma projeção restrita par
 - lista explícita de campos operacionais: identificação, nível, PV/SA/BI atuais e máximos, PV temporários, fase de BI, Defesa, Redução de Dano, Iniciativa, Movimento, Perícias Passivas (Percepção, Fortitude, Reflexos e Vontade) e condições;
 - não retorna atributos, perícias, habilidades, conceito, história, inventário ou anotações.
 
-A projeção está isolada e testada, incluindo as quatro Perícias Passivas calculadas pela Ficha, mas ainda não foi ligada a uma rota HTTP ou à interface. A branch da Jill ainda não contém o módulo `servidor/fichas.js`, que está na `main`; a ligação será feita quando as branches forem integradas, evitando duplicar ou modificar o código de Fichas mantido pelo Claude.
+A projeção está ligada à rota HTTP e à interface do Painel. O servidor consulta `fichas.json` em leitura e usa `REGRAS.calcular` e `LIVRO.CONDICOES` da implementação oficial; não altera nem duplica o módulo `servidor/fichas.js`. O resumo é atualizado ao entrar na Mesa, ao retornar à aba e junto da atualização periódica do Painel.
+
+
+## Resumo operacional das Fichas no Painel
+
+- A rota `GET /api/painel-mestre/:mesaId/fichas` exige sessão válida e valida que o solicitante é o Mestre da Mesa.
+- A projeção inclui somente Fichas `ativa` de jogadores ainda aprovados na Mesa.
+- A interface apresenta identificação, nível, PV/SA/BI, Defesa, RD, Iniciativa, Movimento, Perícias Passivas e condições.
+- O Mestre não recebe atributos, perícias completas, habilidades, conceito, história, inventário ou anotações da Ficha.
+- A integração lê o arquivo persistido de Fichas e injeta o cálculo oficial de `REGRAS`; não modifica os dados da Ficha.
+- Até o merge com a implementação de Fichas da `main`, a rota responde HTTP 503 quando as dependências oficiais ainda não estão disponíveis nesta branch isolada.
