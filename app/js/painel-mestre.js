@@ -422,30 +422,22 @@ function montarResumoFichasMestre() {
     const item = document.createElement('article');
     item.className = 'subpainel-mestre';
     const nome = document.createElement('h3');
-    nome.textContent = ficha.personagem + ' · Nível ' + ficha.nivel;
+    nome.textContent = ficha.personagem;
     const jogador = document.createElement('p');
     jogador.className = 'dica';
     jogador.textContent = 'Jogador: ' + ficha.jogador;
     const recursos = document.createElement('p');
     recursos.textContent = 'PV ' + ficha.pv.atual + '/' + ficha.pv.maximo +
-      (ficha.pv.temporarios ? ' (+' + ficha.pv.temporarios + ' temporários)' : '') +
       ' · SA ' + ficha.sa.atual + '/' + ficha.sa.maximo +
-      ' · BI ' + ficha.bi.atual + '/' + ficha.bi.maximo +
-      (ficha.bi.fase ? ' (Fase ' + ficha.bi.fase + ')' : ' (Colapso)');
+      ' · BI ' + ficha.bi.atual + '/' + ficha.bi.maximo;
     const combate = document.createElement('p');
-    combate.textContent = 'Defesa ' + ficha.defesa + ' · RD ' + ficha.reducaoDano +
-      ' · Iniciativa +' + ficha.iniciativa + ' · Movimento ' + ficha.movimento + ' m';
+    combate.textContent = 'Defesa ' + ficha.defesa + ' · Iniciativa ' + ficha.iniciativa;
     const passivos = ficha.periciasPassivas || {};
     const testes = document.createElement('p');
     testes.textContent = 'Passivos — Percepção ' + (passivos.percepcao ?? '—') +
       ' · Fortitude ' + (passivos.fortitude ?? '—') +
       ' · Reflexos ' + (passivos.reflexos ?? '—') +
       ' · Vontade ' + (passivos.vontade ?? '—');
-    const condicoes = document.createElement('p');
-    condicoes.className = 'dica';
-    condicoes.textContent = ficha.condicoes?.length
-      ? 'Condições: ' + ficha.condicoes.map(c => c.nome).join(', ')
-      : 'Condições: nenhuma';
     const acoes = document.createElement('div');
     acoes.className = 'linha';
     const adicionar = document.createElement('button');
@@ -457,7 +449,7 @@ function montarResumoFichasMestre() {
     adicionar.disabled = jaNaIniciativa || !combateMestre || combateMestre.participantes.length >= 30;
     adicionar.addEventListener('click', () => adicionarFichaAtivaAoCombate(ficha));
     acoes.append(adicionar);
-    item.append(nome, jogador, recursos, combate, testes, condicoes, acoes);
+    item.append(nome, jogador, recursos, combate, testes, acoes);
     lista.append(item);
   }
 }
