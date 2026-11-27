@@ -112,3 +112,11 @@ Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos pers
 - O navegador mantém a alteração local e apresenta o erro retornado; o Mestre deve atualizar a Mesa antes de continuar. Não há mesclagem automática de alterações conflitantes.
 - Estados antigos, ainda sem campo de versão, são lidos como versão 0 e passam a receber versão na primeira gravação feita pelo cliente atualizado.
 - A notificação SSE do combate continua direcionada às sessões do próprio Mestre. A visualização dos Jogadores não recebe nem consulta o estado privado do combate nesta etapa.
+
+
+## Proteção de edição entre atualizações remotas
+
+- A consulta periódica e a atualização ao retornar para a aba não redesenham o combate enquanto um campo de edição do Painel estiver em foco, evitando apagar texto ainda não confirmado.
+- Se uma gravação receber HTTP 409 por versão desatualizada, o Painel preserva o estado local e bloqueia novas atualizações automáticas vindas do servidor.
+- A interface informa o conflito e oferece uma ação explícita para descartar as alterações locais e carregar a versão do servidor, sempre mediante confirmação. Não há descarte silencioso nem mesclagem automática.
+- O teste de fluxo também verifica que campos de texto/seleção em foco suspendem a atualização visual periódica.
