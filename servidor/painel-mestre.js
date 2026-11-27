@@ -53,7 +53,9 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
       const atual=dados[mesaId] || vazio(mesaId);
       if (metodo==='GET') return {status:200,dados:{combate:{...atual,versao:Number(atual.versao)||0}}};
       if (metodo!=='PUT') return {status:405,dados:{erro:'Método não permitido.'}};
-      const versaoAtual=Number(atual.versao)||0;\n      if (corpo?.versao !== undefined && corpo.versao !== versaoAtual) return {status:409,dados:{erro:'Este combate foi alterado em outro aparelho ou aba. Seus dados locais não foram gravados; atualize a Mesa antes de continuar.',versaoAtual}};\n      const r=validar(corpo,atual,mesaId);
+      const versaoAtual=Number(atual.versao)||0;
+      if (corpo?.versao !== undefined && corpo.versao !== versaoAtual) return {status:409,dados:{erro:'Este combate foi alterado em outro aparelho ou aba. Seus dados locais não foram gravados; atualize a Mesa antes de continuar.',versaoAtual}};
+      const r=validar(corpo,atual,mesaId);
       if (r.erro) return {status:400,dados:{erro:r.erro}};
       dados[mesaId]=r.valor; salvar(dados);
       return {status:200,dados:{combate:dados[mesaId]}};
