@@ -20,6 +20,7 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
       if (!id || ids.has(id) || !nome || !Number.isInteger(agi) || agi < -10 || agi > 30 ||
           !Number.isInteger(bonus) || bonus < -10 || bonus > 30 || !Number.isInteger(d20) || d20 < 0 || d20 > 20)
         return { erro:'Confira nome, AGI, bônus de Iniciativa e resultado do d20 de cada participante.' };
+      if (tipo==='personagem' && bonus!==agi) return { erro:'Para Personagens, o bônus de Iniciativa deve ser igual à AGI.' };
       const chave=nome.toLocaleLowerCase('pt-BR');
       if (nomes.has(chave)) return { erro:'Não use nomes repetidos no mesmo combate.' };
       ids.add(id); nomes.add(chave);
