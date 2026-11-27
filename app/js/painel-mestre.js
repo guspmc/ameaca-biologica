@@ -103,6 +103,20 @@ function empateIniciativaMestre(){
   const a=combateMestre.participantes;
   return a.some((p,i)=>i>0&&p.d20>0&&a[i-1].d20>0&&!p.entradaTardia&&!a[i-1].entradaTardia&&p.iniciativa===a[i-1].iniciativa&&p.agi===a[i-1].agi&&p.d20===a[i-1].d20);
 }
+function rerrolarEmpatesIniciativaMestre(){
+  const lista=combateMestre.participantes,empatados=new Set();
+  for(let i=1;i<lista.length;i++){
+    const atual=lista[i],anterior=lista[i-1];
+    if(atual.d20>0&&anterior.d20>0&&!atual.entradaTardia&&!anterior.entradaTardia&&atual.iniciativa===anterior.iniciativa&&atual.agi===anterior.agi&&atual.d20===anterior.d20){
+      empatados.add(atual.id);empatados.add(anterior.id);
+    }
+  }
+  if(!empatados.size)return;
+  for(const p of lista){
+    if(empatados.has(p.id)){p.d20=Math.floor(Math.random()*20)+1;p.iniciativa=p.d20+p.bonusIniciativa;}
+  }
+  ordenarCombateMestre();salvarCombateMestre();
+}
 function adicionarCondicaoCombate(id){
   const p=combateMestre.participantes.find(x=>x.id===id);if(!p)return;
   const select=$('condicao-selecao-'+id),manualInput=$('condicao-manual-'+id);
@@ -171,7 +185,9 @@ function desenharCombateMestre(){
   $('combate-rodada').textContent=String(combateMestre.rodada);
   $('combate-status').textContent=combateMestre.combateAtivo?'Combate em andamento':'Preparação';
   $('combate-avancar').disabled=!combateMestre.combateAtivo||!combateMestre.participantes.length;
-  $('combate-empate').hidden=!empateIniciativaMestre();
+  const haEmpate=empateIniciativaMestre();
+  $('combate-empate').hidden=!haEmpate;
+  $('combate-rerrolar').hidden=!haEmpate;
   $('combate-vazio').hidden=combateMestre.participantes.length>0;
   raiz.hidden=false;
 }
@@ -186,6 +202,7 @@ function montarPainelCombateMestre(){
     const numero=document.createElement('strong');numero.id='combate-rodada';numero.textContent='1';rodada.append(numero);resumo.append(status,rodada);
     const ajuda=document.createElement('p');ajuda.className='dica';ajuda.textContent='Personagens: 1d20 + AGI. Criaturas: 1d20 + Iniciativa da ficha. Empates: AGI, depois resultado natural; persistindo, role novamente.';
     const empate=document.createElement('p');empate.id='combate-empate';empate.className='mensagem aviso';empate.hidden=true;empate.textContent='Empate persistente: os participantes empatados devem rolar novamente.';
+    const rerrolar=document.createElement('button');rerrolar.type='button';rerrolar.id='combate-rerrolar';rerrolar.className='botao pequeno';rerrolar.textContent='Rerrolar desempate';rerrolar.hidden=true;rerrolar.addEventListener('click',rerrolarEmpatesIniciativaMestre);
     const form=document.createElement('form');form.id='combate-form';form.className='combate-form';form.addEventListener('submit',adicionarParticipanteCombate);
     function campo(rotulo,id,tipo,valor){const l=document.createElement('label');l.textContent=rotulo;const e=document.createElement(tipo);e.id=id;if(tipo==='input'){e.type='number';e.min='-10';e.max='30';e.value=valor;e.required=true;}return [l,e];}
     const ln=document.createElement('label');ln.textContent='Participante';const nome=document.createElement('input');nome.id='combate-nome';nome.required=true;nome.maxLength=40;nome.placeholder='Nome';
@@ -201,7 +218,7 @@ function montarPainelCombateMestre(){
     acoes.append(acao('Rolar iniciativa','primario',rolarIniciativasCombate),acao('Próximo turno','',avancarTurnoCombate,'combate-avancar'),acao('Novo combate','',novoCombateMestre));
     const vazio=document.createElement('p');vazio.id='combate-vazio';vazio.className='dica';vazio.textContent='Adicione personagens e criaturas para preparar a ordem de iniciativa.';
     const ul=document.createElement('ol');ul.id='combate-lista';ul.className='lista combate-lista';
-    card.append(h,resumo,ajuda,empate,form,msg,acoes,vazio,ul);raiz.append(card);
+    card.append(h,resumo,ajuda,empate,rerrolar,form,msg,acoes,vazio,ul);raiz.append(card);
   }
   if(combateMestre)desenharCombateMestre();
 }
