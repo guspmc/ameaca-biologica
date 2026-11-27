@@ -233,8 +233,10 @@ function desenharCombateMestre(){
         const perto=document.createElement('span');perto.textContent='ALCANÇANDO';
         const longe=document.createElement('span');longe.textContent='DISTANTE';legenda.append(perto,longe);
         const trilho=document.createElement('div');trilho.className='regua-trilho';trilho.setAttribute('role','meter');trilho.setAttribute('aria-label','Distância relativa do perseguidor');trilho.setAttribute('aria-valuemin','0');trilho.setAttribute('aria-valuemax','10');trilho.setAttribute('aria-valuenow',String(valorDistancia));
-        const preenchimento=document.createElement('div');preenchimento.className='regua-preenchimento';preenchimento.style.width=Math.max(2,valorDistancia*10)+'%';
-        const marcador=document.createElement('span');marcador.className='regua-marcador';marcador.textContent=String(valorDistancia);preenchimento.append(marcador);trilho.append(preenchimento);
+        const intensidade=(10-valorDistancia)/10,corInicial=[245,245,245],corFinal=[200,16,46];
+        const rgb=corInicial.map((c,i)=>Math.round(c+(corFinal[i]-c)*intensidade));
+        trilho.style.backgroundColor='rgb('+rgb.join(',')+')';trilho.style.color=intensidade>=0.48?'#fff':'#202020';
+        const valorNaRegua=document.createElement('strong');valorNaRegua.className='regua-valor';valorNaRegua.textContent=valorDistancia+' / 10';trilho.append(valorNaRegua);
         const estadoDistancia=document.createElement('p');estadoDistancia.className='regua-estado';estadoDistancia.textContent=valorDistancia===0?'O perseguidor alcançou o grupo':valorDistancia<=2?'Perigo iminente':valorDistancia<=4?'Está muito próximo':valorDistancia<=7?'A perseguição continua':'O grupo abriu distância';
         const controles=document.createElement('div');controles.className='regua-controles';
         const aproximar=document.createElement('button');aproximar.type='button';aproximar.className='botao pequeno perigo';aproximar.textContent='− Aproximar';aproximar.disabled=valorDistancia===0;aproximar.addEventListener('click',()=>ajustarProximidadePerseguidor(p.id,-1));
