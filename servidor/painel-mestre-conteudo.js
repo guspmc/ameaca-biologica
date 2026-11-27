@@ -15,8 +15,8 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
     const listas = {};
     for (const [chave, limite, campos] of [
       ['encontros', 40, ['id', 'nome', 'nivel', 'jogadores', 'dificuldade', 'pontos', 'orcamento', 'composicao', 'cenario', 'direcao']],
-      ['documentos', 60, ['id', 'titulo', 'tipo', 'conteudo', 'visivel']],
-      ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito', 'visivel']]
+      ['documentos', 60, ['id', 'titulo', 'tipo', 'conteudo', 'arquivoUrl', 'visivel']],
+      ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito', 'imagemUrl', 'visivel']]
     ]) {
       const origem = Array.isArray(corpo[chave]) ? corpo[chave] : [];
       if (origem.length > limite) return { erro: 'Limite de registros excedido em ' + chave + '.' };
@@ -24,6 +24,11 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
         const novo = {};
         for (const campo of campos) {
           if (campo === 'visivel') novo.visivel = Boolean(item.visivel);
+          else if (campo === 'imagemUrl' || campo === 'arquivoUrl') {
+            const url = validarTexto(item[campo], 1000);
+            try { const parsed = new URL(url); novo[campo] = ['http:', 'https:'].includes(parsed.protocol) ? url : ''; }
+            catch { novo[campo] = ''; }
+          }
           else if (['nivel', 'jogadores', 'pontos', 'orcamento'].includes(campo)) novo[campo] = Number.isFinite(Number(item[campo])) ? Math.max(0, Math.min(100, Math.round(Number(item[campo])))) : 0;
           else novo[campo] = validarTexto(item[campo], campo === 'conteudo' || campo === 'descricao' || campo === 'direcao' || campo === 'cenario' || campo === 'efeito' || campo === 'composicao' ? 12000 : 100);
         }
@@ -38,8 +43,8 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
     publicacoes(mesaId) {
       const mesa = dados[mesaId] || vazio(mesaId);
       return {
-        documentos: mesa.documentos.filter(doc => doc.visivel).map(({ id, titulo, tipo, conteudo }) => ({ id, titulo, tipo, conteudo })),
-        itens: mesa.itens.filter(item => item.visivel).map(({ id, nome, categoria, descricao, efeito }) => ({ id, nome, categoria, descricao, efeito }))
+        documentos: mesa.documentos.filter(doc => doc.visivel).map(({ id, titulo, tipo, conteudo, arquivoUrl }) => ({ id, titulo, tipo, conteudo, arquivoUrl })),
+        itens: mesa.itens.filter(item => item.visivel).map(({ id, nome, categoria, descricao, efeito, imagemUrl }) => ({ id, nome, categoria, descricao, efeito, imagemUrl }))
       };
     },
     documentosPublicos(mesaId) {
