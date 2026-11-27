@@ -98,4 +98,28 @@ vm.runInContext('combateMestre.versao = 7; salvarCombateMestre = () => {}; novoC
 assert.equal(estado().versao, 7);
 assert.equal(estado().participantes.length, 0);
 
+
+// O catálogo contém exatamente as 20 condições listadas nas pp. 81–83 do Arquivo do Jogador.
+const catalogoCondicoes = JSON.parse(vm.runInContext('JSON.stringify(CONDICOES_OFICIAIS_AB)', contexto));
+const nomesCondicoesEsperados = [
+  'Agarrado', 'Amedrontado', 'Atordoado', 'Caído', 'Cego',
+  'Colapso Viral', 'Corrosão', 'Cabeça Carmesim', 'Desacordado',
+  'Desorientado', 'Enfraquecido', 'Exposto', 'Imobilizado',
+  'Incapacitado', 'Intoxicado', 'Queimadura', 'Surdo',
+  'Surpreendido', 'Vulnerável', 'Infectado Especial'
+];
+assert.deepEqual(catalogoCondicoes.map(c => c.nome), nomesCondicoesEsperados);
+assert.equal(new Set(catalogoCondicoes.map(c => c.nome)).size, 20);
+assert.ok(catalogoCondicoes.every(c => c.efeito && c.duracao));
+
+// Avançar o turno não reduz nem encerra automaticamente a duração de condições.
+preparar([{
+  id: 'a', nome: 'Alice', iniciativa: 20, agi: 3, d20: 17, ordem: 0,
+  condicoes: [{ id: 'c1', nome: 'Queimadura', duracao: '1d4 rodadas', observacao: 'Teste no início do turno' }]
+}], 'a', 3);
+vm.runInContext('avancarTurnoCombate()', contexto);
+assert.equal(estado().rodada, 4);
+assert.equal(estado().participantes[0].condicoes[0].duracao, '1d4 rodadas');
+assert.equal(estado().participantes[0].condicoes[0].observacao, 'Teste no início do turno');
+
 console.log('Painel do Mestre: turnos, remoção, edição e versão OK');
