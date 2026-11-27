@@ -202,3 +202,12 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - Os controles **− Aproximar** e **+ Afastar** movem o marcador em uma unidade por vez. A interface apresenta uma leitura textual do risco e impede ultrapassar os limites.
 - A escala é um recurso de acompanhamento narrativo do Painel, não uma medida mecânica nem uma regra adicional do livro. O Mestre decide quando e quanto a posição muda.
 - O valor fica salvo no estado do combate e sincronizado entre as sessões do Mestre.
+
+
+## Integração inicial entre Fichas Ativas e iniciativa
+
+- O resumo operacional de cada Ficha Ativa aprovada oferece a ação **Adicionar à iniciativa**.
+- A ação cria um participante do tipo Personagem e utiliza o nome e a AGI calculada pela Ficha; para Personagens, o bônus de Iniciativa permanece igual à AGI, conforme a regra já aplicada pelo rastreador.
+- Se o combate já estiver em andamento, o personagem entra como participante tardio, permanecendo no fim da ordem atual.
+- A ação impede nomes duplicados e respeita o limite de 30 participantes. Depois de adicionado, o cartão da Ficha informa que o personagem já está na iniciativa.
+- Esta integração apenas copia nome e AGI para o rastreador. Não altera PV, SA, BI, condições ou qualquer dado da Ficha do Jogador. O resumo continua sendo uma projeção de leitura restrita ao Mestre.
