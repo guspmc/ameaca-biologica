@@ -208,3 +208,9 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .combate-condicoes label{flex:1 1 100%;margin-top:4px;font-size:.9rem;color:var(--suave)}
 .combate-condicoes input,.combate-condicoes textarea{box-sizing:border-box;width:100%;min-width:0;flex:1 1 100%;padding:9px 10px;border:1px solid var(--borda);border-radius:8px;background:var(--fundo);color:var(--texto);font:inherit}
 .combate-condicoes textarea{resize:vertical}
+
+.condicao-combate{flex-wrap:wrap}
+.condicao-combate>span{flex:1 1 auto;min-width:0}
+.condicao-edicao{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%;padding-top:6px}
+.condicao-edicao input,.condicao-edicao textarea{flex:1 1 100%;min-width:0;width:100%;padding:8px 10px;font:inherit;color:var(--texto);background:var(--fundo);border:1px solid var(--borda);border-radius:8px}
+.condicao-edicao textarea{resize:vertical}
