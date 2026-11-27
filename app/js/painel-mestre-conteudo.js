@@ -2,30 +2,25 @@
 
 // Módulo de conteúdo do Mestre. Não lê nem altera Fichas de Personagem.
 const CONTEUDO_MESTRE_VAZIO = () => ({ anotacoes: '', encontros: [], documentos: [], itens: [] });
-const CRIATURAS_AB = [
-  { nome: 'Infectado', ameaca: 'Comum', pontos: 1 },
-  { nome: 'Infectado Ácido', ameaca: 'Comum', pontos: 1 },
-  { nome: 'Cerberus', ameaca: 'Comum', pontos: 1 },
-  { nome: 'Fiador de Teia', ameaca: 'Comum', pontos: 1 },
-  { nome: 'Corvo', ameaca: 'Comum', pontos: 1 },
-  { nome: 'G Infante', ameaca: 'Comum', pontos: 1 },
-  { nome: 'Cabeça Carmesim (Crimson Head)', ameaca: 'Perigosa', pontos: 2 },
-  { nome: 'Cabeça Pustulenta', ameaca: 'Perigosa', pontos: 2 },
-  { nome: 'Carnífice', ameaca: 'Perigosa', pontos: 2 },
-  { nome: 'Deimos', ameaca: 'Perigosa', pontos: 2 },
-  { nome: 'Infectado NE-α', ameaca: 'Perigosa', pontos: 2 },
-  { nome: 'Ivy', ameaca: 'Perigosa', pontos: 2 },
-  { nome: 'Pálido', ameaca: 'Perigosa', pontos: 2 },
-  { nome: 'G Adulto', ameaca: 'Elite', pontos: 4 },
-  { nome: 'Caçador Beta', ameaca: 'Elite', pontos: 4 },
-  { nome: 'Caçador Gama', ameaca: 'Elite', pontos: 4 },
-  { nome: 'Caçador Alfa', ameaca: 'Elite', pontos: 4 },
-  { nome: 'Tirano (T-103 Forma II)', ameaca: 'Chefe', pontos: 8 },
-  { nome: 'Jacaré', ameaca: 'Chefe', pontos: 8 },
-  { nome: 'Planta 42', ameaca: 'Chefe', pontos: 8 },
-  { nome: 'Nemesis T-Type — Forma II', ameaca: 'Chefe', pontos: 8 },
-  { nome: 'Nemesis T-Type — Forma Final', ameaca: 'Chefe', pontos: 8 }
-];
+let BESTIARIO_AB = [];
+let CRIATURAS_AB = [];
+let carregandoBestiarioMestre = false;
+
+async function carregarBestiarioMestre() {
+  if (BESTIARIO_AB.length || carregandoBestiarioMestre) return;
+  carregandoBestiarioMestre = true;
+  try {
+    const dados = await buscar(estado.base + '/dados/bestiario.json');
+    BESTIARIO_AB = Array.isArray(dados) ? dados : [];
+    CRIATURAS_AB = BESTIARIO_AB.map(c => ({ id: c.id, nome: c.nome, ameaca: c.categoria, pontos: c.pontos }));
+    window.BESTIARIO_AB = BESTIARIO_AB;
+    if (typeof preencherSeletorCriaturasCombate === 'function') preencherSeletorCriaturasCombate();
+    desenharBestiarioMestre();
+  } catch (e) {
+    const lista = $('bestiario-lista');
+    if (lista) lista.textContent = 'Não foi possível carregar o catálogo de B.O.Ws.';
+  } finally { carregandoBestiarioMestre = false; }
+}
 const ORCAMENTO_AB = {
   '1-2': [4, 6, 8], '3-4': [6, 9, 12], '5-6': [8, 12, 16],
   '7-8': [10, 15, 20], '9-10': [12, 18, 24]
@@ -189,6 +184,33 @@ function atualizarPreviewImagemItem() {
   } catch { preview.removeAttribute('src'); preview.hidden = true; }
 }
 
+function desenharBestiarioMestre(filtro = '') {
+  const lista = $('bestiario-lista');
+  if (!lista) return;
+  lista.replaceChildren();
+  const termo = String(filtro).trim().toLocaleLowerCase('pt-BR');
+  const criaturas = BESTIARIO_AB.filter(c => !termo || [c.nome,c.categoria,c.funcao,c.tamanho].join(' ').toLocaleLowerCase('pt-BR').includes(termo));
+  if (!criaturas.length) { lista.append(elemento('p', BESTIARIO_AB.length ? 'Nenhuma criatura encontrada.' : 'Carregando catálogo…', 'dica')); return; }
+  for (const c of criaturas) {
+    const detalhe = elemento('details', '', 'bestiario-criatura');
+    const resumo = elemento('summary', c.nome + ' · ' + c.categoria + ' (' + c.pontos + ' pts)');
+    detalhe.append(resumo);
+    detalhe.append(elemento('p', c.funcao + ' · ' + c.tamanho, 'dica'));
+    detalhe.append(elemento('p', 'PV ' + c.pv + ' · Defesa ' + c.defesa + ' · Movimento ' + c.movimento));
+    detalhe.append(elemento('p', 'FOR ' + c.atributos.for + ' · AGI ' + c.atributos.agi + ' · VIG ' + c.atributos.vig + ' · AST ' + c.atributos.ast + ' · Iniciativa +' + c.iniciativa));
+    detalhe.append(elemento('p', 'Fortitude +' + c.resistencias.fortitude + ' · Reflexos +' + c.resistencias.reflexos + ' · Vontade +' + c.resistencias.vontade + ' · Percepção +' + c.resistencias.percepcao));
+    const ataques = elemento('div'); ataques.append(elemento('strong','Ataques'));
+    for (const ataque of c.ataques) ataques.append(elemento('p',ataque));
+    detalhe.append(ataques);
+    const tracos = elemento('div'); tracos.append(elemento('strong','Traços'));
+    for (const traco of c.tracos) tracos.append(elemento('p',traco));
+    detalhe.append(tracos);
+    lista.append(detalhe);
+  }
+  const rodape = elemento('p', criaturas.length + ' de ' + BESTIARIO_AB.length + ' criaturas', 'dica');
+  lista.append(rodape);
+}
+
 function desenharConteudoMestre() {
   const raiz = $('bloco-conteudo-mestre');
   if (!raiz) return;
@@ -293,7 +315,7 @@ function montarConteudoMestre() {
   const card = elemento('section', '', 'cartao painel-conteudo'); card.id = 'bloco-conteudo-mestre';
   card.append(elemento('h2', 'Painel de conteúdo'));
   const menu = elemento('nav', '', 'menu-conteudo-mestre'); menu.setAttribute('aria-label', 'Seções do Painel do Mestre');
-  const abas = [['itens','Itens personalizados'],['documentos','Documentações / Files'],['encontros','Encontros e anotações']];
+  const abas = [['itens','Itens personalizados'],['documentos','Documentações / Files'],['bestiario','Bestiário'],['encontros','Encontros e anotações']];
   const paineis = {};
   const trocarAba = (nome) => { for (const [chave] of abas) { if (paineis[chave]) paineis[chave].hidden = chave !== nome; const botao = menu.querySelector('[data-aba="' + chave + '"]'); if (botao) { botao.setAttribute('aria-selected', String(chave === nome)); botao.tabIndex = chave === nome ? 0 : -1; } } };
   for (const [chave, rotulo] of abas) { const botao = elemento('button', rotulo, 'botao pequeno'); botao.type = 'button'; botao.dataset.aba = chave; botao.setAttribute('role','tab'); botao.setAttribute('aria-selected',String(chave==='itens')); botao.addEventListener('click',()=>trocarAba(chave)); menu.append(botao); }
@@ -337,6 +359,14 @@ function montarConteudoMestre() {
   const salvarNotas = elemento('button', 'Salvar anotações', 'botao'); salvarNotas.type = 'button';
   salvarNotas.addEventListener('click', () => { conteudoMestre.anotacoes = notas.value; salvarConteudoMestre(); });
   anotacoes.append(notas, salvarNotas); encontro.append(anotacoes);
+
+  const bestiario = elemento('section', '', 'subpainel-mestre'); bestiario.dataset.secao = 'bestiario'; paineis.bestiario = bestiario;
+  bestiario.append(elemento('h3', 'Bestiário de B.O.Ws.'));
+  bestiario.append(elemento('p', 'Catálogo do Arquivo do Mestre v1.0. Os valores são referências da ficha impressa; ajustes de cena ficam a cargo do Mestre.', 'dica'));
+  const buscaBestiario = elemento('input'); buscaBestiario.type = 'search'; buscaBestiario.id = 'bestiario-busca'; buscaBestiario.placeholder = 'Buscar criatura, categoria ou função…'; buscaBestiario.maxLength = 80;
+  buscaBestiario.addEventListener('input', () => desenharBestiarioMestre(buscaBestiario.value));
+  const listaBestiario = elemento('div', '', 'lista-bestiario'); listaBestiario.id = 'bestiario-lista';
+  bestiario.append(buscaBestiario, listaBestiario); card.append(bestiario);
 
   const docs = elemento('section', '', 'subpainel-mestre'); docs.dataset.secao = 'documentos'; paineis.documentos = docs; docs.append(elemento('h3', 'Documentos narrativos'));
   const fd = elemento('form', '', 'form-encontro-mestre');
@@ -442,6 +472,7 @@ window.carregarMesaAtual = async function () {
   if (estado.mesaId !== mesaConteudoCarregada) { conteudoMestre = CONTEUDO_MESTRE_VAZIO(); documentosPublicosMesa = []; itensPublicosMesa = []; mesaConteudoCarregada = estado.mesaId; }
   await carregarMesaConteudoOriginal();
   if (estado.tela !== 'mesa') return;
+  await carregarBestiarioMestre();
   if (estado.mesaAtual?.papel === 'mestre') await carregarConteudoMestre(true);
   else {
     documentosPublicosMesa = []; itensPublicosMesa = [];
