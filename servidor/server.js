@@ -416,7 +416,7 @@ const servidor = http.createServer(async (req, res) => {
         const tamanho = Number(req.headers['content-length'] || 0);
         if (tamanho > arquivosMestre.MAX_BYTES) return json(res, 413, { erro: 'O arquivo excede o limite de 10 MB.' });
         const buffer = await lerArquivoUpload(req, arquivosMestre.MAX_BYTES);
-        const salvo = arquivosMestre.salvar(mesaId, req.headers['x-file-name'], req.headers['content-type'], buffer);
+        const salvo = arquivosMestre.salvar(mesaId, decodeURIComponent(String(req.headers['x-file-name'] || 'arquivo')), req.headers['content-type'], buffer);
         if (!salvo.ok) return json(res, salvo.status, { erro: salvo.erro });
         return json(res, 201, { arquivo: salvo.arquivo, nome: salvo.nome, tamanho: salvo.tamanho, url: '/api/mesas/' + encodeURIComponent(mesaId) + '/arquivos/' + encodeURIComponent(salvo.arquivo) });
       }
@@ -425,10 +425,11 @@ const servidor = http.createServer(async (req, res) => {
         const arquivo = arquivosMestre.ler(mesaId, partesArquivo[4]);
         if (!arquivo) return json(res, 404, { erro: 'Arquivo não encontrado.' });
         if (acesso.mesa.papel === 'jogador') {
-          const publicados = conteudoMestre.publicacoes(mesaId).documentos;
+          const publicacoes = conteudoMestre.publicacoes(mesaId);
+          const publicados = [...publicacoes.documentos.map(doc => doc.arquivoUrl), ...publicacoes.itens.map(item => item.imagemUrl)];
           const rota = '/api/mesas/' + encodeURIComponent(mesaId) + '/arquivos/' + encodeURIComponent(partesArquivo[4]);
-          const autorizado = publicados.some(doc => {
-            try { return new URL(doc.arquivoUrl).pathname === rota; } catch { return doc.arquivoUrl === rota; }
+          const autorizado = publicados.some(urlArquivo => {
+            try { return new URL(urlArquivo).pathname === rota; } catch { return urlArquivo === rota; }
           });
           if (!autorizado) return json(res, 404, { erro: 'Arquivo não encontrado.' });
         }
