@@ -24,7 +24,8 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
       if (nomes.has(chave)) return { erro:'Não use nomes repetidos no mesmo combate.' };
       ids.add(id); nomes.add(chave);
       const original=anterior.participantes.find(x=>x.id===id);
-      const condicoes = Array.isArray(p.condicoes) ? p.condicoes.slice(0, 10).map((x) => ({
+      if (Array.isArray(p.condicoes) && p.condicoes.length > 30) return { erro:'Cada participante pode ter até 30 instâncias de condições.' };
+      const condicoes = Array.isArray(p.condicoes) ? p.condicoes.slice(0, 30).map((x) => ({
         id: String(x.id || require('crypto').randomUUID()).slice(0, 40),
         nome: String(x.nome || '').trim().slice(0, 60),
         duracao: String(x.duracao || '').trim().slice(0, 80),
