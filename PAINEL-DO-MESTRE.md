@@ -156,3 +156,22 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - As imagens e os anexos são referenciados por URL; o Painel ainda não hospeda arquivos enviados do dispositivo. Para a primeira versão, o Mestre pode usar imagens/arquivos hospedados em um serviço acessível aos Jogadores.
 - A aba de Encontros reúne o criador, encontros preparados e anotações; as outras duas abas isolam seus respectivos formulários e listas.
 - Testes do módulo verificam a publicação dos campos de mídia e a rejeição de esquemas de URL inseguros.
+
+
+## Quinta etapa — Bestiário e preparação integrada de combate
+
+- Catálogo de 22 B.O.Ws. transcritas do Arquivo do Mestre v1.0, pp. 28–49: categoria e pontos de ameaça, função, tamanho, PV, Defesa, Movimento, Atributos, Iniciativa, resistências, ataques e traços.
+- A aba **Bestiário** permite pesquisar por nome, categoria, função ou tamanho e expandir cada ficha para consulta.
+- O sorteador de encontros usa os IDs do catálogo, em vez de guardar apenas nomes em texto. Mantém as categorias e pontuações do livro: Comum 1, Perigosa 2, Elite 4 e Chefe 8. O sorteio automático continua excluindo Chefes; Perseguidores permanecem fora do orçamento comum conforme a p. 21 e serão tratados em módulo próprio.
+- Encontros preparados guardam a composição estruturada (ID da criatura e quantidade). O Mestre pode usar **Preparar combate** para enviar a composição diretamente à ordem de iniciativa.
+- Ao selecionar uma criatura do Bestiário na preparação de iniciativa, o Painel preenche AGI e o valor de Iniciativa da ficha. Também registra PV atuais/máximos, Defesa e Movimento para acompanhamento durante o combate.
+- O PV atual da criatura pode ser atualizado no rastreador sem alterar os valores originais do Bestiário. A ficha-base do catálogo permanece intacta.
+- A composição do encontro e os dados operacionais do combate continuam privados do Mestre. O Bestiário é carregado no fluxo do Painel do Mestre e incluído no cache do PWA para consulta local.
+- Testes verificam a integridade estrutural das 22 fichas, pontuação por categoria, persistência de PV no combate e validação da composição de encontros.
+
+### Regras de referência
+
+- Arquivo do Mestre v1.0, p. 14: para Criaturas, Iniciativa = 1d20 + Iniciativa indicada na ficha; Fortitude, Reflexos, Vontade e Percepção já são valores totais prontos para uso.
+- Arquivo do Mestre v1.0, p. 21: categorias, pontos, orçamento para quatro Personagens e ajuste aproximado de 25% por personagem acima/abaixo de quatro.
+- Arquivo do Mestre v1.0, pp. 28–49: catálogo de B.O.Ws. incluído nesta etapa.
+- Arquivo do Mestre v1.0, pp. 50–55: Perseguidores e suas regras específicas ainda não foram integrados ao Bestiário comum.
