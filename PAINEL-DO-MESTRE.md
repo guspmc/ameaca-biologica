@@ -62,7 +62,7 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 ## Terceira etapa — gerenciamento de condições
 
 - Catálogo de 20 condições oficiais conforme o Arquivo do Jogador v1.0, pp. 81–83, com consulta rápida do efeito e das orientações de duração/remoção.
-- Aplicação por participante com registro individual de duração/término e observações. Condições personalizadas continuam permitidas.
+- Aplicação por participante com registro individual de duração/término e observações. Condições personalizadas continuam permitidas. A suíte de testes confere os 20 nomes oficiais e garante que avançar o turno não altera automaticamente duração nem observações.
 - A interface usa campos no próprio painel (sem caixas de diálogo do navegador), com nome manual exibido somente quando essa opção é selecionada.
 - Instâncias repetidas da mesma condição podem ter suas durações acompanhadas separadamente, mas seus efeitos mecânicos não se acumulam, conforme a regra de Acúmulo de Condições na p. 81.
 - A duração não é decrementada automaticamente ao avançar turnos. Corrosão e Queimadura, por exemplo, exigem testes no início do turno e dano ao final; outras condições dependem da fonte que as aplicou. O Mestre registra manualmente o término para evitar automações que contrariem esses gatilhos.
