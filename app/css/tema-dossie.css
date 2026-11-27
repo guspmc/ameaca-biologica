@@ -1,0 +1,119 @@
+/*
+ * Tema "Dossiê" (identidade visual) e layout largo. Carregado depois de estilo.css:
+ * só sobrescreve cores, tipografia e disposição, para não brigar com mudanças no estilo.css.
+ * Sem fontes externas: usa só as fontes do sistema (funciona sem internet).
+ */
+:root {
+  --fundo: #120f0b;
+  --painel: #1c1812;
+  --painel-2: #262017;
+  --borda: #3b3226;
+  --texto: #eadfc8;
+  --suave: #a89d86;
+  --acento: #e0584a;          /* vermelho-carimbo (texto e contornos) */
+  --acento-fundo: #b3382c;    /* vermelho-carimbo (fundos de botão/carimbo) */
+  --acento-escuro: #fff3e2;   /* texto sobre o vermelho */
+  --aviso: #e6b23c;
+  --erro: #ff9066;
+  --raio: 4px;
+  --mono: ui-monospace, "Cascadia Mono", "Courier New", Courier, monospace;
+}
+
+body {
+  background-color: var(--fundo);
+  /* linhas muito suaves, como papel pautado */
+  background-image: repeating-linear-gradient(0deg, rgba(234, 223, 200, 0.025) 0 1px, transparent 1px 28px);
+}
+
+h1, h2, h3 { font-family: var(--mono); }
+h1 { letter-spacing: 0.04em; text-transform: uppercase; }
+h2 { color: var(--acento); letter-spacing: 0.12em; padding-bottom: 6px; border-bottom: 1px dashed var(--borda); }
+.secao h3 { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.85rem; color: var(--acento); }
+label { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* Números e códigos em fonte de máquina de escrever */
+.per-val, .ind-valor, .stat-linha strong, .codigo-mesa, .etiqueta, .atributo-linha input, #fi-nivel, .municao-item input, .linha-municao input { font-family: var(--mono); }
+
+/* Cartões e seções: papel com cantos retos e uma "aba" vermelha */
+.cartao, .secao, .cartao-ataque, .item-arsenal {
+  border-radius: var(--raio);
+  border-left: 3px solid var(--acento-fundo);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+input, select, textarea, .botao, .grau-label, .cond-label, .hab-label, .stat-linha, .indicador, .municao-item, .ajuste { border-radius: var(--raio); }
+input, select, textarea { background: #0e0c09; }
+
+.botao { font-family: var(--mono); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.botao.primario { background: var(--acento-fundo); border-color: var(--acento-fundo); color: var(--acento-escuro); }
+.botao.primario:hover { background: #c9443a; }
+.botao.perigo { color: var(--erro); border-color: var(--erro); }
+.equipamento-inicial .botao, .mesa-item { text-transform: none; letter-spacing: 0; font-family: inherit; }
+
+/* Carimbos: status, etiquetas e Condições */
+.pilula { border-radius: 2px; border-width: 2px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.78rem; }
+.pilula.ativa { background: transparent; color: var(--acento); border-color: var(--acento); transform: rotate(-2deg); }
+#pilula-offline.ativa { color: var(--aviso); border-color: var(--aviso); background: transparent; }
+.etiqueta { border-radius: 2px; text-transform: uppercase; letter-spacing: 0.06em; border-color: var(--acento-fundo); color: var(--acento); background: transparent; }
+.hab-label.ativo, .cond-label.ativa, .grau-label.ativo { border-color: var(--acento); color: var(--acento); }
+
+/* Marca da tela de login: carimbo CONFIDENCIAL */
+.marca h1 { font-size: 1.9rem; }
+.marca::after {
+  content: "ARQUIVO CONFIDENCIAL";
+  display: inline-block; margin-top: 14px; padding: 3px 10px;
+  font: 700 0.72rem var(--mono); letter-spacing: 0.2em; color: var(--acento);
+  border: 2px solid var(--acento); border-radius: 2px; transform: rotate(-3deg); opacity: 0.85;
+}
+
+/* Barras da Ficha */
+.barra-superior, .barra-inferior { background: var(--painel); }
+.barra-inferior .atalho { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.7rem; border-radius: 2px; }
+.barra-inferior .atalho.ativo { color: var(--acento); background: var(--painel-2); box-shadow: inset 0 -2px 0 var(--acento); }
+.indicador .ind-label { letter-spacing: 0; font-size: 0.64rem; }
+.ponto.on { background: #6fbf73; } /* online = verde, para não confundir com o vermelho de destaque */
+textarea { width: 100%; padding: 12px 14px; font: inherit; color: var(--texto); border: 1px solid var(--borda); }
+
+/* ---------- Ficha compacta ---------- */
+/* Perícias: nome e valor à esquerda, grau num seletor de 3 botões na mesma linha */
+.pericia-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; }
+.pericia-linha .per-nome { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+.pericia-linha .per-nome .etiqueta { margin: 0; font-size: 0.6rem; padding: 0 5px; white-space: nowrap; }
+.pericia-linha .per-val { flex: none; min-width: 2.2rem; margin: 0; text-align: right; }
+.grau-opcoes { flex-wrap: nowrap; gap: 0; margin: 0; flex-shrink: 0; }
+.grau-label { position: relative; flex: none; justify-content: center; padding: 6px 8px; font-size: 0.78rem; border-radius: 0; margin-left: -1px; }
+.grau-label:first-child { border-radius: var(--raio) 0 0 var(--raio); margin-left: 0; }
+.grau-label:last-child { border-radius: 0 var(--raio) var(--raio) 0; }
+.grau-label.ativo { background: var(--acento-fundo); border-color: var(--acento-fundo); color: var(--acento-escuro); z-index: 1; }
+.grau-label input { position: absolute; opacity: 0; width: 100%; height: 100%; left: 0; top: 0; margin: 0; cursor: pointer; }
+
+/* Atributos alinhados em colunas */
+.atributo-linha { display: grid; grid-template-columns: 5.5rem 4.2rem 1fr; gap: 10px; align-items: center; margin: 4px 0; }
+.atributo-linha label { margin: 0; }
+.atributo-linha input { width: 100%; text-align: center; }
+.atributo-dica { color: var(--suave); font-size: 0.76rem; line-height: 1.3; }
+
+/* Opções de ataque: caixas menores, lado a lado */
+.opcoes-ataque .cond-label { margin: 0; padding: 6px 8px; font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 0.85rem; }
+
+/* Em Ficha aberta, o título da Mesa sai (a Ficha tem a própria barra) */
+#app:has(.editor-ficha) #tela-mesa > .topo { display: none; }
+
+/* ---------- Telas largas ---------- */
+.ficha-colunas { display: block; }
+@media (min-width: 980px) {
+  #app:has(.editor-ficha), #app:has(#tela-lab:not([hidden])) { max-width: 1120px; }
+  .barra-superior, .barra-inferior { padding-left: calc(50% - 560px); padding-right: calc(50% - 560px); }
+  .ficha-colunas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 16px; align-items: start; }
+  .editor-ficha { padding-top: 64px; }
+  .barra-inferior { display: none; } /* os atalhos servem ao celular; no PC as duas colunas já cabem */
+
+  /* Laboratório em duas colunas (as colunas se equilibram sozinhas) */
+  #tela-lab:not([hidden]) { display: block; column-count: 2; column-gap: 16px; }
+  #tela-lab > .topo { column-span: all; }
+  #tela-lab > .cartao, #tela-lab > #btn-instalar { break-inside: avoid; }
+}
+
+/* Textos corridos dentro de caixas ficam em fonte normal (só rótulos de campo usam a mono) */
+.hab-label, .cond-label { font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 0.9rem; }
+.stat-linha { gap: 8px; align-items: baseline; }
+.stat-linha strong { text-align: right; }

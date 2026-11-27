@@ -333,7 +333,7 @@ function secaoAtributos(d) {
             checked: grau === i,
             onchange: () => mudouPericia(p.id, i),
           }),
-          g.nome))));
+          g.nome === 'Não Treinada' ? 'Não' : g.nome))));
   };
 
   const pontosTotal = calc ? calc.pontosPericia.total : 0;
@@ -650,10 +650,10 @@ function renderizarEditor() {
 
       bloqueado ? h('p', { class: 'mensagem aviso' }, 'Esta ficha está aguardando aprovação do Mestre. Retire o pedido para editá-la.') : null,
 
-      travar(secaoIdentificacao(d)),
-      travar(secaoAtributos(d)),
-      secaoCombate(d),
-      secaoInventario(d)),
+      // Duas colunas no PC (Identificação + Atributos | Combate + Inventário); uma só no celular.
+      h('div', { class: 'ficha-colunas' },
+        h('div', { class: 'ficha-coluna' }, travar(secaoIdentificacao(d)), travar(secaoAtributos(d))),
+        h('div', { class: 'ficha-coluna' }, secaoCombate(d), secaoInventario(d)))),
 
     // Barra inferior (atalhos de seção).
     criarBarraInferior());

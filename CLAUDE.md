@@ -30,10 +30,14 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - v0.5: Arsenal. `app/js/dados-arsenal.js` (UMD, global `ARSENAL`: armas, ataques básicos, proteções + tabela Kendo, Peças Extras com compatibilidade, munições, consumíveis, expansões; copiado das tabelas do capítulo 3) e extensões de `regras.js`: itens do catálogo (`ref`, `mun`, `pecas[]`, `equip`), `municoes`, `kendo.placas`; Espaços derivados (Requiem modular, Peças que mudam Espaços, munição por Espaço, Bolsa/Pochete pela maior), Defesa/RD pelo colete (limite de AGI), Movimento pela Fase da BI, Proficiência por Classe/Habilidade, `montarAtaque`/`resolverAtaque`/`rolarExpressao`, `recarregar`, `gastarMunicao`, `usarConsumivel`; `validar` confere Peças, carregador, colete único e Inventário acima do limite. Tela em `app/js/arsenal-ui.js` (carregado depois de `ficha.js`). Ficha Ativa agora também salva `municoes` e `kendo`. Corrigido: enviar a Ficha para aprovação perdia a última edição (agora salva antes). Testes: `teste-arsenal.js` + UI no Chromium (fora do repositório).
 - Pontos do Arsenal a conferir com o dono: dano das Armas Especiais/Magnums usa a regra geral (dados + AGI); Rajada usa o dano normal da arma (Reflexos DT 12 metade); Disparo Cadenciado = +2 dados do mesmo tipo; Mira Laser = Mirar sem gastar SA (o app não controla "1 vez por turno"); Besta/Engate Triplo, Lança-Chamas (acúmulo de dados), Granada/Mina e Receitas ficam só como texto.
 
+- v0.6: identidade visual **Dossiê** em `app/css/tema-dossie.css` (carregado depois de `estilo.css`; só sobrescreve cores/tipografia/layout, para não conflitar com o branch do Painel do Mestre). Tokens: papel escuro, `--acento` vermelho-carimbo, `--acento-fundo` para botões, mono do sistema (sem fontes externas). Ficha compacta (Perícias em seletor de 3 botões, "Não Treinada" aparece como "Não"), Atributos em grade, Ficha em 2 colunas no PC (`.ficha-colunas`; barra inferior some ≥980 px), Laboratório em 2 colunas no PC (multicol). Ícones regerados em vermelho (`ferramentas/gerar-icones.js`). `sw.js` v5.
+- Identidade decidida pelo dono: Dossiê / Arquivo. Se o Painel do Mestre do ChatGPT trouxer CSS novo, conferir contra `tema-dossie.css`.
+
 ## Próximas etapas
-1. Painel do Mestre (branch separado, pelo ChatGPT): resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
-2. Instalação do PWA no modo local (ver "Limitações" no README).
-3. Depois: Receitas/criação de itens, regras de Descanso, tabela de Condições com efeitos automáticos.
+1. Subir de Nível, Exportar/Importar Ficha e Ficha Offline (v0.7, pedido pelo dono).
+2. Painel do Mestre (branch separado, pelo ChatGPT): resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
+3. Instalação do PWA no modo local (ver "Limitações" no README).
+4. Depois: Receitas/criação de itens, regras de Descanso, tabela de Condições com efeitos automáticos.
 
 ## Como testar (aqui)
 - `npm test`: servidor, rotas, presença em tempo real, portas e QR (só Node).

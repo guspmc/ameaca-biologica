@@ -8,8 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const FUNDO = [11, 15, 12];
-const ACENTO = [61, 220, 132];
+const FUNDO = [18, 15, 11];
+const ACENTO = [224, 88, 74];
 
 function crc32(buffer) {
   let crc = 0xffffffff;
