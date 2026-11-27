@@ -30,6 +30,35 @@ let carregandoConteudoMestre = false;
 let salvandoConteudoMestre = false;
 let salvarConteudoPendente = false;
 
+
+async function enviarArquivoMestre(arquivo) {
+  if (!arquivo) throw new Error('Selecione um arquivo.');
+  if (arquivo.size > 10 * 1024 * 1024) throw new Error('O arquivo excede o limite de 10 MB.');
+  const rota = estado.base + '/api/mesas/' + encodeURIComponent(estado.mesaId) + '/arquivos';
+  const resposta = await fetch(rota, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + estado.token, 'Content-Type': arquivo.type || 'application/octet-stream', 'X-File-Name': encodeURIComponent(arquivo.name) },
+    body: arquivo
+  });
+  const dados = await resposta.json();
+  if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível enviar o arquivo.');
+  return estado.base + dados.url;
+}
+async function abrirArquivoMesa(url) {
+  const janela = window.open('about:blank', '_blank');
+  try {
+    const resposta = await fetch(url, { headers: { Authorization: 'Bearer ' + estado.token } });
+    if (!resposta.ok) throw new Error('Não foi possível abrir o anexo.');
+    const temporario = URL.createObjectURL(await resposta.blob());
+    if (janela) janela.location.href = temporario;
+    else window.location.href = temporario;
+    setTimeout(() => URL.revokeObjectURL(temporario), 60000);
+  } catch (erro) {
+    if (janela) janela.close();
+    mensagem($('conteudo-msg') || $('aviso-mesa'), erro.message, 'erro');
+  }
+}
+
 function apiConteudoMestre(metodo = 'GET', corpo) {
   return buscar(estado.base + '/api/painel-mestre/' + encodeURIComponent(estado.mesaId) + '/conteudo', {
     method: metodo,
@@ -424,12 +453,21 @@ function montarConteudoMestre() {
   const [ldc, conteudoDoc] = campoConteudo('Conteúdo', 'doc-conteudo', 'textarea');
   conteudoDoc.rows = 6; conteudoDoc.maxLength = 12000;
   const [larq, arquivoDoc] = campoConteudo('Link para arquivo anexo (opcional)', 'doc-arquivo');
-  arquivoDoc.type = 'url'; arquivoDoc.placeholder = 'https://…';
+  arquivoDoc.type = 'url'; arquivoDoc.placeholder = 'https://… ou envie um arquivo';
+  const uploadDoc = elemento('input'); uploadDoc.type = 'file'; uploadDoc.accept = '.pdf,.png,.jpg,.jpeg,.webp,.txt';
+  const enviarDoc = elemento('button', 'Enviar arquivo', 'botao pequeno'); enviarDoc.type = 'button';
+  enviarDoc.addEventListener('click', async () => {
+    const arquivo = uploadDoc.files?.[0]; if (!arquivo) { mensagem(msg, 'Selecione um arquivo para enviar.', 'aviso'); return; }
+    enviarDoc.disabled = true; enviarDoc.textContent = 'Enviando…';
+    try { arquivoDoc.value = await enviarArquivoMestre(arquivo); mensagem(msg, 'Arquivo enviado e anexado ao documento.', 'info'); }
+    catch (erro) { mensagem(msg, erro.message, 'erro'); }
+    finally { enviarDoc.disabled = false; enviarDoc.textContent = 'Enviar arquivo'; }
+  });
   const visivel = elemento('input'); visivel.type = 'checkbox'; visivel.id = 'doc-visivel';
   const lv = elemento('label', 'Preparar para compartilhar com os Jogadores'); lv.prepend(visivel);
   const guardarDoc = elemento('button', 'Salvar documento', 'botao'); guardarDoc.type = 'submit'; guardarDoc.id = 'doc-guardar';
   const cancelarDoc = elemento('button', 'Cancelar edição', 'botao pequeno'); cancelarDoc.type = 'button'; cancelarDoc.id = 'doc-cancelar'; cancelarDoc.hidden = true; cancelarDoc.addEventListener('click', cancelarEdicaoDocumento);
-  fd.append(ldt, tituloDoc, ldtipo, tipoDoc, ldc, conteudoDoc, larq, arquivoDoc, lv, guardarDoc, cancelarDoc);
+  fd.append(ldt, tituloDoc, ldtipo, tipoDoc, ldc, conteudoDoc, larq, arquivoDoc, uploadDoc, enviarDoc, lv, guardarDoc, cancelarDoc);
   fd.addEventListener('submit', e => { e.preventDefault(); if (!tituloDoc.value.trim() || !conteudoDoc.value.trim()) return;
     const dados = { titulo: tituloDoc.value.trim(), tipo: tipoDoc.value, conteudo: conteudoDoc.value, arquivoUrl: arquivoDoc.value.trim(), visivel: visivel.checked };
     if (documentoEmEdicao) { const doc = conteudoMestre.documentos.find(x => x.id === documentoEmEdicao); if (doc) Object.assign(doc, dados); }
@@ -445,14 +483,23 @@ function montarConteudoMestre() {
   const [lid, descItem] = campoConteudo('Descrição', 'item-descricao', 'textarea'); descItem.rows = 3;
   const [lie, efeitoItem] = campoConteudo('Efeito / regra', 'item-efeito', 'textarea'); efeitoItem.rows = 3;
   const [lim, imagemItem] = campoConteudo('Imagem do item (URL)', 'item-imagem');
-  imagemItem.type = 'url'; imagemItem.placeholder = 'https://…';
+  imagemItem.type = 'url'; imagemItem.placeholder = 'https://… ou envie uma imagem';
+  const uploadImagem = elemento('input'); uploadImagem.type = 'file'; uploadImagem.accept = '.png,.jpg,.jpeg,.webp';
+  const enviarImagem = elemento('button', 'Enviar imagem', 'botao pequeno'); enviarImagem.type = 'button';
+  enviarImagem.addEventListener('click', async () => {
+    const arquivo = uploadImagem.files?.[0]; if (!arquivo) { mensagem(msg, 'Selecione uma imagem para enviar.', 'aviso'); return; }
+    enviarImagem.disabled = true; enviarImagem.textContent = 'Enviando…';
+    try { imagemItem.value = await enviarArquivoMestre(arquivo); atualizarPreviewImagemItem(); mensagem(msg, 'Imagem enviada.', 'info'); }
+    catch (erro) { mensagem(msg, erro.message, 'erro'); }
+    finally { enviarImagem.disabled = false; enviarImagem.textContent = 'Enviar imagem'; }
+  });
   const previewItem = elemento('img'); previewItem.id = 'item-imagem-preview'; previewItem.alt = 'Prévia da imagem do item'; previewItem.hidden = true; previewItem.loading = 'lazy'; previewItem.referrerPolicy = 'no-referrer';
   imagemItem.addEventListener('input', atualizarPreviewImagemItem);
   const publicarItem = elemento('input'); publicarItem.type = 'checkbox'; publicarItem.id = 'item-publicar';
   const labelPublicarItem = elemento('label', 'Compartilhar item com os Jogadores'); labelPublicarItem.prepend(publicarItem);
   const guardarItem = elemento('button', 'Salvar item', 'botao'); guardarItem.type = 'submit'; guardarItem.id = 'item-guardar';
   const cancelarItem = elemento('button', 'Cancelar edição', 'botao pequeno'); cancelarItem.type = 'button'; cancelarItem.id = 'item-cancelar'; cancelarItem.hidden = true; cancelarItem.addEventListener('click', cancelarEdicaoItem);
-  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, lim, imagemItem, previewItem, labelPublicarItem, guardarItem, cancelarItem);
+  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, lim, imagemItem, uploadImagem, enviarImagem, previewItem, labelPublicarItem, guardarItem, cancelarItem);
   fi.addEventListener('submit', e => { e.preventDefault(); if (!nomeItem.value.trim()) return;
     const dados = { nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, imagemUrl: imagemItem.value.trim(), visivel: publicarItem.checked };
     if (itemEmEdicao) { const item = conteudoMestre.itens.find(x => x.id === itemEmEdicao); if (item) Object.assign(item, dados); }
@@ -491,7 +538,7 @@ function montarDocumentosPublicos() {
     const sec = elemento('article', '', 'subpainel-mestre');
     sec.append(elemento('h3', doc.titulo), elemento('p', doc.tipo, 'dica'));
     const corpo = elemento('p', doc.conteudo); corpo.style.whiteSpace = 'pre-wrap'; sec.append(corpo);
-    if (doc.arquivoUrl) { const link = elemento('a', 'Abrir arquivo anexo'); link.href = doc.arquivoUrl; link.target = '_blank'; link.rel = 'noopener noreferrer'; sec.append(link); }
+    if (doc.arquivoUrl) { const link = elemento('a', 'Abrir arquivo anexo'); link.href = doc.arquivoUrl; link.addEventListener('click', e => { if (doc.arquivoUrl.includes('/api/mesas/')) { e.preventDefault(); abrirArquivoMesa(doc.arquivoUrl); } }); sec.append(link); }
     card.append(sec);
   }
   if (itensPublicosMesa.length) {
