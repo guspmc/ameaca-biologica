@@ -234,3 +234,8 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .bestiario-criatura summary{cursor:pointer;font-weight:700}
 .bestiario-criatura p{margin:8px 0;white-space:pre-wrap}
 #bestiario-busca{width:100%;margin-top:8px}
+
+.composicao-manual-mestre{border:1px solid var(--borda);border-radius:8px;padding:12px;margin:12px 0}
+.composicao-manual-linha{display:flex;gap:8px;align-items:center;margin:8px 0}
+.composicao-manual-linha select{flex:1;min-width:0}
+.composicao-manual-linha input{width:76px}
