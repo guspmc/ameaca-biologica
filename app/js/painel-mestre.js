@@ -32,18 +32,31 @@ function apiPainelMestre(metodo='GET',corpo) {
   });
 }
 async function carregarCombateMestre(silencioso=false) {
-  if(!estado.mesaId||estado.modo!=='local'||estado.mesaAtual?.papel!=='mestre'||carregandoCombate)return;
+  if(!estado.mesaId||estado.modo!=='local'||estado.mesaAtual?.papel!=='mestre'||carregandoCombate||salvandoCombate)return;
   carregandoCombate=true;
   try{const r=await apiPainelMestre();combateMestre=r.combate;desenharCombateMestre();}
   catch(e){if(!silencioso)mensagem($('aviso-mesa'),e.message,'erro');}
   finally{carregandoCombate=false;}
 }
+let salvarCombatePendente=false;
 async function salvarCombateMestre() {
-  if(!combateMestre||salvandoCombate)return;
+  if(!combateMestre)return;
+  if(salvandoCombate){salvarCombatePendente=true;return;}
   salvandoCombate=true;
-  try{const r=await apiPainelMestre('PUT',combateMestre);combateMestre=r.combate;desenharCombateMestre();}
-  catch(e){mensagem($('aviso-mesa'),e.message,'erro');}
-  finally{salvandoCombate=false;}
+  let erro=null;
+  try{
+    do{
+      salvarCombatePendente=false;
+      const copia=JSON.parse(JSON.stringify(combateMestre));
+      const r=await apiPainelMestre('PUT',copia);
+      if(!salvarCombatePendente)combateMestre=r.combate;
+    }while(salvarCombatePendente);
+  }catch(e){erro=e;}
+  finally{
+    salvandoCombate=false;
+    desenharCombateMestre();
+    if(erro)mensagem($('aviso-mesa'),erro.message,'erro');
+  }
 }
 function ordenarCombateMestre(){
   combateMestre.participantes.sort((a,b)=>{
