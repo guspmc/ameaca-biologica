@@ -7,7 +7,7 @@
  */
 const mesmo = (a, b) => String(a ?? '').toLocaleLowerCase('pt-BR') === String(b ?? '').toLocaleLowerCase('pt-BR');
 
-function criarResumoFichasMestre({ carregar, infoMesa, calcular, condicoesCatalogo = [] }) {
+function criarResumoFichasMestre({ carregar, infoMesa, calcular }) {
   if (typeof calcular !== 'function') throw new TypeError('A função calcular das regras é obrigatória.');
 
   return {
@@ -19,36 +19,27 @@ function criarResumoFichasMestre({ carregar, infoMesa, calcular, condicoesCatalo
       const aprovados = new Set((Array.isArray(info.aprovados) ? info.aprovados : []).map((nome) => String(nome).toLocaleLowerCase('pt-BR')));
       const todas = carregar() || {};
       const fichasMesa = todas[mesaId] && typeof todas[mesaId] === 'object' ? Object.values(todas[mesaId]) : [];
-      const catalogo = new Map(condicoesCatalogo.map((c) => [c.id, c.nome]));
-
       const fichas = fichasMesa
         .filter((f) => f && f.estado === 'ativa' && aprovados.has(String(f.usuario ?? '').toLocaleLowerCase('pt-BR')))
         .map((f) => {
           const dados = f.dados || {};
           const calculados = calcular(dados);
-          const condicoes = Array.isArray(dados.jogo?.condicoes) ? dados.jogo.condicoes : [];
-
-          // Lista explícita de campos permitidos. Não incluir dados, atributos,
-          // perícias, habilidades, história, conceito, inventário ou anotações.
+          // Lista explícita e mínima de campos permitidos ao Mestre: somente leitura.
           return {
             id: String(f.id || ''),
             jogador: String(f.usuario || ''),
             personagem: String(dados.nome || ''),
-            nivel: Number(dados.nivel) || 1,
-            pv: { atual: calculados.pv, maximo: calculados.pvMax, temporarios: calculados.pvTemp },
+            pv: { atual: calculados.pv, maximo: calculados.pvMax },
             sa: { atual: calculados.sa, maximo: calculados.saMax },
-            bi: { atual: calculados.bi, maximo: calculados.biMax, fase: calculados.faseBI?.fase ?? null },
+            bi: { atual: calculados.bi, maximo: calculados.biMax },
             defesa: calculados.defesa,
-            reducaoDano: calculados.rd,
             iniciativa: calculados.iniciativa,
-            movimento: calculados.movimento,
             periciasPassivas: {
               percepcao: calculados.passivos?.percepcao ?? null,
               fortitude: calculados.passivos?.fortitude ?? null,
               reflexos: calculados.passivos?.reflexos ?? null,
               vontade: calculados.passivos?.vontade ?? null,
             },
-            condicoes: condicoes.map((id) => ({ id, nome: catalogo.get(id) || id })),
           };
         });
 
