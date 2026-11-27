@@ -21,4 +21,4 @@ assert.ok(catalogo.some(c => c.id === 'nemesis-t-type-forma-final' && c.pv === 2
 assert.ok(catalogo.some(c => c.id === 'infectado' && c.pv === 15));
 assert.ok(catalogo.some(c => c.id === 'tirano-t103-perseguidor' && c.pvPerseguicao === 80));
 assert.ok(catalogo.some(c => c.id === 'nemesis-t-type-perseguidor' && c.pvPerseguicao === 100));
-console.log('Bestiário: 22 criaturas e estrutura de fichas OK');
+console.log('Bestiário: 22 criaturas comuns e 2 Perseguidores; estrutura de fichas OK');
