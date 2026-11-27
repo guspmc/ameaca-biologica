@@ -97,3 +97,9 @@ A integração com a Ficha deve fornecer ao Painel uma projeção de sessão, nu
 - estado de condições que o Jogador e o Mestre precisam acompanhar durante a cena.
 
 Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos personagens aprovados na Mesa. O Painel não deve receber atributos completos, inventário, histórico, anotações privadas ou campos que não sejam necessários à condução da sessão. O formato definitivo será ajustado após a revisão da implementação de Fichas na main, para não criar um contrato incompatível com o trabalho paralelo.
+
+## Testes de fluxo de combate
+
+- A suíte também executa testes diretamente sobre as funções de turno do módulo visual, em ambiente isolado do navegador.
+- São verificados: avanço dentro da ordem, fechamento da rodada ao passar pelo último participante, remoção do participante atual no meio/fim da ordem, remoção de participante fora do turno, remoção do último participante e avanço com lista vazia.
+- Os testes validam o comportamento já implementado; não acrescentam regras novas ao sistema.
