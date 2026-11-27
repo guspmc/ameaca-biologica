@@ -70,4 +70,23 @@ r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 assert.equal(r.status,200);
 assert.equal(r.dados.combate.participantes[0].iniciativa,16);
 
+
+// Controle otimista de versão: uma segunda sessão não pode sobrescrever
+// uma gravação feita depois da versão que ela carregou.
+r=painel.atender('Mestre','GET','mesa-1');
+const versaoA=r.dados.combate.versao;
+const gravacaoA={versao:versaoA,rodada:3,turnoAtual:null,participantes:[]};
+r=painel.atender('Mestre','PUT','mesa-1',gravacaoA);
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.versao,versaoA+1);
+const gravacaoObsoleta={versao:versaoA,rodada:8,turnoAtual:null,participantes:[]};
+r=painel.atender('Mestre','PUT','mesa-1',gravacaoObsoleta);
+assert.equal(r.status,409);
+assert.equal(r.dados.versaoAtual,versaoA+1);
+assert.equal(painel.atender('Mestre','GET','mesa-1').dados.combate.rodada,3);
+// A versão também avança em gravações sucessivas da mesma sessão.
+r=painel.atender('Mestre','PUT','mesa-1',{versao:versaoA+1,rodada:4,turnoAtual:null,participantes:[]});
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.versao,versaoA+2);
+
 console.log('Painel do Mestre: tudo OK');
