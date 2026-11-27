@@ -125,6 +125,54 @@ function campoConteudo(rotulo, id, tipo = 'input', valor = '') {
 }
 function novoIdConteudo() { return crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2); }
 
+let documentoEmEdicao = null;
+let itemEmEdicao = null;
+
+function cancelarEdicaoDocumento() {
+  documentoEmEdicao = null;
+  $('doc-titulo').value = '';
+  $('doc-tipo').selectedIndex = 0;
+  $('doc-conteudo').value = '';
+  $('doc-visivel').checked = false;
+  $('doc-guardar').textContent = 'Salvar documento';
+  $('doc-cancelar').hidden = true;
+}
+function editarDocumentoMestre(id) {
+  const doc = conteudoMestre.documentos.find(x => x.id === id);
+  if (!doc) return;
+  documentoEmEdicao = id;
+  $('doc-titulo').value = doc.titulo;
+  $('doc-tipo').value = doc.tipo;
+  $('doc-conteudo').value = doc.conteudo;
+  $('doc-visivel').checked = Boolean(doc.visivel);
+  $('doc-guardar').textContent = 'Salvar alterações';
+  $('doc-cancelar').hidden = false;
+  $('doc-titulo').focus();
+}
+function cancelarEdicaoItem() {
+  itemEmEdicao = null;
+  $('item-nome').value = '';
+  $('item-categoria').selectedIndex = 0;
+  $('item-descricao').value = '';
+  $('item-efeito').value = '';
+  $('item-publicar').checked = false;
+  $('item-guardar').textContent = 'Salvar item';
+  $('item-cancelar').hidden = true;
+}
+function editarItemMestre(id) {
+  const item = conteudoMestre.itens.find(x => x.id === id);
+  if (!item) return;
+  itemEmEdicao = id;
+  $('item-nome').value = item.nome;
+  $('item-categoria').value = item.categoria;
+  $('item-descricao').value = item.descricao;
+  $('item-efeito').value = item.efeito;
+  $('item-publicar').checked = Boolean(item.visivel);
+  $('item-guardar').textContent = 'Salvar alterações';
+  $('item-cancelar').hidden = false;
+  $('item-nome').focus();
+}
+
 function desenharConteudoMestre() {
   const raiz = $('bloco-conteudo-mestre');
   if (!raiz) return;
@@ -147,11 +195,15 @@ function desenharConteudoMestre() {
   for (const item of conteudoMestre.documentos) {
     const li = elemento('li', '', 'registro-mestre');
     li.append(elemento('strong', item.titulo), elemento('p', item.tipo + (item.visivel ? ' · marcado para compartilhar' : ' · privado')));
+    const editar = elemento('button', 'Editar', 'botao pequeno');
+    editar.type = 'button'; editar.addEventListener('click', () => editarDocumentoMestre(item.id));
+    const editar = elemento('button', 'Editar', 'botao pequeno');
+    editar.type = 'button'; editar.addEventListener('click', () => editarItemMestre(item.id));
     const publicar = elemento('button', item.visivel ? 'Retirar publicação' : 'Publicar', 'botao pequeno');
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este documento?')) return; conteudoMestre.documentos = conteudoMestre.documentos.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(publicar, remover); documentos.append(li);
+    li.append(editar, publicar, remover); documentos.append(li);
   }
   const itens = $('itens-mestre'); itens.replaceChildren();
   for (const item of conteudoMestre.itens) {
@@ -162,7 +214,7 @@ function desenharConteudoMestre() {
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este item personalizado?')) return; conteudoMestre.itens = conteudoMestre.itens.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(estadoPublicacao, publicar, remover); itens.append(li);
+    li.append(estadoPublicacao, editar, publicar, remover); itens.append(li);
   }
 }
 
@@ -220,10 +272,14 @@ function montarConteudoMestre() {
   conteudoDoc.rows = 6; conteudoDoc.maxLength = 12000;
   const visivel = elemento('input'); visivel.type = 'checkbox'; visivel.id = 'doc-visivel';
   const lv = elemento('label', 'Preparar para compartilhar com os Jogadores'); lv.prepend(visivel);
-  const guardarDoc = elemento('button', 'Salvar documento', 'botao'); guardarDoc.type = 'submit';
-  fd.append(ldt, tituloDoc, ldtipo, tipoDoc, ldc, conteudoDoc, lv, guardarDoc);
+  const guardarDoc = elemento('button', 'Salvar documento', 'botao'); guardarDoc.type = 'submit'; guardarDoc.id = 'doc-guardar';
+  const cancelarDoc = elemento('button', 'Cancelar edição', 'botao pequeno'); cancelarDoc.type = 'button'; cancelarDoc.id = 'doc-cancelar'; cancelarDoc.hidden = true; cancelarDoc.addEventListener('click', cancelarEdicaoDocumento);
+  fd.append(ldt, tituloDoc, ldtipo, tipoDoc, ldc, conteudoDoc, lv, guardarDoc, cancelarDoc);
   fd.addEventListener('submit', e => { e.preventDefault(); if (!tituloDoc.value.trim() || !conteudoDoc.value.trim()) return;
-    conteudoMestre.documentos.unshift({ id: novoIdConteudo(), titulo: tituloDoc.value.trim(), tipo: tipoDoc.value, conteudo: conteudoDoc.value, visivel: visivel.checked }); salvarConteudoMestre(); fd.reset(); });
+    const dados = { titulo: tituloDoc.value.trim(), tipo: tipoDoc.value, conteudo: conteudoDoc.value, visivel: visivel.checked };
+    if (documentoEmEdicao) { const doc = conteudoMestre.documentos.find(x => x.id === documentoEmEdicao); if (doc) Object.assign(doc, dados); }
+    else conteudoMestre.documentos.unshift({ id: novoIdConteudo(), ...dados });
+    cancelarEdicaoDocumento(); salvarConteudoMestre(); });
   docs.append(fd, elemento('ul', '', 'lista')); docs.lastChild.id = 'documentos-mestre'; card.append(docs);
 
   const itensSec = elemento('section', '', 'subpainel-mestre'); itensSec.append(elemento('h3', 'Itens personalizados'));
@@ -235,10 +291,14 @@ function montarConteudoMestre() {
   const [lie, efeitoItem] = campoConteudo('Efeito / regra', 'item-efeito', 'textarea'); efeitoItem.rows = 3;
   const publicarItem = elemento('input'); publicarItem.type = 'checkbox'; publicarItem.id = 'item-publicar';
   const labelPublicarItem = elemento('label', 'Compartilhar item com os Jogadores'); labelPublicarItem.prepend(publicarItem);
-  const guardarItem = elemento('button', 'Salvar item', 'botao'); guardarItem.type = 'submit';
-  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, labelPublicarItem, guardarItem);
+  const guardarItem = elemento('button', 'Salvar item', 'botao'); guardarItem.type = 'submit'; guardarItem.id = 'item-guardar';
+  const cancelarItem = elemento('button', 'Cancelar edição', 'botao pequeno'); cancelarItem.type = 'button'; cancelarItem.id = 'item-cancelar'; cancelarItem.hidden = true; cancelarItem.addEventListener('click', cancelarEdicaoItem);
+  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, labelPublicarItem, guardarItem, cancelarItem);
   fi.addEventListener('submit', e => { e.preventDefault(); if (!nomeItem.value.trim()) return;
-    conteudoMestre.itens.unshift({ id: novoIdConteudo(), nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, visivel: publicarItem.checked }); salvarConteudoMestre(); fi.reset(); });
+    const dados = { nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, visivel: publicarItem.checked };
+    if (itemEmEdicao) { const item = conteudoMestre.itens.find(x => x.id === itemEmEdicao); if (item) Object.assign(item, dados); }
+    else conteudoMestre.itens.unshift({ id: novoIdConteudo(), ...dados });
+    cancelarEdicaoItem(); salvarConteudoMestre(); });
   itensSec.append(fi, elemento('ul', '', 'lista')); itensSec.lastChild.id = 'itens-mestre'; card.append(itensSec);
 
   const ulE = elemento('ul', '', 'lista'); ulE.id = 'encontros-mestre';
