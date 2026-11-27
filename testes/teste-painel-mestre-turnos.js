@@ -10,6 +10,8 @@ const documento = { hidden: false, activeElement: null, addEventListener() {}, g
 const contexto = vm.createContext({
   document: documento,
   $: (id) => documento.getElementById(id),
+  confirm: () => true,
+  estado: { mesaId: 'mesa-teste' },
   setInterval() {},
   renderizarMesa() {},
   carregarMesaAtual() {}
@@ -91,4 +93,9 @@ assert.equal(vm.runInContext('painelMestreEmEdicao()', contexto), false);
 documento.activeElement = { tagName: 'INPUT', dentroDoPainel: false };
 assert.equal(vm.runInContext('painelMestreEmEdicao()', contexto), false);
 
-console.log('Painel do Mestre: turnos, remoção e proteção de edição OK');
+preparar(participantes, 'b', 8);
+vm.runInContext('combateMestre.versao = 7; salvarCombateMestre = () => {}; novoCombateMestre()', contexto);
+assert.equal(estado().versao, 7);
+assert.equal(estado().participantes.length, 0);
+
+console.log('Painel do Mestre: turnos, remoção, edição e versão OK');
