@@ -90,7 +90,7 @@ function prepararEncontroNoCombate(encontro){
     for(let i=0;i<quantidade;i++){
       let nome=quantidade>1?criatura.nome+' '+(i+1):criatura.nome;
       let sufixo=2;
-      while(combateMestre.participantes.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))||novas.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){nome=criatura.nome+' ('+sufixo+++')';}
+      while(combateMestre.participantes.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))||novas.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){nome=criatura.nome+' ('+sufixo+')';sufixo++;}
       novas.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo:'criatura',
         agi:criatura.atributos.agi,bonusIniciativa:criatura.iniciativa,d20:0,iniciativa:0,
         criaturaId:criatura.id,pvAtual:criatura.pv,pvMaximo:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
