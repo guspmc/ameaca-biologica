@@ -59,6 +59,14 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 - Conteúdo persistido em arquivo separado (painel-mestre-conteudo.json), com autorização exclusiva do Mestre para criar, editar e excluir. Jogadores recebem somente os documentos publicados; não recebem anotações, encontros privados ou itens em preparação.
 - Ao encerrar a Mesa, os dados desse módulo também são apagados.
 
+## Terceira etapa — gerenciamento de condições
+
+- Catálogo de 20 condições oficiais conforme o Arquivo do Jogador v1.0, pp. 81–83, com consulta rápida do efeito e das orientações de duração/remoção.
+- Aplicação por participante com registro individual de duração/término e observações. Condições personalizadas continuam permitidas.
+- A interface usa campos no próprio painel (sem caixas de diálogo do navegador), com nome manual exibido somente quando essa opção é selecionada.
+- Instâncias repetidas da mesma condição podem ter suas durações acompanhadas separadamente, mas seus efeitos mecânicos não se acumulam, conforme a regra de Acúmulo de Condições na p. 81.
+- A duração não é decrementada automaticamente ao avançar turnos. Corrosão e Queimadura, por exemplo, exigem testes no início do turno e dano ao final; outras condições dependem da fonte que as aplicou. O Mestre registra manualmente o término para evitar automações que contrariem esses gatilhos.
+
 ## Referências de regras e limites
 
 - Arquivo do Mestre v1.0, p. 21: categorias de ameaça (Comum 1, Perigosa 2, Elite 4, Chefe 8; Perseguidor especial), orçamento para quatro personagens por faixa de nível e ajuste aproximado de 25% por personagem.
@@ -68,7 +76,7 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 
 Ainda pendente:
 - Integrar PV, SA, BI e perícias passivas aos dados autorizados da Ficha Ativa, assim que o modelo de dados da Ficha estiver estável na main. Até lá, o Painel não lê fichas privadas nem inventa uma segunda fonte de verdade.
-- Gerenciamento de condições: seletor com as 20 condições listadas nas pp. 81–83 do Arquivo do Jogador, consulta rápida do efeito e da duração/remoção descritos no livro, além de cadastro manual de condições personalizadas. A duração aplicada continua registrada separadamente por instância; a redução automática ao avançar turnos não foi implementada porque os gatilhos variam conforme a condição e a fonte.
+
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
 - Testes HTTP de integração para autenticação, aprovação de Jogadores e filtragem das publicações adicionados à suíte; acompanhar o resultado do CI antes de considerar a etapa validada.
 ### Contrato planejado para o resumo das Fichas
