@@ -2,15 +2,14 @@
 
 /*
  * Projeção operacional das Fichas para o Painel do Mestre.
- * Nunca retorna o objeto completo da Ficha. Somente personagens ativos,
- * pertencentes a jogadores ainda aprovados na Mesa, e somente ao Mestre.
+ * As dependências de regras são injetadas para manter este módulo isolado
+ * enquanto servidor/fichas.js e app/js/regras.js permanecem na main do Claude.
  */
-const REGRAS = require('../app/js/regras.js');
-const LIVRO = require('../app/js/dados-livro.js');
-
 const mesmo = (a, b) => String(a ?? '').toLocaleLowerCase('pt-BR') === String(b ?? '').toLocaleLowerCase('pt-BR');
 
-function criarResumoFichasMestre({ carregar, infoMesa }) {
+function criarResumoFichasMestre({ carregar, infoMesa, calcular, condicoesCatalogo = [] }) {
+  if (typeof calcular !== 'function') throw new TypeError('A função calcular das regras é obrigatória.');
+
   return {
     listar(mesaId, usuario) {
       const info = infoMesa(mesaId);
@@ -20,14 +19,14 @@ function criarResumoFichasMestre({ carregar, infoMesa }) {
       const aprovados = new Set((Array.isArray(info.aprovados) ? info.aprovados : []).map((nome) => String(nome).toLocaleLowerCase('pt-BR')));
       const todas = carregar() || {};
       const fichasMesa = todas[mesaId] && typeof todas[mesaId] === 'object' ? Object.values(todas[mesaId]) : [];
+      const catalogo = new Map(condicoesCatalogo.map((c) => [c.id, c.nome]));
 
       const fichas = fichasMesa
         .filter((f) => f && f.estado === 'ativa' && aprovados.has(String(f.usuario ?? '').toLocaleLowerCase('pt-BR')))
         .map((f) => {
           const dados = f.dados || {};
-          const calculados = REGRAS.calcular(dados);
+          const calculados = calcular(dados);
           const condicoes = Array.isArray(dados.jogo?.condicoes) ? dados.jogo.condicoes : [];
-          const catalogo = new Map((LIVRO.CONDICOES || []).map((c) => [c.id, c.nome]));
 
           // Lista explícita de campos permitidos. Não incluir dados, atributos,
           // perícias, habilidades, história, conceito, inventário ou anotações.
