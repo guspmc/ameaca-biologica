@@ -39,7 +39,14 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
         if(typeof p.criaturaId!=='string'||p.criaturaId.length>80||!Number.isInteger(pvMaximo)||pvMaximo<1||pvMaximo>9999||
           !Number.isInteger(pvAtual)||pvAtual<0||pvAtual>pvMaximo||!Number.isInteger(defesa)||defesa<0||defesa>100||
           typeof p.movimento!=='string'||p.movimento.length>80) return {erro:'Dados de ficha da Criatura inválidos.'};
-        Object.assign(participante,{criaturaId:p.criaturaId,pvAtual,pvMaximo,defesa,movimento:p.movimento});
+        const extra={criaturaId:p.criaturaId,pvAtual,pvMaximo,defesa,movimento:p.movimento};
+        if(p.perseguidor){
+          const pvPerseguicaoMaximo=Number(p.pvPerseguicaoMaximo),pvCombateMaximo=p.pvCombateMaximo==null?null:Number(p.pvCombateMaximo);
+          if(p.fase!=='perseguicao'&&p.fase!=='combate'||!Number.isInteger(pvPerseguicaoMaximo)||pvPerseguicaoMaximo<1||pvPerseguicaoMaximo>9999||
+            (pvCombateMaximo!==null&&(!Number.isInteger(pvCombateMaximo)||pvCombateMaximo<1||pvCombateMaximo>9999)))return {erro:'Dados da Fase de Perseguição inválidos.'};
+          Object.assign(extra,{perseguidor:true,fase:p.fase,pvPerseguicaoMaximo,pvCombateMaximo});
+        }
+        Object.assign(participante,extra);
       }
       participantes.push(participante);
     }
