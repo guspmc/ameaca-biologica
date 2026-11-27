@@ -27,10 +27,13 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - O layout da Ficha é desenho próprio (as páginas-modelo do livro são imagens e não puderam ser lidas); ajustar se o dono mandar capturas.
 - O **Painel do Mestre** será feito em branch separado (pelo ChatGPT) e conferido antes do merge. Nesta etapa só entrou em `painelDoMestre` (mesas.js) o cartão de aprovação de Fichas; manter isso mínimo.
 
+- v0.5: Arsenal. `app/js/dados-arsenal.js` (UMD, global `ARSENAL`: armas, ataques básicos, proteções + tabela Kendo, Peças Extras com compatibilidade, munições, consumíveis, expansões; copiado das tabelas do capítulo 3) e extensões de `regras.js`: itens do catálogo (`ref`, `mun`, `pecas[]`, `equip`), `municoes`, `kendo.placas`; Espaços derivados (Requiem modular, Peças que mudam Espaços, munição por Espaço, Bolsa/Pochete pela maior), Defesa/RD pelo colete (limite de AGI), Movimento pela Fase da BI, Proficiência por Classe/Habilidade, `montarAtaque`/`resolverAtaque`/`rolarExpressao`, `recarregar`, `gastarMunicao`, `usarConsumivel`; `validar` confere Peças, carregador, colete único e Inventário acima do limite. Tela em `app/js/arsenal-ui.js` (carregado depois de `ficha.js`). Ficha Ativa agora também salva `municoes` e `kendo`. Corrigido: enviar a Ficha para aprovação perdia a última edição (agora salva antes). Testes: `teste-arsenal.js` + UI no Chromium (fora do repositório).
+- Pontos do Arsenal a conferir com o dono: dano das Armas Especiais/Magnums usa a regra geral (dados + AGI); Rajada usa o dano normal da arma (Reflexos DT 12 metade); Disparo Cadenciado = +2 dados do mesmo tipo; Mira Laser = Mirar sem gastar SA (o app não controla "1 vez por turno"); Besta/Engate Triplo, Lança-Chamas (acúmulo de dados), Granada/Mina e Receitas ficam só como texto.
+
 ## Próximas etapas
-1. Arsenal: catálogo de armas/itens do livro (hoje o inventário é livre, com Espaços) e cálculo de ataque/dano.
-2. Painel do Mestre (branch separado): resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
-3. Instalação do PWA no modo local (ver "Limitações" no README).
+1. Painel do Mestre (branch separado, pelo ChatGPT): resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
+2. Instalação do PWA no modo local (ver "Limitações" no README).
+3. Depois: Receitas/criação de itens, regras de Descanso, tabela de Condições com efeitos automáticos.
 
 ## Como testar (aqui)
 - `npm test`: servidor, rotas, presença em tempo real, portas e QR (só Node).
@@ -41,7 +44,7 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - `servidor/server.js`: HTTP + SSE + JSON. Rotas: `GET /api/status`, `POST /api/entrar`, `GET /api/eventos?token=`, `GET /api/qr?texto=`, `/api/mesas*` (ver `servidor/mesas.js`). Escolha de porta em `ouvir`.
 - `servidor/mesas.js`: regras das Mesas (código, limites, aprovação), guarda em `mesas.json`.
 - `app/js/mesas.js`: telas de Mesas (lista, criar, Painel do Mestre, visão do Jogador).
-- `app/js/ficha.js`, `app/js/regras.js`, `app/js/dados-livro.js`: Ficha de Personagem (tela, regras, dados do livro). `servidor/fichas.js`: regras e guarda das Fichas.
+- `app/js/ficha.js`, `app/js/arsenal-ui.js`, `app/js/regras.js`, `app/js/dados-livro.js`, `app/js/dados-arsenal.js`: Ficha de Personagem (tela, Arsenal na tela, regras, dados do livro, dados do Arsenal). `servidor/fichas.js`: regras e guarda das Fichas.
 - `servidor/qr.js`: gerador de QR (byte, correção M, versões 1 a 9).
 - `app/js/app.js`: login, estado Offline/Local, conexão, descoberta de porta, QR, renderização.
 - `app/sw.js`: cache offline (aumente `VERSAO` ao mudar a lista de arquivos).

@@ -199,3 +199,19 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 @media (min-width: 700px) { .barra-superior, .barra-inferior { padding-left: calc(50% - 280px); padding-right: calc(50% - 280px); } }
 input[type="checkbox"], input[type="radio"] { width: auto; }
 .painel-rolagem .linha label { display: flex; align-items: center; gap: 8px; color: var(--texto); }
+/* Arsenal (v0.5) */
+.item-arsenal, .cartao-ataque { border: 1px solid var(--borda); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+.item-topo { display: flex; align-items: center; gap: 8px; }
+.item-topo strong { flex: 1; }
+.item-arsenal .dica, .cartao-ataque .dica { margin: 4px 0; }
+.linha-municao { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.linha-municao input { width: 70px; }
+.pecas { margin: 6px 0; }
+.peca-linha { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 0.85rem; }
+.peca-linha span { flex: 1; }
+.seletor-arsenal { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 6px; }
+.municoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+.municao-item { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border: 1px solid var(--borda); border-radius: 10px; color: var(--texto); }
+.opcoes-ataque { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.opcoes-ataque select { width: auto; }
+.cartao-ataque .botao.primario { width: 100%; }

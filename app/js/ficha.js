@@ -424,8 +424,12 @@ function secaoCombate(d) {
     h('h3', {}, 'Dados de Combate'),
     h('div', { class: 'combate-stats' },
       h('div', { class: 'stat-linha' }, h('span', {}, 'Defesa'), h('strong', {}, String(calc.defesa))),
+      h('div', { class: 'stat-linha' }, h('span', {}, 'RD'), h('strong', {}, String(calc.rd))),
       h('div', { class: 'stat-linha' }, h('span', {}, 'Iniciativa'), h('strong', {}, String(calc.iniciativa))),
       h('div', { class: 'stat-linha' }, h('span', {}, 'Movimento'), h('strong', {}, calc.movimento + ' m'))),
+
+    h('h3', {}, 'Ataques'),
+    painelAtaques(d),
 
     h('h3', {}, 'Passivos'),
     h('div', { class: 'combate-stats' },
@@ -452,7 +456,7 @@ function secaoInventario(d) {
   const maximo = calc ? calc.inventarioMax : 4;
 
   function adicionarItem() {
-    fichaAtual.dados.itens.push({ nome: 'Novo item', espacos: 1, nota: '' });
+    fichaAtual.dados.itens.push({ nome: 'Novo item', espacos: 1, nota: '', ref: '', mun: 0, pecas: [], equip: false });
     agendarSalvarFicha();
     renderizarEditor();
     // Foca no nome do último item.
@@ -464,6 +468,7 @@ function secaoInventario(d) {
 
   function removerItem(idx) {
     fichaAtual.dados.itens.splice(idx, 1);
+    limparAtaques();
     agendarSalvarFicha();
     renderizarEditor();
   }
@@ -481,7 +486,7 @@ function secaoInventario(d) {
   }
 
   const listaItens = h('div', { id: 'lista-itens' },
-    d.itens.map((item, idx) =>
+    d.itens.map((item, idx) => item.ref ? linhaItemArsenal(item, idx, () => removerItem(idx)) :
       h('div', { class: 'item-linha' },
         h('input', { class: 'item-nome', type: 'text', placeholder: 'Nome do item', value: item.nome, maxlength: '60',
           oninput: (e) => mudouItem(idx, 'nome', e.target.value) }),
@@ -521,9 +526,14 @@ function secaoInventario(d) {
           }).filter(Boolean))
       : null,
 
+    avisoDoArsenal(),
     listaItens,
 
-    h('button', { type: 'button', class: 'botao pequeno', onclick: adicionarItem }, '+ Adicionar item'),
+    seletorArsenal(d),
+    h('button', { type: 'button', class: 'botao pequeno', onclick: adicionarItem }, '+ Item livre'),
+
+    h('h3', {}, 'Munição (reserva)'),
+    painelMunicao(d),
 
     h('label', { for: 'fi-moedas' }, 'Moedas Antigas (até 3 por Espaço)'),
     h('input', { id: 'fi-moedas', type: 'number', min: '0', max: '99', value: d.moedas,
@@ -549,7 +559,7 @@ async function salvarFichaAgora() {
   if (!fichaAtual || !estado.mesaId) return;
   const dd = fichaAtual.dados;
   const corpo = fichaAtual.estado === 'ativa'
-    ? { jogo: dd.jogo, itens: dd.itens, moedas: dd.moedas, anotacoes: dd.anotacoes }
+    ? { jogo: dd.jogo, itens: dd.itens, municoes: dd.municoes, kendo: dd.kendo, moedas: dd.moedas, anotacoes: dd.anotacoes }
     : fichaAtual.dados;
   try {
     await apiFichas('/fichas/' + encodeURIComponent(fichaAtual.id), 'PUT', corpo);
@@ -691,6 +701,9 @@ async function criarNovaFicha() {
 
 async function enviarParaAprovacao() {
   try {
+    // Salva já o que ainda esperava o salvamento automático; senão a última edição se perderia.
+    clearTimeout(timerSalvarJogo);
+    await apiFichas('/fichas/' + encodeURIComponent(fichaAtual.id), 'PUT', fichaAtual.dados);
     await apiFichas('/fichas/' + encodeURIComponent(fichaAtual.id) + '/solicitar', 'POST');
     fichaAtual.estado = 'pendente';
     renderizarEditor();

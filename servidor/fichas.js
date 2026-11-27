@@ -122,7 +122,7 @@ function criarFichas({ carregar, salvar, infoMesa }) {
     // ---- Edição ----
 
     // Rascunho: salva dados normalizados (tudo, exceto limite de nível).
-    // Ativa: salva só campos de jogo (pv, pvTemp, sa, bi, condicoes) e inventário (itens, moedas, anotações).
+    // Ativa: salva só campos de jogo (pv, pvTemp, sa, bi, condicoes) e inventário (itens, munições, Kendo, moedas, anotações).
     // Pendente: bloqueada.
     salvar(mesaId, usuario, fichaId, dadosEntrada) {
       const r = verificarAcesso(mesaId, usuario);
@@ -146,6 +146,8 @@ function criarFichas({ carregar, salvar, infoMesa }) {
           jogo: j,
           itens: Array.isArray(e.itens) ? e.itens : f.dados.itens,
           moedas: e.moedas !== undefined ? e.moedas : f.dados.moedas,
+          municoes: e.municoes && typeof e.municoes === 'object' ? e.municoes : f.dados.municoes,
+          kendo: e.kendo && typeof e.kendo === 'object' ? e.kendo : f.dados.kendo,
           anotacoes: e.anotacoes !== undefined ? e.anotacoes : f.dados.anotacoes,
         });
         // Garante que pv/sa não passam do máximo atual.

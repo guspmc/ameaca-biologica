@@ -8,9 +8,9 @@
  * Funciona no navegador (variável global REGRAS) e no Node (require).
  */
 (function (raiz, fabrica) {
-  if (typeof module === 'object' && module.exports) module.exports = fabrica(require('./dados-livro.js'));
-  else raiz.REGRAS = fabrica(raiz.LIVRO);
-})(typeof self !== 'undefined' ? self : this, function (LIVRO) {
+  if (typeof module === 'object' && module.exports) module.exports = fabrica(require('./dados-livro.js'), require('./dados-arsenal.js'));
+  else raiz.REGRAS = fabrica(raiz.LIVRO, raiz.ARSENAL);
+})(typeof self !== 'undefined' ? self : this, function (LIVRO, ARSENAL) {
   const LIMITES = { rascunhos: 5, ativas: 3, nivelMax: 10, itens: 60 };
   const ATRIBUTO_IDS = LIVRO.ATRIBUTOS.map((a) => a.id);
   const PERICIA_IDS = LIVRO.PERICIAS.map((p) => p.id);
@@ -53,11 +53,29 @@
       if (habilidadePorId(id) && !habilidades.includes(id)) habilidades.push(id);
     }
 
-    const itens = (Array.isArray(d.itens) ? d.itens : []).slice(0, LIMITES.itens).map((i) => ({
-      nome: texto(i && i.nome, 60),
-      espacos: inteiro(i && i.espacos, 0, 20, 1),
-      nota: texto(i && i.nota, 200),
-    }));
+    const itens = (Array.isArray(d.itens) ? d.itens : []).slice(0, LIMITES.itens).map((i) => {
+      const ref = i && ARSENAL.itemPorId(i.ref) ? i.ref : '';
+      const cat = ref ? ARSENAL.itemPorId(ref) : null;
+      const pecas = [];
+      for (const pid of cat && cat.tipo === 'arma' && i && Array.isArray(i.pecas) ? i.pecas : []) {
+        if (ARSENAL.pecaPorId(pid) && !pecas.includes(pid)) pecas.push(pid);
+      }
+      return {
+        nome: texto(i && i.nome, 60) || (cat ? cat.nome : ''),
+        espacos: inteiro(i && i.espacos, 0, 20, 1),
+        nota: texto(i && i.nota, 200),
+        ref,
+        mun: inteiro(i && i.mun, 0, 999, 0),
+        pecas: pecas.slice(0, 3),
+        equip: !!(cat && cat.tipo === 'protecao' && i.equip),
+      };
+    });
+
+    const municoes = {};
+    for (const m of ARSENAL.MUNICOES) {
+      const q = inteiro(d.municoes && d.municoes[m.id], 0, 9999, 0);
+      if (q > 0) municoes[m.id] = q;
+    }
 
     const j = d.jogo && typeof d.jogo === 'object' ? d.jogo : {};
     const condicoes = [];
@@ -81,6 +99,8 @@
       equipamentoInicial: dentro(d.equipamentoInicial, ['A', 'B', 'C']),
       bonus,
       itens,
+      municoes,
+      kendo: { placas: inteiro(d.kendo && d.kendo.placas, 0, 3, 0) },
       moedas: inteiro(d.moedas, 0, 99, 0),
       anotacoes: texto(d.anotacoes, 3000),
       // Valores de jogo (mudam durante a partida). null = "cheio" (igual ao máximo).
@@ -130,6 +150,50 @@
     return { colapso: false, fase: Math.floor((bi * 5) / biMax) + 1 };
   }
 
+  /* ---------- Arsenal: Espaços, proteção, capacidade ---------- */
+
+  const catalogo = (item) => (item && item.ref ? ARSENAL.itemPorId(item.ref) : null);
+  const pecasDoItem = (item) => (item.pecas || []).map(ARSENAL.pecaPorId).filter(Boolean);
+
+  // Espaços que o item ocupa (item do Arsenal: valor do livro; item livre: o que a pessoa digitou).
+  function espacosDoItem(item) {
+    const cat = catalogo(item);
+    if (!cat) return item.espacos;
+    if (cat.tipo !== 'arma') return cat.espacos ?? 1; // sem Espaços indicados no livro, o item ocupa 1
+    const pecas = pecasDoItem(item);
+    let e = cat.modular ? (pecas.length >= 2 ? 2 : 1) : cat.espacos;
+    for (const p of pecas) if (p.mods.espacosArma) e = Math.max(e, p.mods.espacosArma);
+    return e;
+  }
+
+  const espacosMunicao = (municoes) =>
+    ARSENAL.MUNICOES.reduce((s, m) => s + Math.ceil((municoes[m.id] || 0) / m.porEspaco), 0);
+
+  // Colete equipado (só um vale): { def, rd, capAgi } ou null.
+  function protecaoEquipada(d) {
+    const item = d.itens.find((i) => i.equip && catalogo(i) && catalogo(i).tipo === 'protecao');
+    if (!item) return null;
+    const cat = catalogo(item);
+    const v = cat.kendo ? ARSENAL.KENDO[d.kendo.placas] : cat;
+    return { nome: item.nome, def: v.def, rd: v.rd, capAgi: v.capAgi };
+  }
+
+  // Bolsa e Pochete não acumulam: vale a maior.
+  const bonusExpansao = (d) =>
+    d.itens.reduce((m, i) => { const c = catalogo(i); return c && c.tipo === 'expansao' ? Math.max(m, c.bonus) : m; }, 0);
+
+  // Capacidade máxima do carregador (base + Peças).
+  function capacidadeDaArma(item) {
+    const cat = catalogo(item);
+    if (!cat || cat.pente == null) return 0;
+    let cap = cat.pente;
+    for (const p of pecasDoItem(item)) {
+      const c = p.mods.capacidade;
+      cap += typeof c === 'object' ? (c[cat.familia] || 0) : (c || 0);
+    }
+    return cap;
+  }
+
   function calcular(d) {
     const classe = classePorId(d.classe);
     const a = d.atributos;
@@ -155,18 +219,34 @@
     const sa = d.jogo.sa == null ? saMax : Math.min(d.jogo.sa, saMax);
     const bi = Math.min(d.jogo.bi, Math.max(biMax, 0));
 
-    const espacosItens = d.itens.reduce((s, i) => s + i.espacos, 0);
+    const espacosItens = d.itens.reduce((s, i) => s + espacosDoItem(i), 0) + espacosMunicao(d.municoes);
     const espacosMoedas = Math.ceil(d.moedas / 3);
+
+    // Defesa: 10 + AGI (limitada pelo colete) + colete + bônus. Desorientado perde AGI; Exposto -2.
+    const prot = protecaoEquipada(d);
+    const cond = d.jogo.condicoes;
+    let agiDefesa = cond.includes('desorientado') ? 0 : a.AGI;
+    if (prot && prot.capAgi != null) agiDefesa = Math.min(agiDefesa, prot.capAgi);
+    const defesa = 10 + agiDefesa + (prot ? prot.def : 0) + b.defesa - (cond.includes('exposto') ? 2 : 0);
+
+    // Movimento: Fase 2 a 4 da BI +3 m; Fase 5 -6 m (perde os benefícios); Intoxicado -3 m.
+    const fase = faseBI(bi, biMax);
+    let movimento = 9 + b.movimento;
+    if (fase.fase >= 2 && fase.fase <= 4) movimento += 3;
+    else if (fase.fase === 5) movimento -= 6;
+    if (cond.includes('intoxicado')) movimento -= 3;
+    movimento = Math.max(0, movimento);
 
     return {
       pvMax, saMax, biMax, pv, sa, bi, pvTemp: d.jogo.pvTemp,
       vulneravel: pvMax > 0 && pv * 5 <= pvMax,
       desacordado: pvMax > 0 && pv === 0,
-      faseBI: faseBI(bi, biMax),
-      defesa: 10 + a.AGI + b.defesa,
+      faseBI: fase,
+      defesa,
+      rd: prot ? prot.rd : 0,
       iniciativa: a.AGI,
-      movimento: 9 + b.movimento,
-      inventarioMax: 4 + a.FOR + b.inventario,
+      movimento,
+      inventarioMax: 4 + a.FOR + b.inventario + bonusExpansao(d),
       inventarioUsado: espacosItens + espacosMoedas,
       pericias, graus,
       passivos: {
@@ -191,15 +271,245 @@
     };
   }
 
+  /* ---------- Arsenal: Proficiência, ataque e dano (capítulo 3) ---------- */
+
+  const ORDEM_GRAU = ['comum', 'tatica', 'militar', 'exotica'];
+  const ate = (grau, limite) => ORDEM_GRAU.indexOf(grau) <= ORDEM_GRAU.indexOf(limite);
+
+  // Proficiência por Classe (e Habilidades que a ampliam). Corpo a Corpo Comum/Tática: todas as Classes.
+  function temProficiencia(d, arma) {
+    if (!arma || !arma.familia) return true;
+    if (arma.familia === 'corpo') return !arma.grau || ate(arma.grau, 'tatica');
+    const hab = (id) => d.habilidades.includes(id);
+    if (d.classe === 'agente') {
+      if (arma.id === 'gm-79' || arma.id === 'killer7') return true;
+      if (arma.familia === 'pistola' || arma.familia === 'smg') return ate(arma.grau, 'militar');
+      if (arma.familia === 'escopeta') return ate(arma.grau, 'tatica');
+      return false;
+    }
+    if (d.classe === 'autodidata') {
+      if (arma.familia === 'pistola') return ate(arma.grau, 'tatica');
+      if (arma.familia === 'escopeta') return arma.grau === 'comum';
+      if (arma.familia === 'smg') return ate(arma.grau, 'tatica');
+      if (arma.familia === 'magnum') return hab('arsenal-improvavel');
+      return false;
+    }
+    if (d.classe === 'operador') {
+      if (arma.familia === 'magnum' || arma.familia === 'especial') return hab('armamento-especial');
+      return true;
+    }
+    return false;
+  }
+
+  /* Dados: "2d4+1d6+3" */
+  function somaDados(dano, extra) {
+    const m = /^(\d+)d(\d+)$/.exec(dano || '');
+    return m ? `${Number(m[1]) + extra}d${m[2]}` : dano;
+  }
+
+  // Rola uma expressão. explode: cada resultado máximo gera outro dado (Motosserra). rng devolve [0,1).
+  function rolarExpressao(expr, rng = Math.random, explode = false) {
+    const partes = [];
+    let total = 0;
+    const termos = String(expr || '').replace(/\s+/g, '').replace(/-/g, '+-').split('+').filter(Boolean);
+    for (const t of termos) {
+      const m = /^(-?)(\d+)d(\d+)$/.exec(t);
+      if (m) {
+        const sinal = m[1] ? -1 : 1;
+        const lado = Number(m[3]);
+        const dados = [];
+        const n = Math.min(Number(m[2]), 50);
+        for (let i = 0; i < n; i++) {
+          let v = 1 + Math.floor(rng() * lado);
+          dados.push(v);
+          let extras = 0;
+          while (explode && v === lado && extras < 20) { v = 1 + Math.floor(rng() * lado); dados.push(v); extras++; }
+        }
+        const soma = sinal * dados.reduce((s, x) => s + x, 0);
+        partes.push({ termo: t, dados, soma });
+        total += soma;
+      } else if (/^-?\d+$/.test(t)) {
+        partes.push({ termo: t, dados: [], soma: Number(t) });
+        total += Number(t);
+      }
+    }
+    return { total, partes };
+  }
+
+  // Fontes de ataque: itens da Ficha ligados a uma arma do Arsenal + ataques básicos.
+  function armasDaFicha(d) {
+    const lista = [];
+    d.itens.forEach((item, idx) => { const c = catalogo(item); if (c && c.tipo === 'arma') lista.push({ idx, item, cat: c }); });
+    return lista;
+  }
+
+  const DESV_CONDICOES = { cego: 'Cego', caido: 'Caído', imobilizado: 'Imobilizado', intoxicado: 'Intoxicado' };
+
+  /*
+   * Monta o ataque sem rolar nada. fonte = item da Ficha (arma do Arsenal) ou o id de um ataque básico.
+   * op = { modo: 'normal'|'cadenciado'|'rajada'|'carregado', arremesso, mirar, vantagem, desvantagem }
+   */
+  function montarAtaque(d, c, fonte, op = {}) {
+    const basico = typeof fonte === 'string' ? ARSENAL.ATAQUES_BASICOS.find((a) => a.id === fonte) : null;
+    const item = basico ? null : fonte;
+    const cat = basico ? { ...basico, familia: 'corpo', pente: null } : catalogo(item);
+    if (!cat || (!basico && cat.tipo !== 'arma')) return null;
+    const pecas = item ? pecasDoItem(item) : [];
+    const avisos = [];
+    const corpo = cat.familia === 'corpo';
+    const arremesso = !!op.arremesso && (basico ? !!basico.arremesso : !!cat.arremessavel || /Arremess/.test(cat.props || ''));
+    const aCorpo = corpo && !arremesso;
+    const periciaId = aCorpo ? 'luta' : 'pontaria';
+    const atributo = aCorpo ? 'FOR' : 'AGI';
+
+    // Modo
+    let modo = ['cadenciado', 'rajada', 'carregado'].includes(op.modo) ? op.modo : 'normal';
+    const proficiente = temProficiencia(d, cat);
+    const habilitaCad = pecas.some((p) => p.mods.habilitaCadenciado);
+    if (cat.soRajada) modo = 'rajada';
+    if (modo === 'cadenciado' && !(cat.cadenciado || habilitaCad)) { modo = 'normal'; avisos.push('Esta arma não permite Disparo Cadenciado.'); }
+    if (modo === 'rajada' && !cat.rajada) { modo = 'normal'; avisos.push('Esta arma não permite Rajada.'); }
+    if (modo === 'carregado' && !cat.carregado) modo = 'normal';
+    if ((modo === 'cadenciado' || modo === 'rajada') && !proficiente) { modo = 'normal'; avisos.push('Sem Proficiência não há Rajada nem Disparo Cadenciado.'); }
+
+    // Consumo de munição
+    let consumo = 0;
+    if (!corpo) {
+      consumo = cat.consumo || 1;
+      if (modo === 'cadenciado') consumo = habilitaCad && cat.id === 'matilda' ? 3 : 5;
+      if (modo === 'rajada') consumo = 10;
+      if (modo === 'carregado') consumo = cat.carregado.consumo;
+    }
+
+    // Dano
+    let dados = cat.dano;
+    if (modo === 'carregado') dados = cat.carregado.dano;
+    if (modo === 'cadenciado') dados = somaDados(dados, 2);
+    for (const p of pecas) if (p.mods.danoDados) dados = somaDados(dados, p.mods.danoDados);
+    const extras = [];
+    for (const p of pecas) if (p.mods.danoExtra) extras.push(p.mods.danoExtra);
+    if (!corpo && d.habilidades.includes('armeira-autodidata')) for (let i = 0; i < pecas.length; i++) extras.push('1d4');
+    const fase = c.faseBI.fase;
+    if (aCorpo && fase === 4) extras.push('1d4');
+    const fixo = cat.mortal ? 0 : d.atributos[atributo];
+    const semDano = !!cat.mortal || !dados;
+    const formula = semDano ? '' : [dados, ...extras, ...(fixo ? [String(fixo)] : [])].join('+');
+
+    // Teste de ataque
+    const partes = [{ nome: LIVRO.PERICIAS.find((p) => p.id === periciaId).nome, valor: c.pericias[periciaId] }];
+    if (fase === 3) partes.push({ nome: 'BI Fase 3', valor: 2 });
+    if (fase === 4) partes.push({ nome: 'BI Fase 4', valor: 3 });
+    if (d.habilidades.includes('armeiro') && pecas.length) partes.push({ nome: 'Armeiro', valor: pecas.length });
+    if (op.mirar && !corpo) partes.push({ nome: 'Mirar', valor: 2 });
+    const bonus = partes.reduce((s, p) => s + p.valor, 0);
+
+    const motivosDesv = [];
+    if (op.desvantagem) motivosDesv.push('marcada por você');
+    if (!proficiente) motivosDesv.push('sem Proficiência');
+    if (cat.desvantagem) motivosDesv.push(cat.nome);
+    if (fase === 5) motivosDesv.push('BI Fase 5');
+    for (const [id, nome] of Object.entries(DESV_CONDICOES)) if (d.jogo.condicoes.includes(id)) motivosDesv.push(nome);
+    const vant = !!op.vantagem;
+    const desv = motivosDesv.length > 0;
+    const vantagem = vant && !desv ? 'vantagem' : desv && !vant ? 'desvantagem' : 'normal';
+    if (d.jogo.condicoes.some((x) => ['atordoado', 'incapacitado', 'desorientado'].includes(x))) avisos.push('Uma Condição da Ficha impede Atacar.');
+
+    let crit = cat.crit;
+    for (const p of pecas) if (p.mods.crit) crit -= p.mods.crit;
+    crit = Math.max(2, crit);
+
+    const municaoAtual = item ? item.mun : 0;
+    const semMunicao = !corpo && consumo > municaoAtual;
+    return {
+      nome: cat.nome, familia: cat.familia, modo, arremesso, proficiente, avisos,
+      pericia: periciaId, partes, bonus,
+      vantagem, motivosDesv, dados, extras, fixo, formula, semDano,
+      crit, mult: cat.mult, explode: !!cat.explode,
+      rolaAtaque: modo !== 'rajada' && !cat.mortal,
+      salvamento: modo === 'rajada' ? 'Rajada em Cone de 4,5 m: Reflexos DT 12 (sucesso sofre metade).' : '',
+      consumo, municaoAtual, semMunicao, municaoId: cat.municao || null,
+      mortal: !!cat.mortal,
+    };
+  }
+
+  // Rola o ataque montado. Devolve tudo o que a tela precisa mostrar.
+  function resolverAtaque(m, rng = Math.random) {
+    if (!m.rolaAtaque) {
+      const area = m.semDano ? null : rolarExpressao(m.formula, rng, m.explode);
+      return { d20: [], escolhido: null, total: null, critico: false, critSeAcertar: false, dano: area, danoCritico: null };
+    }
+    const qtd = m.vantagem === 'normal' ? 1 : 2;
+    const d20 = Array.from({ length: qtd }, () => 1 + Math.floor(rng() * 20));
+    const escolhido = m.vantagem === 'desvantagem' ? Math.min(...d20) : Math.max(...d20);
+    const dano = m.semDano ? null : rolarExpressao(m.formula, rng, m.explode);
+    const critico = escolhido === 20;
+    const critSeAcertar = !critico && m.crit < 20 && escolhido >= m.crit;
+    return {
+      d20, escolhido, total: escolhido + m.bonus, critico, critSeAcertar, dano,
+      danoCritico: dano ? dano.total * m.mult : null,
+    };
+  }
+
+  // Gasta munição do pente (o que tem no pente é da arma; a reserva fica em d.municoes). Devolve true se gastou.
+  function gastarMunicao(item, consumo) {
+    if (consumo > item.mun) return false;
+    item.mun -= consumo;
+    return true;
+  }
+
+  // Recarrega a arma com a munição da reserva. Devolve quantas unidades entraram.
+  function recarregar(d, item) {
+    const cat = catalogo(item);
+    if (!cat || cat.pente == null || !cat.municao) return 0;
+    const falta = Math.max(0, capacidadeDaArma(item) - item.mun);
+    const reserva = d.municoes[cat.municao] || 0;
+    const n = Math.min(falta, reserva);
+    item.mun += n;
+    const resto = reserva - n;
+    if (resto > 0) d.municoes[cat.municao] = resto; else delete d.municoes[cat.municao];
+    return n;
+  }
+
+  // Usa um consumível de cura. manual = { cura, bi, pvTemp } (valores rolados fora do app). Remove o item.
+  function usarConsumivel(d, idx, opcoes = {}) {
+    const item = d.itens[idx];
+    const cat = catalogo(item);
+    if (!cat || cat.tipo !== 'consumivel' || cat.uso === false) return null;
+    const c = calcular(d);
+    const rng = opcoes.rng || Math.random;
+    const manual = opcoes.manual || {};
+    const rel = { nome: cat.nome, cura: 0, bi: 0, pvTemp: 0, semIntoxicacao: false, texto: [] };
+    const valor = (chave, expr) => (manual[chave] != null ? Math.max(0, Math.trunc(Number(manual[chave])) || 0) : rolarExpressao(expr, rng).total);
+    let pv = c.pv;
+    if (cat.curaTotal) { rel.cura = c.pvMax - pv; pv = c.pvMax; rel.texto.push('Recupera todos os PV'); }
+    else if (cat.cura) { rel.cura = valor('cura', cat.cura); pv = Math.min(c.pvMax, pv + rel.cura); rel.texto.push(`+${rel.cura} PV`); }
+    d.jogo.pv = pv >= c.pvMax ? null : pv;
+    if (cat.bi) { rel.bi = valor('bi', cat.bi); d.jogo.bi = Math.max(0, d.jogo.bi - rel.bi); rel.texto.push(`-${rel.bi} BI`); }
+    if (cat.pvTemp) { rel.pvTemp = valor('pvTemp', cat.pvTemp); d.jogo.pvTemp = Math.max(d.jogo.pvTemp, rel.pvTemp); rel.texto.push(`${rel.pvTemp} PV Temporários`); }
+    if (cat.semIntoxicacao) {
+      const k = d.jogo.condicoes.indexOf('intoxicado');
+      if (k >= 0) { d.jogo.condicoes.splice(k, 1); rel.semIntoxicacao = true; rel.texto.push('Intoxicação removida'); }
+    }
+    d.itens.splice(idx, 1);
+    return rel;
+  }
+
   // Itens que a escolha de Equipamento Inicial acrescenta (Erva Verde + Lanterna Simples + opção da Classe).
   function equipamentoInicial(classeId, opcao) {
     const classe = classePorId(classeId);
     const escolha = classe && classe.equipamento[opcao];
     if (!escolha) return null;
-    return {
-      itens: [...LIVRO.EQUIPAMENTO_COMUM, ...escolha.itens].map((i) => ({ nome: i.nome, espacos: i.espacos, nota: '' })),
-      moedas: escolha.moedas,
-    };
+    // Itens que existem no Arsenal viram itens do catálogo (arma já carregada, colete já equipado).
+    const itens = [...LIVRO.EQUIPAMENTO_COMUM, ...escolha.itens].map((i) => {
+      const cat = ARSENAL.itemPorNome(i.nome);
+      if (!cat) return { nome: i.nome, espacos: i.espacos, nota: '', ref: '', mun: 0, pecas: [], equip: false };
+      return {
+        nome: cat.nome, espacos: cat.espacos, nota: '', ref: cat.id, pecas: [],
+        mun: cat.tipo === 'arma' && cat.pente != null ? cat.pente : 0,
+        equip: cat.tipo === 'protecao',
+      };
+    });
+    return { itens, moedas: escolha.moedas };
   }
 
   /* ---------- Validação ---------- */
@@ -282,11 +592,30 @@
       }
     }
 
+    // Arsenal: Peças compatíveis e em número permitido, carregador, colete e Espaços
+    for (const item of d.itens) {
+      const cat = catalogo(item);
+      if (!cat) continue;
+      if (cat.tipo === 'arma') {
+        const pecas = pecasDoItem(item);
+        if (pecas.length > cat.pecas) erros.push(`${item.nome}: só aceita ${cat.pecas} Peça(s) Extra(s).`);
+        for (const p of pecas) if (!ARSENAL.pecaServe(p, cat)) erros.push(`${item.nome}: a Peça ${p.nome} não serve nesta arma.`);
+        if (cat.pente != null && item.mun > capacidadeDaArma(item)) erros.push(`${item.nome}: o carregador comporta ${capacidadeDaArma(item)}.`);
+      }
+    }
+    if (d.itens.filter((i) => i.equip).length > 1) erros.push('Só um colete pode ficar equipado.');
+    const c2 = calcular(d);
+    if (c2.inventarioUsado > c2.inventarioMax) {
+      erros.push(`Inventário acima do limite: ${c2.inventarioUsado} Espaços usados para ${c2.inventarioMax}.`);
+    }
+
     return { erros, pendencias };
   }
 
   return {
     LIMITES, novaFicha, normalizar, calcular, validar, vagasDeHabilidade, equipamentoInicial,
+    espacosDoItem, capacidadeDaArma, protecaoEquipada, temProficiencia, armasDaFicha, montarAtaque, resolverAtaque,
+    gastarMunicao, recarregar, usarConsumivel, rolarExpressao, somaDados,
     origemPorId, classePorId, habilidadePorId, periciasGratuitas, outraPericiaDaOrigem,
   };
 });
