@@ -400,7 +400,7 @@ const servidor = http.createServer(async (req, res) => {
     }
 
     if (url.pathname.startsWith('/api/mesas/') && url.pathname.includes('/arquivos')) {
-      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\\s+/i, ''));
+      const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
       if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
       const partesArquivo = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
       if (partesArquivo.length < 4 || partesArquivo.length > 5 || partesArquivo[0] !== 'api' || partesArquivo[1] !== 'mesas' || partesArquivo[3] !== 'arquivos') {
