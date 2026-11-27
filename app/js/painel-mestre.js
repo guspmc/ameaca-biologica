@@ -357,6 +357,39 @@ async function carregarResumoFichasMestre() {
     carregandoResumoFichasMestre = false;
   }
 }
+function adicionarFichaAtivaAoCombate(ficha) {
+  if (!combateMestre || !ficha) {
+    mensagem($('aviso-mesa'), 'O combate ainda não está carregado. Tente novamente em instantes.', 'aviso');
+    return;
+  }
+  const nome = String(ficha.personagem || '').trim();
+  const agi = Number(ficha.iniciativa);
+  if (!nome || !Number.isInteger(agi) || agi < -10 || agi > 30) {
+    mensagem($('aviso-mesa'), 'Não foi possível obter nome e AGI válidos desta Ficha Ativa.', 'erro');
+    return;
+  }
+  if (combateMestre.participantes.length >= 30) {
+    mensagem($('aviso-mesa'), 'O combate aceita até 30 participantes.', 'aviso');
+    return;
+  }
+  if (combateMestre.participantes.some(p => p.nome.toLocaleLowerCase('pt-BR') === nome.toLocaleLowerCase('pt-BR'))) {
+    mensagem($('aviso-mesa'), 'Este personagem já está na ordem de combate.', 'aviso');
+    return;
+  }
+  const participante = {
+    id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()).slice(0, 40),
+    nome, tipo: 'personagem', agi, bonusIniciativa: agi,
+    d20: 0, iniciativa: 0,
+    entradaTardia: Boolean(combateMestre.combateAtivo),
+    ordem: combateMestre.participantes.length,
+  };
+  combateMestre.participantes.push(participante);
+  ordenarCombateMestre();
+  salvarCombateMestre();
+  montarResumoFichasMestre();
+  mensagem($('aviso-mesa'), nome + ' foi adicionado à iniciativa usando a AGI da Ficha Ativa.', 'info');
+  $('bloco-combate-mestre')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function montarResumoFichasMestre() {
   if (estado.mesaAtual?.papel !== 'mestre' || estado.tela !== 'mesa') return;
   const raiz = $('conteudo-mesa');
@@ -413,7 +446,18 @@ function montarResumoFichasMestre() {
     condicoes.textContent = ficha.condicoes?.length
       ? 'Condições: ' + ficha.condicoes.map(c => c.nome).join(', ')
       : 'Condições: nenhuma';
-    item.append(nome, jogador, recursos, combate, testes, condicoes);
+    const acoes = document.createElement('div');
+    acoes.className = 'linha';
+    const adicionar = document.createElement('button');
+    adicionar.type = 'button';
+    adicionar.className = 'botao pequeno primario';
+    const jaNaIniciativa = Boolean(combateMestre?.participantes.some(p =>
+      p.nome.toLocaleLowerCase('pt-BR') === String(ficha.personagem || '').toLocaleLowerCase('pt-BR')));
+    adicionar.textContent = jaNaIniciativa ? 'Já está na iniciativa' : 'Adicionar à iniciativa';
+    adicionar.disabled = jaNaIniciativa || !combateMestre || combateMestre.participantes.length >= 30;
+    adicionar.addEventListener('click', () => adicionarFichaAtivaAoCombate(ficha));
+    acoes.append(adicionar);
+    item.append(nome, jogador, recursos, combate, testes, condicoes, acoes);
     lista.append(item);
   }
 }
