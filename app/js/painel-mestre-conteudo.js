@@ -336,7 +336,7 @@ function montarConteudoMestre() {
   const notas = elemento('textarea'); notas.id = 'anotacoes-mestre'; notas.rows = 5; notas.maxLength = 12000; notas.placeholder = 'Pistas, decisões, nomes, acontecimentos…';
   const salvarNotas = elemento('button', 'Salvar anotações', 'botao'); salvarNotas.type = 'button';
   salvarNotas.addEventListener('click', () => { conteudoMestre.anotacoes = notas.value; salvarConteudoMestre(); });
-  anotacoes.append(notas, salvarNotas); card.append(anotacoes);
+  anotacoes.append(notas, salvarNotas); encontro.append(anotacoes);
 
   const docs = elemento('section', '', 'subpainel-mestre'); docs.dataset.secao = 'documentos'; paineis.documentos = docs; docs.append(elemento('h3', 'Documentos narrativos'));
   const fd = elemento('form', '', 'form-encontro-mestre');
@@ -383,7 +383,7 @@ function montarConteudoMestre() {
   itensSec.append(fi, elemento('ul', '', 'lista')); itensSec.lastChild.id = 'itens-mestre'; card.append(itensSec);
 
   const ulE = elemento('ul', '', 'lista'); ulE.id = 'encontros-mestre';
-  const eSec = elemento('section', '', 'subpainel-mestre'); eSec.append(elemento('h3', 'Encontros preparados'), ulE); card.append(eSec);
+  const eSec = elemento('section', '', 'subpainel-mestre'); eSec.dataset.secao = 'encontros'; eSec.append(elemento('h3', 'Encontros preparados'), ulE); encontro.append(eSec);
   raiz.append(card);
   trocarAba('itens');
   desenharConteudoMestre();
