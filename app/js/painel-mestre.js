@@ -126,10 +126,21 @@ function desenharCombateMestre(){
     li.append(identidade,dados,d20,remover);
     const condicoes=document.createElement('div');condicoes.className='combate-condicoes';
     for(const condicao of (p.condicoes||[])){
-      const tag=document.createElement('span');tag.className='condicao-combate';
-      tag.textContent=condicao.nome+' · '+(condicao.duracao||'duração não definida')+(condicao.observacao?' · '+condicao.observacao:'');
+      const tag=document.createElement('div');tag.className='condicao-combate';
+      const texto=document.createElement('span');texto.textContent=condicao.nome+' · '+(condicao.duracao||'duração não definida')+(condicao.observacao?' · '+condicao.observacao:'');
+      const editar=document.createElement('button');editar.type='button';editar.className='botao pequeno';editar.textContent='Editar';editar.setAttribute('aria-label','Editar duração e observação de '+condicao.nome);
       const excluir=document.createElement('button');excluir.type='button';excluir.className='botao pequeno';excluir.textContent='×';excluir.setAttribute('aria-label','Remover condição '+condicao.nome);
-      excluir.addEventListener('click',()=>removerCondicaoCombate(p.id,condicao.id));tag.append(excluir);condicoes.append(tag);
+      const editorEdicao=document.createElement('div');editorEdicao.className='condicao-edicao';editorEdicao.hidden=true;
+      const duracaoEdicao=document.createElement('input');duracaoEdicao.type='text';duracaoEdicao.maxLength=80;duracaoEdicao.value=condicao.duracao||'';duracaoEdicao.setAttribute('aria-label','Duração ou término de '+condicao.nome);
+      const observacaoEdicao=document.createElement('textarea');observacaoEdicao.rows=2;observacaoEdicao.maxLength=300;observacaoEdicao.value=condicao.observacao||'';observacaoEdicao.setAttribute('aria-label','Observação de '+condicao.nome);
+      const salvarEdicao=document.createElement('button');salvarEdicao.type='button';salvarEdicao.className='botao pequeno primario';salvarEdicao.textContent='Salvar';
+      const cancelarEdicao=document.createElement('button');cancelarEdicao.type='button';cancelarEdicao.className='botao pequeno';cancelarEdicao.textContent='Cancelar';
+      editar.addEventListener('click',()=>{editorEdicao.hidden=!editorEdicao.hidden;if(!editorEdicao.hidden)duracaoEdicao.focus();});
+      salvarEdicao.addEventListener('click',()=>{condicao.duracao=duracaoEdicao.value.trim()||'Conforme a fonte';condicao.observacao=observacaoEdicao.value.trim();salvarCombateMestre();});
+      cancelarEdicao.addEventListener('click',()=>{editorEdicao.hidden=true;});
+      excluir.addEventListener('click',()=>removerCondicaoCombate(p.id,condicao.id));
+      editorEdicao.append(duracaoEdicao,observacaoEdicao,salvarEdicao,cancelarEdicao);
+      tag.append(texto,editar,excluir,editorEdicao);condicoes.append(tag);
     }
     const seletor=document.createElement('select');seletor.id='condicao-selecao-'+p.id;seletor.className='condicao-seletor';seletor.setAttribute('aria-label','Selecionar condição para '+p.nome);
     const instrucao=document.createElement('option');instrucao.value='';instrucao.textContent='Selecionar condição oficial…';seletor.append(instrucao);
