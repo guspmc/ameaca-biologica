@@ -1,0 +1,703 @@
+[
+  {
+    "id": "infectado",
+    "nome": "Infectado",
+    "categoria": "Comum",
+    "pontos": 1,
+    "funcao": "Pressão lenta / infecção",
+    "tamanho": "Médio",
+    "pv": 15,
+    "defesa": 12,
+    "movimento": "6 m",
+    "atributos": {
+      "for": 2,
+      "agi": 0,
+      "vig": 2,
+      "ast": 0
+    },
+    "iniciativa": 0,
+    "resistencias": {
+      "fortitude": 4,
+      "reflexos": 0,
+      "vontade": 0,
+      "percepcao": 1
+    },
+    "ataques": [
+      "Mordida. +2 • 1d6+2 • Corpo a Corpo. Em Dano: +2 BI.",
+      "Agarrão. +2 • Corpo a Corpo. Usa a regra universal de Agarrar."
+    ],
+    "tracos": [
+      "V-ACT: Se derrotado sem fogo, destruição do crânio ou efeito que impeça regeneração, o Narrador pode ativar o V-ACT. Role 1d4+1. Após esse número de rodadas, pode retornar como Crimson Head.",
+      "Morto-vivo: não reage à dor narrativa comum."
+    ]
+  },
+  {
+    "id": "infectado-acido",
+    "nome": "Infectado Ácido",
+    "categoria": "Comum",
+    "pontos": 1,
+    "funcao": "Pressão lenta / infecção",
+    "tamanho": "Médio",
+    "pv": 22,
+    "defesa": 13,
+    "movimento": "6 m",
+    "atributos": {
+      "for": 2,
+      "agi": 1,
+      "vig": 3,
+      "ast": 0
+    },
+    "iniciativa": 1,
+    "resistencias": {
+      "fortitude": 5,
+      "reflexos": 2,
+      "vontade": 1,
+      "percepcao": 2
+    },
+    "ataques": [
+      "Jorro Ácido. +4 • 1d8 • Alcance Médio. Em Dano: Fortitude DT 12 ou Corrosão.",
+      "Mordida. +3 • 1d6+2 • Corpo a Corpo. Em Dano: +2 BI."
+    ],
+    "tracos": [
+      "Explosão Ácida: Ao chegar a 0 PV, explode em raio de 1,5 m. Reflexos DT 13. Falha: 1d6 + Corrosão. Sucesso: metade do Dano e sem Corrosão.",
+      "Morto-vivo: não reage à dor narrativa comum."
+    ]
+  },
+  {
+    "id": "cerberus",
+    "nome": "Cerberus",
+    "categoria": "Comum",
+    "pontos": 1,
+    "funcao": "Flanqueador / perseguição",
+    "tamanho": "Médio",
+    "pv": 12,
+    "defesa": 14,
+    "movimento": "15 m",
+    "atributos": {
+      "for": 2,
+      "agi": 4,
+      "vig": 2,
+      "ast": 0
+    },
+    "iniciativa": 4,
+    "resistencias": {
+      "fortitude": 2,
+      "reflexos": 6,
+      "vontade": 1,
+      "percepcao": 5
+    },
+    "ataques": [
+      "Investida. +4 • 1d6+2 • Corpo a Corpo. Se tiver se movido pelo menos 6 m em linha reta antes do Ataque: em acerto, Reflexos DT 12 ou Caído.",
+      "Mordida. +4 • 1d4+2 • Corpo a Corpo. Em Dano: +1 BI."
+    ],
+    "tracos": [
+      "Matilha: +2 no Teste de Ataque se outro Cerberus estiver adjacente ao mesmo alvo."
+    ]
+  },
+  {
+    "id": "fiador-de-teia",
+    "nome": "Fiador de Teia",
+    "categoria": "Comum",
+    "pontos": 1,
+    "funcao": "Pressão lenta / infecção",
+    "tamanho": "Médio",
+    "pv": 12,
+    "defesa": 13,
+    "movimento": "9 m. Escalada 9 m",
+    "atributos": {
+      "for": 1,
+      "agi": 3,
+      "vig": 1,
+      "ast": 0
+    },
+    "iniciativa": 3,
+    "resistencias": {
+      "fortitude": 2,
+      "reflexos": 5,
+      "vontade": 0,
+      "percepcao": 4
+    },
+    "ataques": [
+      "Mordida. +3 • 1d6+1 • Corpo a Corpo. Em Dano: Fortitude DT 12 ou Intoxicado por 1d4 rodadas +2 BI.",
+      "Teia. Ação • Alcance Curto. Reflexos DT 12. Falha: Imobilizado. Atletismo ou FOR DT 12 para romper."
+    ],
+    "tracos": [
+      "Escaladora. Ignora terreno vertical comum."
+    ]
+  },
+  {
+    "id": "corvo",
+    "nome": "Corvo",
+    "categoria": "Comum",
+    "pontos": 1,
+    "funcao": "Perturbação / enxame",
+    "tamanho": "Pequeno",
+    "pv": 8,
+    "defesa": 12,
+    "movimento": "3 m. Voo 15 m",
+    "atributos": {
+      "for": 0,
+      "agi": 4,
+      "vig": 1,
+      "ast": 0
+    },
+    "iniciativa": 4,
+    "resistencias": {
+      "fortitude": 1,
+      "reflexos": 6,
+      "vontade": 0,
+      "percepcao": 4
+    },
+    "ataques": [
+      "Bicada. +3 • 1d4+1 • Corpo a Corpo. Vantagem se outro Corvo ameaçar o mesmo alvo."
+    ],
+    "tracos": [
+      "Revoada: pode atravessar espaços ocupados por criaturas Médias ou maiores durante o voo sem provocar Ataque de Oportunidade. Não pode terminar o Movimento nesses espaços."
+    ]
+  },
+  {
+    "id": "g-infante",
+    "nome": "G Infante",
+    "categoria": "Comum",
+    "pontos": 1,
+    "funcao": "Perturbação / infecção",
+    "tamanho": "Pequeno",
+    "pv": 8,
+    "defesa": 13,
+    "movimento": "3 m. Nado 9 m",
+    "atributos": {
+      "for": 0,
+      "agi": 3,
+      "vig": 1,
+      "ast": 0
+    },
+    "iniciativa": 3,
+    "resistencias": {
+      "fortitude": 1,
+      "reflexos": 5,
+      "vontade": 0,
+      "percepcao": 3
+    },
+    "ataques": [
+      "Mordida. +3 • 1d4+1 • Corpo a Corpo. Em Dano: Fortitude DT 11 ou Intoxicado por 1 rodada +1 BI."
+    ],
+    "tracos": [
+      "Aquático.",
+      "Frágil: se sofrer Dano Massivo, é derrotado imediatamente."
+    ]
+  },
+  {
+    "id": "cabeca-carmesim",
+    "nome": "Cabeça Carmesim (Crimson Head)",
+    "categoria": "Perigosa",
+    "pontos": 2,
+    "funcao": "Flanqueador / perseguição",
+    "tamanho": "Médio",
+    "pv": 25,
+    "defesa": 14,
+    "movimento": "9 m",
+    "atributos": {
+      "for": 3,
+      "agi": 2,
+      "vig": 3,
+      "ast": 0
+    },
+    "iniciativa": 2,
+    "resistencias": {
+      "fortitude": 6,
+      "reflexos": 4,
+      "vontade": 2,
+      "percepcao": 2
+    },
+    "ataques": [
+      "Sequência Brutal. +4 • 2d4+3 • Corpo a Corpo.",
+      "Investida. +5 • 1d8+3 • Corpo a Corpo. Se tiver se movido ao menos 6 m em linha reta: em acerto, Fortitude DT 13 ou Caído."
+    ],
+    "tracos": [
+      "Imune à Dor: na primeira vez em cada combate que ficar Atordoado, a condição termina no início do próximo turno dele, mesmo que tivesse duração maior."
+    ]
+  },
+  {
+    "id": "cabeca-pustulenta",
+    "nome": "Cabeça Pustulenta",
+    "categoria": "Perigosa",
+    "pontos": 2,
+    "funcao": "Caçador veloz / punição de feridos",
+    "tamanho": "Médio",
+    "pv": 30,
+    "defesa": 15,
+    "movimento": "12 m",
+    "atributos": {
+      "for": 3,
+      "agi": 3,
+      "vig": 3,
+      "ast": 0
+    },
+    "iniciativa": 3,
+    "resistencias": {
+      "fortitude": 5,
+      "reflexos": 5,
+      "vontade": 1,
+      "percepcao": 3
+    },
+    "ataques": [
+      "Garras. +5 • 2d6+3 • Corpo a Corpo.",
+      "Bote. +6 • 1d8+3 • Corpo a Corpo. Em acerto, Reflexos DT 14 ou Agarrado."
+    ],
+    "tracos": [
+      "Frenesi: +2 no Teste de Ataque contra alvo que tenha sofrido Dano desde o início do último turno do Cabeça Pustulenta.",
+      "Predador V-ACT: 1/combate, após usar Disparada, pode usar Bote como Ação Bônus."
+    ]
+  },
+  {
+    "id": "carnifice",
+    "nome": "Carnífice",
+    "categoria": "Perigosa",
+    "pontos": 2,
+    "funcao": "Emboscada / verticalidade",
+    "tamanho": "Médio",
+    "pv": 45,
+    "defesa": 16,
+    "movimento": "12 m. Escalada 12 m",
+    "atributos": {
+      "for": 4,
+      "agi": 4,
+      "vig": 3,
+      "ast": 1
+    },
+    "iniciativa": 4,
+    "resistencias": {
+      "fortitude": 6,
+      "reflexos": 7,
+      "vontade": 2,
+      "percepcao": 6
+    },
+    "ataques": [
+      "Língua Perfurante. +6 • 1d6+4 • Alcance Curto.",
+      "Bote. +8 • 2d6+4 • Corpo a Corpo."
+    ],
+    "tracos": [
+      "Sentidos Alternativos: é Cego e falha automaticamente em testes exclusivamente visuais. Enquanto puder perceber por som/vibração, não sofre as demais penalidades de Cego.",
+      "Caçador de Teto. Pode ocupar paredes e teto sem Teste em superfícies compatíveis.",
+      "Explosivos: sofre +1 Dado de Dano."
+    ]
+  },
+  {
+    "id": "deimos",
+    "nome": "Deimos",
+    "categoria": "Perigosa",
+    "pontos": 2,
+    "funcao": "Enxame móvel / infecção",
+    "tamanho": "Médio",
+    "pv": 28,
+    "defesa": 15,
+    "movimento": "12 m. Escalada 12 m",
+    "atributos": {
+      "for": 2,
+      "agi": 4,
+      "vig": 2,
+      "ast": 0
+    },
+    "iniciativa": 4,
+    "resistencias": {
+      "fortitude": 4,
+      "reflexos": 7,
+      "vontade": 1,
+      "percepcao": 5
+    },
+    "ataques": [
+      "Garras. +5 • 1d8+2 • Corpo a Corpo. Em Dano: +2 BI.",
+      "Implantação. +5 • 1d6+2 • Corpo a Corpo. Só contra alvo Agarrado. Em Dano: +2 BI; Fortitude DT 13 ou Intoxicado por 1d4 rodadas."
+    ],
+    "tracos": [
+      "Escalador.",
+      "Infestação: +2 no Teste de Ataque se outro Deimos ameaçar o mesmo alvo."
+    ]
+  },
+  {
+    "id": "infectado-ne-alpha",
+    "nome": "Infectado NE-α",
+    "categoria": "Perigosa",
+    "pontos": 2,
+    "funcao": "Alcance / Controle",
+    "tamanho": "Médio",
+    "pv": 32,
+    "defesa": 14,
+    "movimento": "9 m",
+    "atributos": {
+      "for": 3,
+      "agi": 2,
+      "vig": 3,
+      "ast": 0
+    },
+    "iniciativa": 2,
+    "resistencias": {
+      "fortitude": 5,
+      "reflexos": 4,
+      "vontade": 1,
+      "percepcao": 4
+    },
+    "ataques": [
+      "Tentáculo. +5 • 1d8+3 • Alcance 3 m. Em acerto: pode puxar 1,5 m.",
+      "Agarrão Cefálico. +5 • 1d6+3 • Corpo a Corpo. Em acerto: Reflexos DT 14 ou Agarrado."
+    ],
+    "tracos": [
+      "Parasita Exposto: após Dano Massivo, Ataques usando Mirar contra o parasita recebem +1 Dado de Dano até o fim de seu próximo turno.",
+      "Hospedeiro: efeitos que dependam de dor narrativa comum não impedem sua ação."
+    ]
+  },
+  {
+    "id": "ivy",
+    "nome": "Ivy",
+    "categoria": "Perigosa",
+    "pontos": 2,
+    "funcao": "Controle de Área",
+    "tamanho": "Grande",
+    "pv": 48,
+    "defesa": 14,
+    "movimento": "6 m",
+    "atributos": {
+      "for": 4,
+      "agi": 1,
+      "vig": 5,
+      "ast": 0
+    },
+    "iniciativa": 1,
+    "resistencias": {
+      "fortitude": 8,
+      "reflexos": 2,
+      "vontade": 3,
+      "percepcao": 4
+    },
+    "ataques": [
+      "Cipó. +5 • 2d6+4 • Alcance 3 m. Em acerto, pode puxar 1,5 m.",
+      "Nuvem de Esporos. Ação • Cone 4,5 m. Fortitude DT 14. Falha: 1d6 + Desorientado até o fim do próximo turno do alvo. Sucesso: metade do Dano, sem condição."
+    ],
+    "tracos": [
+      "Vulnerabilidade ao Fogo: +1 Dado de Dano.",
+      "Raízes: Vantagem contra Empurrar/Derrubar."
+    ]
+  },
+  {
+    "id": "palido",
+    "nome": "Pálido",
+    "categoria": "Perigosa",
+    "pontos": 2,
+    "funcao": "Pressão / Regeneração",
+    "tamanho": "Médio",
+    "pv": 40,
+    "defesa": 13,
+    "movimento": "6 m",
+    "atributos": {
+      "for": 3,
+      "agi": 1,
+      "vig": 5,
+      "ast": 0
+    },
+    "iniciativa": 1,
+    "resistencias": {
+      "fortitude": 8,
+      "reflexos": 2,
+      "vontade": 2,
+      "percepcao": 3
+    },
+    "ataques": [
+      "Mordida. +4 • 1d8+3 • Corpo a Corpo. Em Dano: +1 BI.",
+      "Agarrão. +4 • Corpo a Corpo."
+    ],
+    "tracos": [
+      "Regeneração: recupera 6 PV no início do turno se não tiver sofrido Dano por Fogo ou Corrosão desde o fim do turno anterior.",
+      "Carne Persistente: perda de membros não essenciais não produz dor narrativa; Decepamento continua funcionando quando compatível."
+    ]
+  },
+  {
+    "id": "cacador-alfa",
+    "nome": "Caçador Alfa",
+    "categoria": "Elite",
+    "pontos": 4,
+    "funcao": "Assalto / execução",
+    "tamanho": "Médio",
+    "pv": 55,
+    "defesa": 15,
+    "movimento": "12 m",
+    "atributos": {
+      "for": 4,
+      "agi": 3,
+      "vig": 4,
+      "ast": 1
+    },
+    "iniciativa": 3,
+    "resistencias": {
+      "fortitude": 7,
+      "reflexos": 6,
+      "vontade": 3,
+      "percepcao": 5
+    },
+    "ataques": [
+      "Garras. +6 • 2d8+4 • Corpo a Corpo. Possui Decepamento.",
+      "Salto. +6 • 2d6+4 • Corpo a Corpo. Como parte do Ataque, pode mover até 4,5 m em direção ao alvo."
+    ],
+    "tracos": [
+      "Predador de Corredor: Vantagem no primeiro Teste de Ataque contra alvo Surpreendido.",
+      "Reflexos de Caça: Vantagem em Reflexos contra perigos ambientais visíveis."
+    ]
+  },
+  {
+    "id": "cacador-beta",
+    "nome": "Caçador Beta",
+    "categoria": "Elite",
+    "pontos": 4,
+    "funcao": "Execução / mobilidade",
+    "tamanho": "Médio",
+    "pv": 50,
+    "defesa": 16,
+    "movimento": "12 m",
+    "atributos": {
+      "for": 4,
+      "agi": 4,
+      "vig": 4,
+      "ast": 1
+    },
+    "iniciativa": 4,
+    "resistencias": {
+      "fortitude": 7,
+      "reflexos": 7,
+      "vontade": 3,
+      "percepcao": 5
+    },
+    "ataques": [
+      "Garras. +6 • 2d8+4 • Corpo a Corpo. Possui Decepamento.",
+      "Salto Predatório. +6 • 2d6+4 • Corpo a Corpo. Como parte do Ataque, pode mover até 6 m em direção ao alvo. Em acerto: Reflexos DT 15 ou Caído."
+    ],
+    "tracos": [
+      "Execução Instintiva: um 20 natural com Garras contra alvo Vulnerável causa Morte Instantânea."
+    ]
+  },
+  {
+    "id": "cacador-gama",
+    "nome": "Caçador Gama",
+    "categoria": "Elite",
+    "pontos": 4,
+    "funcao": "Controle / execução",
+    "tamanho": "Grande",
+    "pv": 55,
+    "defesa": 14,
+    "movimento": "6 m. Nado 12 m",
+    "atributos": {
+      "for": 5,
+      "agi": 2,
+      "vig": 5,
+      "ast": 0
+    },
+    "iniciativa": 2,
+    "resistencias": {
+      "fortitude": 8,
+      "reflexos": 4,
+      "vontade": 2,
+      "percepcao": 3
+    },
+    "ataques": [
+      "Língua Agarradora. +6 • 1d8+5 • Alcance Curto. Em acerto: Agarrado. Escapar: Ação + Atletismo ou Reflexos DT 15.",
+      "Engolir. +6 • 3d6+5 • Corpo a Corpo. Somente contra alvo Agarrado pelo Hunter γ e Vulnerável. Em acerto: Fortitude DT 16. Falha: Morte Instantânea se o alvo puder sofrê-la; se não puder, sofre o Dano normal do Ataque. Sucesso: sofre o Dano normal do Ataque."
+    ],
+    "tracos": [
+      "Anfíbio. Não sofre penalidade por água profunda.",
+      "Corpo Pesado: Vantagem contra Empurrar/Derrubar."
+    ]
+  },
+  {
+    "id": "g-adulto",
+    "nome": "G Adulto",
+    "categoria": "Elite",
+    "pontos": 4,
+    "funcao": "Controle / geração de ameaça",
+    "tamanho": "Grande",
+    "pv": 70,
+    "defesa": 15,
+    "movimento": "6 m. Nado 12 m",
+    "atributos": {
+      "for": 5,
+      "agi": 1,
+      "vig": 6,
+      "ast": 0
+    },
+    "iniciativa": 1,
+    "resistencias": {
+      "fortitude": 9,
+      "reflexos": 3,
+      "vontade": 3,
+      "percepcao": 4
+    },
+    "ataques": [
+      "Braço Mutado. +7 • 2d8+5 • Corpo a Corpo. Em acerto: pode iniciar Agarrar, DT 15.",
+      "Jato Corrosivo. +6 • 1d8+4 • Alcance Curto. Em Dano: Fortitude DT 13 ou Corrosão +1 BI."
+    ],
+    "tracos": [
+      "Expelir G Infante: 1/combate, Ação Bônus, cria 1 G Infante em espaço de água adjacente desocupado.",
+      "Olho Exposto: após sofrer Dano Massivo, Ataques usando Mirar contra o ponto fraco recebem +1 Dado de Dano até o fim de seu próximo turno.",
+      "Aquático."
+    ]
+  },
+  {
+    "id": "tirano-t103-forma-ii",
+    "nome": "Tirano (T-103 Forma II)",
+    "categoria": "Chefe",
+    "pontos": 8,
+    "funcao": "Pressão frontal / força bruta",
+    "tamanho": "Grande",
+    "pv": 135,
+    "defesa": 18,
+    "movimento": "9 m",
+    "atributos": {
+      "for": 7,
+      "agi": 2,
+      "vig": 7,
+      "ast": 1
+    },
+    "iniciativa": 2,
+    "resistencias": {
+      "fortitude": 11,
+      "reflexos": 5,
+      "vontade": 7,
+      "percepcao": 5
+    },
+    "ataques": [
+      "Garra Tyrant. +9 • 3d10+7 • Corpo a Corpo. Possui Decepamento.",
+      "Golpe de Arremesso. +8 • 2d10+7 • Corpo a Corpo. Em acerto, empurra o alvo 3 m. Depois, o alvo faz Fortitude DT 17. Em falha, também fica Caído."
+    ],
+    "tracos": [
+      "Mutação Terminal. Ao atingir 45 PV ou menos, aumenta seu Movimento para 12 m e causa +1 Dado de Dano. Seu coração fica exposto. O Tirano recebe Atordoado em Ataques usando Mirar no coração.",
+      "Arma Bio-Orgânica. Recebe Vantagem em Testes de resistência contra Atordoado e efeitos que tentem deslocá-lo à força."
+    ]
+  },
+  {
+    "id": "planta-42",
+    "nome": "Planta 42",
+    "categoria": "Chefe",
+    "pontos": 8,
+    "funcao": "Controle de cenário / ponto fraco",
+    "tamanho": "Colossal",
+    "pv": 150,
+    "defesa": 14,
+    "movimento": "0 m",
+    "atributos": {
+      "for": 8,
+      "agi": 0,
+      "vig": 8,
+      "ast": 1
+    },
+    "iniciativa": 0,
+    "resistencias": {
+      "fortitude": 12,
+      "reflexos": 0,
+      "vontade": 6,
+      "percepcao": 6
+    },
+    "ataques": [
+      "Cipó Esmagador. +8 • 3d8+8 • Alcance 6 m.",
+      "Agarrar com Cipó. DT 16 ou fica agarrado.",
+      "Pólen Tóxico. Ação • Área até 6 m ao redor de si. Criaturas na área fazem Fortitude DT 16. Em falha, sofrem 2d6 de Dano e ficam Intoxicadas por 1d4 rodadas. Em sucesso, sofrem metade do Dano e não ficam Intoxicadas."
+    ],
+    "tracos": [
+      "Enraizada. É imune a Caído, Agarrado e efeitos de Empurrar ou deslocamento forçado que dependam de mover seu corpo inteiro."
+    ]
+  },
+  {
+    "id": "jacare",
+    "nome": "Jacaré",
+    "categoria": "Chefe",
+    "pontos": 8,
+    "funcao": "Controle de cenário / perseguição curta",
+    "tamanho": "Enorme",
+    "pv": 110,
+    "defesa": 15,
+    "movimento": "9 m. Nado 15 m",
+    "atributos": {
+      "for": 8,
+      "agi": 2,
+      "vig": 8,
+      "ast": 0
+    },
+    "iniciativa": 2,
+    "resistencias": {
+      "fortitude": 12,
+      "reflexos": 4,
+      "vontade": 4,
+      "percepcao": 5
+    },
+    "ataques": [
+      "Mordida. +9 • 4d8+8 • Corpo a Corpo. Em acerto: pode iniciar Agarrar, DT 17.",
+      "Arrancada. +8 • 3d10+8 • Corpo a Corpo. Só após mover 6 m em linha reta."
+    ],
+    "tracos": [
+      "Predador de Esgoto: ignora terreno difícil de água e detritos.",
+      "Encontro de Cenário: ofereça rota de fuga ou elemento ambiental capaz de causar Dano Grave/Letal."
+    ]
+  },
+  {
+    "id": "nemesis-t-type-forma-ii",
+    "nome": "Nemesis T-Type (Forma II)",
+    "categoria": "Chefe",
+    "pontos": 8,
+    "funcao": "Chefe / mobilidade quadrúpede",
+    "tamanho": "Grande",
+    "pv": 165,
+    "defesa": 18,
+    "movimento": "15 m",
+    "atributos": {
+      "for": 9,
+      "agi": 4,
+      "vig": 9,
+      "ast": 1
+    },
+    "iniciativa": 4,
+    "resistencias": {
+      "fortitude": 13,
+      "reflexos": 7,
+      "vontade": 8,
+      "percepcao": 7
+    },
+    "ataques": [
+      "Garra. +10 • 3d10+8 • Corpo a Corpo.",
+      "Salto Predatório. +10 • 3d8+8 • Corpo a Corpo. Como parte do Ataque, move até 9 m. Reflexos DT 17 ou Caído.",
+      "Investida Bestial. +9 • 4d8+8 • Corpo a Corpo. Só após mover 9 m em linha reta."
+    ],
+    "tracos": [
+      "Locomoção Aberrante: ignora terreno difícil e escala até 3 m como parte do Movimento.",
+      "Nódulo Vulnerável: após Dano Massivo, Ataques usando Mirar contra o ponto fraco recebem +1 Dado de Dano até o fim de seu próximo turno."
+    ]
+  },
+  {
+    "id": "nemesis-t-type-forma-final",
+    "nome": "Nemesis T-Type (Forma Final)",
+    "categoria": "Chefe",
+    "pontos": 8,
+    "funcao": "Chefe final / cenário",
+    "tamanho": "Colossal",
+    "pv": 220,
+    "defesa": 17,
+    "movimento": "3 m",
+    "atributos": {
+      "for": 10,
+      "agi": 0,
+      "vig": 10,
+      "ast": 1
+    },
+    "iniciativa": 0,
+    "resistencias": {
+      "fortitude": 14,
+      "reflexos": 1,
+      "vontade": 9,
+      "percepcao": 6
+    },
+    "ataques": [
+      "Membro Esmagador. +10 • 4d10+10 • Alcance 6 m.",
+      "Varredura. Ação • Linha 9 m × 3 m. Reflexos DT 18. Falha: 4d8+8 e Caído. Sucesso: metade, sem Caído."
+    ],
+    "tracos": [
+      "Massa Colossal: imune a Caído, Agarrado e deslocamento forçado do corpo inteiro.",
+      "Nódulos de Regeneração: 3 nódulos. Ataque usando Mirar + Dano Massivo destrói 1. Enquanto restar nódulo, recupera 15 PV no início do turno.",
+      "Chefe de Cenário: derrota definitiva também depende da arma/mecanismo especial da cena."
+    ]
+  }
+]
