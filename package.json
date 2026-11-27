@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "node servidor/server.js",
-    "test": "node testes/teste-servidor.js && node testes/teste-portas.js && node testes/teste-mesas.js && node testes/teste-painel-mestre.js && node testes/teste-painel-mestre-conteudo.js && node testes/teste-painel-mestre-turnos.js && node testes/teste-painel-mestre-fichas.js && node testes/teste-bestiario.js"
+    "test": "node testes/teste-servidor.js && node testes/teste-portas.js && node testes/teste-mesas.js && node testes/teste-painel-mestre.js && node testes/teste-painel-mestre-conteudo.js && node testes/teste-painel-mestre-turnos.js && node testes/teste-painel-mestre-fichas.js && node testes/teste-bestiario.js && node testes/teste-arquivos-mestre.js"
   },
   "engines": {
     "node": ">=18"
