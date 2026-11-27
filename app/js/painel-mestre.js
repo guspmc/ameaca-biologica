@@ -103,7 +103,7 @@ function prepararEncontroNoCombate(encontro){
   mensagem($('aviso-mesa'),novas.length+' criatura(s) adicionada(s) à ordem de combate. Role a Iniciativa quando estiver pronto.','info');
   $('bloco-combate-mestre')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
-window.prepararEncontroNoCombate=prepararEncontroNoCombate;
+if(typeof window!=='undefined')window.prepararEncontroNoCombate=prepararEncontroNoCombate;
 
 function selecionarCriaturaIniciativa(){
   const id=$('combate-criatura-catalogo')?.value;
