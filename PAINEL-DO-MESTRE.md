@@ -230,6 +230,6 @@ O Painel do Mestre é estritamente de leitura em relação às Fichas dos Jogado
 
 ## Pendências que dependem da integração com a Ficha da main
 
-1. **Atualização instantânea do resumo de Fichas:** o Painel ainda usa consulta periódica de quatro segundos. Para SSE real, a rota de salvamento de Fichas na implementação do Claude precisa emitir um evento direcionado aos membros aprovados da Mesa após a gravação bem-sucedida. Esta branch não altera `servidor/fichas.js` nem os arquivos de Ficha.
+1. **Atualização instantânea do resumo de Fichas:** o Painel ainda usa consulta periódica de quatro segundos. O Painel já está preparado para escutar o evento SSE `ficha` (com payload `{ id: mesaId }`) e atualizar o resumo assim que ele chegar. Falta a rota de salvamento de Fichas na implementação do Claude emitir esse evento, direcionado aos membros aprovados da Mesa, após a gravação bem-sucedida. Esta branch não altera `servidor/fichas.js` nem os arquivos de Ficha.
 2. **Distribuição efetiva de itens para o inventário da Ficha:** os itens publicados já são exibidos aos Jogadores como catálogo da Mesa, mas ainda não são inseridos no inventário pessoal. Isso requer um contrato explícito na API da Ficha, com ação do Jogador, validação no servidor e preservação da regra de que o Mestre não edita Fichas.
 3. **Integração final:** após o Claude concluir a main, revisar a rota de salvamento de Fichas, o formato do inventário e os arquivos compartilhados antes do merge. Não sincronizar/rebasear esta branch durante o trabalho paralelo.
