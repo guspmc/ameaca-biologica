@@ -1,7 +1,7 @@
 'use strict';
 function criarPainelMestre({ carregar, salvar, ehMestre }) {
   const dados = carregar() || {};
-  const vazio = (mesaId) => ({ mesaId, combateAtivo:false, rodada:1, turnoAtual:null, participantes:[], atualizadoEm:new Date().toISOString() });
+  const vazio = (mesaId) => ({ mesaId, versao:0, combateAtivo:false, rodada:1, turnoAtual:null, participantes:[], atualizadoEm:new Date().toISOString() });
   function ordenar(lista) {
     return [...lista].sort((a,b) => {
       if (a.entradaTardia !== b.entradaTardia) return a.entradaTardia ? 1 : -1;
@@ -39,7 +39,7 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
     if (!Number.isInteger(rodada) || rodada<1 || rodada>9999) return { erro:'Rodada inválida.' };
     const turnoAtual=corpo.turnoAtual==null?null:String(corpo.turnoAtual);
     if (turnoAtual && !participantes.some(p=>p.id===turnoAtual)) return { erro:'O turno atual não pertence a este combate.' };
-    return { valor:{ mesaId,combateAtivo:Boolean(corpo.combateAtivo),rodada,turnoAtual,participantes:ordenar(participantes),atualizadoEm:new Date().toISOString() } };
+    return { valor:{ mesaId,versao:(Number(anterior.versao)||0)+1,combateAtivo:Boolean(corpo.combateAtivo),rodada,turnoAtual,participantes:ordenar(participantes),atualizadoEm:new Date().toISOString() } };
   }
   return {
     apagar(mesaId) {
@@ -51,9 +51,9 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
     atender(usuario,metodo,mesaId,corpo) {
       if (!ehMestre(usuario,mesaId)) return {status:403,dados:{erro:'Somente o Mestre desta Mesa pode acessar o Painel do Mestre.'}};
       const atual=dados[mesaId] || vazio(mesaId);
-      if (metodo==='GET') return {status:200,dados:{combate:atual}};
+      if (metodo==='GET') return {status:200,dados:{combate:{...atual,versao:Number(atual.versao)||0}}};
       if (metodo!=='PUT') return {status:405,dados:{erro:'Método não permitido.'}};
-      const r=validar(corpo,atual,mesaId);
+      const versaoAtual=Number(atual.versao)||0;\n      if (corpo?.versao !== undefined && corpo.versao !== versaoAtual) return {status:409,dados:{erro:'Este combate foi alterado em outro aparelho ou aba. Seus dados locais não foram gravados; atualize a Mesa antes de continuar.',versaoAtual}};\n      const r=validar(corpo,atual,mesaId);
       if (r.erro) return {status:400,dados:{erro:r.erro}};
       dados[mesaId]=r.valor; salvar(dados);
       return {status:200,dados:{combate:dados[mesaId]}};
