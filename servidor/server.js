@@ -18,6 +18,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { qrSvg } = require('./qr');
 const { criarMesas } = require('./mesas');
+const { criarFichas } = require('./fichas');
 
 const NOME_DO_JOGO = 'Ameaça Biológica';
 // Porta preferida. Se estiver ocupada, o servidor tenta as seguintes (até 11 portas: 3000 a 3010).
@@ -255,7 +256,10 @@ async function rotasMesas(req, res, url) {
   } else if (partes.length === 2 && metodo === 'POST') {
     if (acao === 'configurar') r = mesas.configurar(usuario, id, await lerCorpo(req));
     else if (acao === 'novo-codigo') r = mesas.novoCodigo(usuario, id);
-    else if (acao === 'encerrar') r = mesas.encerrar(usuario, id);
+    else if (acao === 'encerrar') {
+      r = mesas.encerrar(usuario, id);
+      if (r && r.ok) fichas.purgar(id);
+    }
     else if (acao === 'sair') r = mesas.sair(usuario, id);
   } else if (partes.length === 4 && partes[1] === 'jogadores' && metodo === 'POST') {
     r = mesas.decidir(usuario, id, partes[2], partes[3]);
@@ -264,6 +268,60 @@ async function rotasMesas(req, res, url) {
   if (!r) return json(res, 404, { erro: 'Rota não encontrada.' });
   if (!r.ok) return json(res, r.status, { erro: r.erro });
   if (r.avisar) avisarUsuarios(r.avisar, 'mesa', { id: r.id });
+  const { ok, status, avisar, ...resposta } = r;
+  return json(res, status, resposta);
+}
+
+/* ---------- Fichas ---------- */
+
+const fichas = criarFichas({
+  carregar: () => lerDados('fichas.json', {}),
+  salvar: (dados) => salvarDados('fichas.json', dados),
+  infoMesa: (mesaId) => mesas.info(mesaId),
+});
+
+// Rotas: /api/mesas/:mesaId/fichas[/:fichaId[/:acao]]
+// e      /api/mesas/:mesaId/solicitacoes-fichas[/:fichaId/:acao]
+async function rotasFichas(req, res, url) {
+  const usuario = sessoes.get((req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+  if (!usuario) return json(res, 401, { erro: 'Sessão inválida. Entre novamente.' });
+
+  // partes: ['api','mesas', mesaId, secao, fichaId?, acao?]
+  const partes = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+  // índice 0='api', 1='mesas', 2=mesaId, 3=secao, 4=fichaId, 5=acao
+  const mesaId = partes[2];
+  const secao = partes[3]; // 'fichas' | 'solicitacoes-fichas'
+  const fichaId = partes[4];
+  const acao = partes[5];
+  const metodo = req.method;
+  let r = null;
+
+  if (secao === 'fichas') {
+    if (!fichaId) {
+      if (metodo === 'GET') r = fichas.listar(mesaId, usuario);
+      else if (metodo === 'POST') r = fichas.criar(mesaId, usuario);
+    } else if (!acao) {
+      if (metodo === 'GET') r = fichas.obter(mesaId, usuario, fichaId);
+      else if (metodo === 'PUT') r = fichas.salvar(mesaId, usuario, fichaId, await lerCorpo(req));
+      else if (metodo === 'DELETE') r = fichas.excluir(mesaId, usuario, fichaId);
+    } else {
+      if (metodo === 'POST') {
+        if (acao === 'solicitar') r = fichas.solicitar(mesaId, usuario, fichaId);
+        else if (acao === 'retirar') r = fichas.retirar(mesaId, usuario, fichaId);
+        else if (acao === 'desativar') r = fichas.desativar(mesaId, usuario, fichaId);
+      }
+    }
+  } else if (secao === 'solicitacoes-fichas') {
+    if (!fichaId) {
+      if (metodo === 'GET') r = fichas.solicitacoes(mesaId, usuario);
+    } else if (acao && metodo === 'POST') {
+      r = fichas.decidir(mesaId, usuario, fichaId, acao);
+    }
+  }
+
+  if (!r) return json(res, 404, { erro: 'Rota não encontrada.' });
+  if (!r.ok) return json(res, r.status, { erro: r.erro });
+  if (r.avisar) avisarUsuarios(r.avisar, 'ficha', { mesaId, fichaId: r.id });
   const { ok, status, avisar, ...resposta } = r;
   return json(res, status, resposta);
 }
@@ -305,6 +363,14 @@ const servidor = http.createServer(async (req, res) => {
 
     if (url.pathname === '/api/eventos' && req.method === 'GET') {
       return abrirEventos(req, res, url);
+    }
+
+    // Fichas: /api/mesas/:mesaId/fichas[/...] ou /api/mesas/:mesaId/solicitacoes-fichas[/...]
+    if (url.pathname.startsWith('/api/mesas/') && url.pathname.includes('/fichas')) {
+      return await rotasFichas(req, res, url);
+    }
+    if (url.pathname.startsWith('/api/mesas/') && url.pathname.includes('/solicitacoes-fichas')) {
+      return await rotasFichas(req, res, url);
     }
 
     if (url.pathname === '/api/mesas' || url.pathname.startsWith('/api/mesas/')) {

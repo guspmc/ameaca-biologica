@@ -2,7 +2,9 @@
 
 Aplicativo (PWA) para jogar **Ameaça Biológica RPG**: fichas de personagem, Painel do Mestre e Mesas, tudo ligado por um servidor local no computador do Mestre. Gratuito, sem internet e sem bibliotecas externas.
 
-> **Etapa atual (v0.3):** servidor local que escolhe uma porta livre sozinho, login por usuário e senha, Laboratório com status **Offline/Local**, presença em tempo real e **Mesas**: criar (quem cria vira Mestre), código aleatório, entrar por código ou QR Code, aprovação do Mestre e limites de jogadores e de Nível. O Painel do Mestre completo e as Fichas vêm nas próximas etapas.
+> **Etapa atual (v0.4):** adiciona a **Ficha de Personagem** (rascunhos, Fichas Ativas aprovadas pelo Mestre, barras de PV/SA/BI, rolador de dados). O Mestre aprova a Ficha, mas não vê o conteúdo dela. O Painel do Mestre completo vem depois.
+>
+> **Antes (v0.3):** servidor local que escolhe uma porta livre sozinho, login por usuário e senha, Laboratório com status **Offline/Local**, presença em tempo real e **Mesas**: criar (quem cria vira Mestre), código aleatório, entrar por código ou QR Code, aprovação do Mestre e limites de jogadores e de Nível. O Painel do Mestre completo e as Fichas vêm nas próximas etapas.
 
 ## Como iniciar o servidor (Windows, computador do Mestre)
 

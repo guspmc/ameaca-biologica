@@ -180,6 +180,7 @@ async function abrirSessao(base) {
       renderizar();
     });
     fonte.addEventListener('mesa', (e) => aoEventoDeMesa(JSON.parse(e.data)));
+    fonte.addEventListener('ficha', (e) => { if (typeof aoEventoDeFicha === 'function') aoEventoDeFicha(JSON.parse(e.data)); });
     fonte.onopen = () => {
       abriu = true;
       estado.fonte = fonte;

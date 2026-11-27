@@ -23,9 +23,13 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - v0.3: Mesas. `servidor/mesas.js` (regras) + rotas `/api/mesas*` (auth `Authorization: Bearer <token>`; evento SSE `mesa` só para membros). Cliente em `app/js/mesas.js` (carregado antes de `app.js`; DOM por `h()`, sem innerHTML). Código de 6 caracteres (`ABC-123`), QR da Mesa = `endereço/?mesa=CODIGO` (o app entra sozinho após conectar). Limites: jogadores 2–9, Nível 1–10 (o livro tem 10 Níveis), 5 Mesas por Mestre, 30 por servidor. Painel do Mestre por enquanto: convite/QR, aprovações, jogadores, configurações, encerrar; visão do Jogador: status e lista da Mesa. Testes: `testes/teste-mesas.js` + UI no Chromium (fora do repositório).
 - Ainda **não testado pelo dono no Windows**: abertura do navegador pelo `iniciar.bat` na porta real, QR lido por celular de verdade, troca de porta com a 3000 ocupada.
 
+- v0.4: Ficha de Personagem. Regras do livro em `app/js/dados-livro.js` (Origens, Classes, Habilidades, Condições) e `app/js/regras.js` (`normalizar`, `calcular`, `validar`; UMD: o app calcula e o servidor valida com o mesmo código). `servidor/fichas.js` + rotas `/api/mesas/:id/fichas*` e `/api/mesas/:id/solicitacoes-fichas*` (SSE `ficha`). Fichas por Mesa em `dados/fichas.json`, estados rascunho → pendente → ativa; ≤5 rascunhos, ≤3 ativas+pendentes; Nível ≤ limite da Mesa. Ficha Ativa só muda valores de jogo (PV/SA/BI/condições) e inventário. O Mestre só vê nome do jogador e do personagem nos pedidos, nunca o conteúdo. Tela em `app/js/ficha.js` (barra superior PV/SA/BI com +/-, barra inferior de atalhos, rolador Manual/Automático, equipamento inicial A/B/C). Testes: `teste-regras.js`, `teste-fichas.js` + UI no Chromium (fora do repositório).
+- O layout da Ficha é desenho próprio (as páginas-modelo do livro são imagens e não puderam ser lidas); ajustar se o dono mandar capturas.
+- O **Painel do Mestre** será feito em branch separado (pelo ChatGPT) e conferido antes do merge. Nesta etapa só entrou em `painelDoMestre` (mesas.js) o cartão de aprovação de Fichas; manter isso mínimo.
+
 ## Próximas etapas
-1. Ficha de Personagem (a partir do livro, últimas páginas): rascunhos ≤5, ativas ≤3, aprovação do Mestre, limite de Nível, barras PV/SA/BI e atalhos, Manual/Automático.
-2. Painel do Mestre: resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
+1. Arsenal: catálogo de armas/itens do livro (hoje o inventário é livre, com Espaços) e cálculo de ataque/dano.
+2. Painel do Mestre (branch separado): resumo das Fichas, iniciativa/turnos, documentos, anotações, itens personalizados.
 3. Instalação do PWA no modo local (ver "Limitações" no README).
 
 ## Como testar (aqui)
@@ -37,6 +41,7 @@ PWA para jogar o RPG próprio "Ameaça Biológica". Dono do projeto não program
 - `servidor/server.js`: HTTP + SSE + JSON. Rotas: `GET /api/status`, `POST /api/entrar`, `GET /api/eventos?token=`, `GET /api/qr?texto=`, `/api/mesas*` (ver `servidor/mesas.js`). Escolha de porta em `ouvir`.
 - `servidor/mesas.js`: regras das Mesas (código, limites, aprovação), guarda em `mesas.json`.
 - `app/js/mesas.js`: telas de Mesas (lista, criar, Painel do Mestre, visão do Jogador).
+- `app/js/ficha.js`, `app/js/regras.js`, `app/js/dados-livro.js`: Ficha de Personagem (tela, regras, dados do livro). `servidor/fichas.js`: regras e guarda das Fichas.
 - `servidor/qr.js`: gerador de QR (byte, correção M, versões 1 a 9).
 - `app/js/app.js`: login, estado Offline/Local, conexão, descoberta de porta, QR, renderização.
 - `app/sw.js`: cache offline (aumente `VERSAO` ao mudar a lista de arquivos).

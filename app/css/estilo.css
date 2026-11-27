@@ -147,3 +147,55 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .lista li { padding: 8px 0; border-bottom: 1px solid var(--borda); word-break: break-all; }
 .lista li:last-child { border-bottom: 0; }
 .lista .voce { color: var(--acento); font-size: 0.85rem; margin-left: 6px; }
+
+/* ---------- Ficha de Personagem ---------- */
+.barra-superior, .barra-inferior {
+  position: fixed; left: 0; right: 0; z-index: 20;
+  display: flex; gap: 6px; padding: 6px 8px;
+  background: var(--painel); border: 0 solid var(--borda);
+}
+.barra-superior { top: 0; border-bottom-width: 1px; justify-content: space-between; }
+.barra-inferior { bottom: 0; border-top-width: 1px; }
+.barra-inferior .atalho {
+  flex: 1; padding: 10px 2px; font: inherit; font-size: 0.78rem; color: var(--suave);
+  background: transparent; border: 0; border-radius: 8px; cursor: pointer;
+}
+.barra-inferior .atalho.ativo { color: var(--acento); background: var(--painel-2); }
+.indicador { display: flex; align-items: center; gap: 2px; padding: 2px 3px; border: 1px solid var(--borda); border-radius: 10px; flex: 1 1 0; min-width: 0; justify-content: space-between; font-size: 0.85rem; }
+.indicador .ind-centro { display: flex; flex-direction: column; align-items: center; line-height: 1.15; min-width: 0; }
+.indicador .ind-label { color: var(--suave); font-weight: 700; font-size: 0.68rem; white-space: nowrap; }
+.indicador .ind-valor { font-weight: 700; }
+.indicador.vulneravel { border-color: var(--aviso); }
+.indicador.desacordado, .indicador.colapso { border-color: var(--erro); color: var(--erro); }
+.ajuste { width: 26px; height: 32px; padding: 0; flex-shrink: 0; font: inherit; font-weight: 700; color: var(--texto); background: var(--painel-2); border: 1px solid var(--borda); border-radius: 8px; cursor: pointer; }
+.editor-ficha { padding: 56px 0 72px; }
+.editor-ficha.bloqueado .secao { opacity: 0.55; pointer-events: none; }
+.editor-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.secao { background: var(--painel); border: 1px solid var(--borda); border-radius: var(--raio); padding: 14px; margin: 12px 0; scroll-margin-top: 60px; }
+.secao h3 { margin: 14px 0 6px; font-size: 0.95rem; color: var(--acento); }
+.secao h3:first-child { margin-top: 0; }
+.atributo-linha { display: flex; align-items: center; gap: 10px; }
+.atributo-linha label { flex: 1; margin: 6px 0; }
+.atributo-linha input { width: 70px; }
+.pericia-linha { padding: 8px 0; border-bottom: 1px solid var(--borda); }
+.pericia-linha .per-val, .linha-pericia .per-val { font-weight: 700; margin-left: 8px; color: var(--acento); }
+.grau-opcoes { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.grau-label { margin: 0; padding: 4px 10px; border: 1px solid var(--borda); border-radius: 999px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.grau-label.ativo { border-color: var(--acento); color: var(--acento); }
+.grau-label input { width: auto; }
+.hab-label, .cond-label { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 4px 0; padding: 8px; border: 1px solid var(--borda); border-radius: 10px; color: var(--texto); }
+.hab-label.ativo, .cond-label.ativa { border-color: var(--acento); }
+.hab-label input, .cond-label input { width: auto; }
+.hab-desc { width: 100%; color: var(--suave); font-size: 0.8rem; }
+.combate-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; }
+.stat-linha { display: flex; justify-content: space-between; padding: 6px 10px; border: 1px solid var(--borda); border-radius: 10px; }
+.linha-pericia { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.linha-pericia .per-nome { flex: 1; }
+.resultado-rolagem { padding: 8px 10px; margin: 8px 0; border: 1px solid var(--acento); border-radius: 10px; font-weight: 700; }
+.item-linha { display: grid; grid-template-columns: 1fr 60px auto; gap: 6px; margin-bottom: 6px; }
+.item-linha .item-nota { grid-column: 1 / 3; }
+.equipamento-inicial { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.equipamento-inicial .botao { text-align: left; }
+@media (min-width: 700px) { .barra-superior, .barra-inferior { padding-left: calc(50% - 280px); padding-right: calc(50% - 280px); } }
+input[type="checkbox"], input[type="radio"] { width: auto; }
+.painel-rolagem .linha label { display: flex; align-items: center; gap: 8px; color: var(--texto); }

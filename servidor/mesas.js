@@ -265,6 +265,19 @@ function criarMesas({ carregar, salvar }) {
       return { ok: true, status: 200, id, avisar };
     },
 
+    // Informações internas para outros módulos (ex.: fichas.js).
+    // Devolve null se a Mesa não existir.
+    info(id) {
+      const m = mesas[id];
+      if (!m) return null;
+      return {
+        mestre: m.mestre,
+        limiteNivel: m.limiteNivel,
+        membros: membros(m),
+        aprovados: aprovados(m).map((j) => j.usuario),
+      };
+    },
+
     sair(usuario, id) {
       const r = mesaDoMembro(usuario, id);
       if (r.falha) return r.falha;

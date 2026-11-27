@@ -298,6 +298,13 @@ function painelDoMestre(m) {
       h('select', { id: 'cfg-nivel' }, opcoes(1, NIVEL_MAX, m.limiteNivel)),
       h('div', { class: 'linha' }, h('button', { type: 'submit', class: 'botao primario' }, 'Salvar')))));
 
+  // Solicitações de ficha pendentes (async: insere elemento vazio e atualiza depois).
+  const cartaoFichasEl = h('div', { class: 'cartao' }, h('p', { class: 'dica' }, 'Carregando fichas…'));
+  partes.push(cartaoFichasEl);
+  if (typeof cartaoFichasMestre === 'function') {
+    cartaoFichasMestre().then((el) => { cartaoFichasEl.replaceWith(el); });
+  }
+
   partes.push(h('div', { class: 'cartao desativado' },
     h('h2', {}, 'Em breve'),
     h('p', { class: 'dica' }, 'Resumo das Fichas, turnos e iniciativa, documentos, anotações e itens personalizados.')));
@@ -319,9 +326,14 @@ function visaoDoJogador(m) {
         pontoOnline(nome), nome,
         i === 0 ? h('span', { class: 'etiqueta' }, 'Mestre') : null,
         nome.toLowerCase() === estado.usuario.toLowerCase() ? h('span', { class: 'voce' }, '(você)') : null)))));
-    partes.push(h('div', { class: 'cartao desativado' },
-      h('h2', {}, 'Fichas de Personagem'),
-      h('p', { class: 'dica' }, `Em breve: você vai criar até 5 rascunhos e usar até 3 Fichas ativas. Esta Mesa aceita personagens até o Nível ${m.limiteNivel}.`)));
+    // Cartão de Fichas (definido em ficha.js).
+    if (typeof cartaoFichas === 'function') {
+      partes.push(cartaoFichas(m));
+    } else {
+      partes.push(h('div', { class: 'cartao desativado' },
+        h('h2', {}, 'Fichas de Personagem'),
+        h('p', { class: 'dica' }, `Até 5 rascunhos e 3 fichas ativas. Nível máximo: ${m.limiteNivel}.`)));
+    }
   }
   partes.push(h('button', { type: 'button', class: 'botao perigo largo', onclick: sairDaMesa }, 'Sair da Mesa'));
   return partes;
@@ -329,6 +341,7 @@ function visaoDoJogador(m) {
 
 function renderizarMesa() {
   if (estado.tela !== 'mesa') return;
+  if (typeof emFicha === 'function' && emFicha()) return; // Ficha aberta (ficha.js)
   const raiz = $('conteudo-mesa');
 
   // Não apaga um campo que a pessoa está editando; redesenha quando ela terminar.
