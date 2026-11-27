@@ -83,7 +83,7 @@ O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquiv
 - Arquivo do Mestre v1.0, apêndice, p. 70: resumo das condições e lembrete de que durações de fontes diferentes podem ser acompanhadas separadamente.
 
 Ainda pendente:
-- Concluída a projeção e a primeira integração do resumo operacional: a rota `GET /api/painel-mestre/:mesaId/fichas` entrega somente Fichas Ativas de jogadores aprovados, e o Painel exibe PV/SA/BI, Defesa, RD, Iniciativa, Movimento, Perícias Passivas e condições. A rota depende dos módulos oficiais de Ficha/Regras da `main`; enquanto as branches estiverem separadas, responde 503 de forma explícita.
+- Concluída a projeção e a primeira integração do resumo operacional: a rota `GET /api/painel-mestre/:mesaId/fichas` entrega somente Fichas Ativas de jogadores aprovados, e o Painel exibe identificação, PV/SA/BI atuais e máximos, Iniciativa, Defesa e as quatro Perícias Passivas autorizadas. A rota depende dos módulos oficiais de Ficha/Regras da `main`; enquanto as branches estiverem separadas, responde 503 de forma explícita.
 
 - Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
 - Testes HTTP de integração para autenticação, aprovação de Jogadores e filtragem das publicações adicionados à suíte; acompanhar o resultado do CI antes de considerar a etapa validada.
@@ -92,11 +92,10 @@ Ainda pendente:
 A integração com a Ficha deve fornecer ao Painel uma projeção de sessão, nunca o objeto completo da Ficha. Campos previstos:
 - Identificador da Ficha Ativa aprovada e nome do personagem;
 - PV atual/máximo, SA atual/máximo e BI atual/máxima;
-- Nível do personagem;
 - Percepção, Fortitude, Reflexos e Vontade passivas, calculadas pelo módulo oficial de regras da Ficha;
-- estado de condições que o Jogador e o Mestre precisam acompanhar durante a cena.
+- Identificação do Jogador e do personagem, para associar os valores à pessoa correta.
 
-Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos personagens aprovados na Mesa. O Painel não deve receber atributos completos, inventário, histórico, anotações privadas ou campos que não sejam necessários à condução da sessão. O formato definitivo será ajustado após a revisão da implementação de Fichas na main, para não criar um contrato incompatível com o trabalho paralelo.
+Essa projeção é limitada aos personagens aprovados na Mesa e consultada periodicamente pelo Painel (a cada quatro segundos), ao entrar na Mesa e ao retornar à aba. O Mestre recebe somente os campos expressamente autorizados; a rota é de leitura e não possui operação para alterar a Ficha.
 
 ## Testes de fluxo de combate
 
