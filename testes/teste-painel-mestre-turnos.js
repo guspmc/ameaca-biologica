@@ -5,8 +5,10 @@ const vm = require('node:vm');
 const path = require('node:path');
 
 const codigo = fs.readFileSync(path.join(__dirname, '../app/js/painel-mestre.js'), 'utf8');
+const raizPainel = { contains: (el) => el && el.dentroDoPainel === true };
+const documento = { hidden: false, activeElement: null, addEventListener() {}, getElementById: (id) => id === 'bloco-combate-mestre' ? raizPainel : null };
 const contexto = vm.createContext({
-  document: { hidden: false, addEventListener() {} },
+  document: documento,
   setInterval() {},
   renderizarMesa() {},
   carregarMesaAtual() {}
@@ -78,4 +80,14 @@ vm.runInContext('avancarTurnoCombate()', contexto);
 assert.equal(estado().rodada, 7);
 assert.equal(estado().turnoAtual, null);
 
-console.log('Painel do Mestre: transições de turno e remoção OK');
+// A consulta periódica não pode redesenhar o painel enquanto o Mestre digita ou seleciona um campo.
+documento.activeElement = { tagName: 'INPUT', dentroDoPainel: true };
+assert.equal(vm.runInContext('painelMestreEmEdicao()', contexto), true);
+documento.activeElement = { tagName: 'TEXTAREA', dentroDoPainel: true };
+assert.equal(vm.runInContext('painelMestreEmEdicao()', contexto), true);
+documento.activeElement = { tagName: 'BUTTON', dentroDoPainel: true };
+assert.equal(vm.runInContext('painelMestreEmEdicao()', contexto), false);
+documento.activeElement = { tagName: 'INPUT', dentroDoPainel: false };
+assert.equal(vm.runInContext('painelMestreEmEdicao()', contexto), false);
+
+console.log('Painel do Mestre: turnos, remoção e proteção de edição OK');
