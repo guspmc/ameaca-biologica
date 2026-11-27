@@ -57,4 +57,17 @@ assert.equal(condicao.nome,'Exposto');
 assert.equal(condicao.duracao.length,80);
 assert.equal(condicao.observacao.length,300);
 
+// Personagens não podem enviar bônus de Iniciativa diferente da AGI.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'p1',nome:'Alice',tipo:'personagem',agi:3,bonusIniciativa:4,d20:12}
+]});
+assert.equal(r.status,400);
+assert.match(r.dados.erro,/bônus de Iniciativa deve ser igual à AGI/);
+// Criaturas continuam podendo informar o bônus indicado em sua ficha.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'c1',nome:'Infectado',tipo:'criatura',agi:1,bonusIniciativa:4,d20:12}
+]});
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.participantes[0].iniciativa,16);
+
 console.log('Painel do Mestre: tudo OK');
