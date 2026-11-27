@@ -129,6 +129,12 @@ assert.equal(condicaoPorNome('Desacordado').efeito,
 assert.equal(condicaoPorNome('Desacordado').duracao,
   'Em 0 PV, segue Testes de Reanimação. Outras fontes determinam como despertar.');
 
+assert.equal(vm.runInContext("duracaoInicialCondicao(condicaoPorNome('Colapso Viral'))", contexto), '');
+assert.equal(vm.runInContext("duracaoInicialCondicao(condicaoPorNome('Cabeça Carmesim'))", contexto), '');
+assert.equal(vm.runInContext("duracaoInicialCondicao(condicaoPorNome('Infectado Especial'))", contexto), '');
+assert.equal(vm.runInContext("duracaoInicialCondicao(condicaoPorNome('Corrosão'))", contexto), 'Conforme a fonte');
+
+
 
 // Avançar o turno não reduz nem encerra automaticamente a duração de condições.
 preparar([{
