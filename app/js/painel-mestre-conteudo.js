@@ -190,6 +190,16 @@ function desenharConteudoMestre() {
     const acoes = elemento('div', '', 'linha');
     const editar = elemento('button', 'Editar encontro', 'botao pequeno');
     editar.type = 'button';
+    const duplicar = elemento('button', 'Duplicar', 'botao pequeno');
+    duplicar.type = 'button';
+    duplicar.addEventListener('click', () => {
+      const copia = JSON.parse(JSON.stringify(item));
+      copia.id = novoIdConteudo();
+      copia.nome = (item.nome || 'Encontro sem título') + ' (cópia)';
+      const indice = conteudoMestre.encontros.findIndex(x => x.id === item.id);
+      conteudoMestre.encontros.splice(indice < 0 ? 0 : indice + 1, 0, copia);
+      salvarConteudoMestre();
+    });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este encontro preparado?')) return; conteudoMestre.encontros = conteudoMestre.encontros.filter(x => x.id !== item.id); salvarConteudoMestre(); });
     const editor = elemento('form', '', 'editor-encontro-mestre'); editor.hidden = true;
@@ -229,7 +239,7 @@ function desenharConteudoMestre() {
       if (!item.nome) { mensagem($('conteudo-msg'),'Informe um nome para o encontro.','aviso'); campos.nome.focus(); return; }
       salvarConteudoMestre();
     });
-    acoes.append(editar,remover);
+    acoes.append(editar,duplicar,remover);
     li.append(acoes,editor); encontros.append(li);
   }
   const documentos = $('documentos-mestre'); documentos.replaceChildren();
