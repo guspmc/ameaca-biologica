@@ -37,17 +37,22 @@ assert.equal(resposta.fichas.length, 1, 'Somente Ficha ativa de jogador ainda ap
 const resumo = resposta.fichas[0];
 assert.equal(resumo.personagem, 'Claire');
 assert.equal(resumo.jogador, 'Ana');
-assert.deepEqual(resumo.pv, { atual: 5, maximo: 10, temporarios: 2 });
+assert.deepEqual(resumo.pv, { atual: 5, maximo: 10 });
 assert.deepEqual(resumo.sa, { atual: 2, maximo: 4 });
-assert.deepEqual(resumo.bi, { atual: 1, maximo: 3, fase: 1 });
+assert.deepEqual(resumo.bi, { atual: 1, maximo: 3 });
 assert.deepEqual(resumo.periciasPassivas, { percepcao: 15, fortitude: 12, reflexos: 14, vontade: 11 });
-assert.deepEqual(resumo.condicoes, [{ id: 'cego', nome: 'Cego' }]);
+assert.ok(!('condicoes' in resumo), 'Condições não são expostas ao Mestre');
 assert.deepEqual(Object.keys(resumo).sort(), [
-  'bi', 'condicoes', 'defesa', 'id', 'iniciativa', 'jogador',
-  'movimento', 'nivel', 'personagem', 'periciasPassivas', 'pv', 'reducaoDano', 'sa',
+  'bi', 'defesa', 'id', 'iniciativa', 'jogador', 'personagem', 'periciasPassivas', 'pv', 'sa',
 ].sort());
 assert.ok(!JSON.stringify(resumo).includes('SEGREDO'));
 assert.ok(!JSON.stringify(resumo).includes('ANOTAÇÃO PRIVADA'));
 assert.ok(!JSON.stringify(resumo).includes('atributos'));
 assert.ok(!JSON.stringify(resumo).includes('habilidades'));
+assert.ok(!JSON.stringify(resumo).includes('condicoes'));
+assert.ok(!('nivel' in resumo));
+assert.ok(!('movimento' in resumo));
+assert.ok(!('reducaoDano' in resumo));
+assert.ok(!('temporarios' in resumo.pv));
+assert.ok(!('fase' in resumo.bi));
 console.log('Projeção operacional das Fichas para o Mestre: OK');
