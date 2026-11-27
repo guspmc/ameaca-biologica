@@ -42,6 +42,12 @@ function criarResumoFichasMestre({ carregar, infoMesa, calcular, condicoesCatalo
             reducaoDano: calculados.rd,
             iniciativa: calculados.iniciativa,
             movimento: calculados.movimento,
+            periciasPassivas: {
+              percepcao: calculados.passivos?.percepcao ?? null,
+              fortitude: calculados.passivos?.fortitude ?? null,
+              reflexos: calculados.passivos?.reflexos ?? null,
+              vontade: calculados.passivos?.vontade ?? null,
+            },
             condicoes: condicoes.map((id) => ({ id, nome: catalogo.get(id) || id })),
           };
         });
