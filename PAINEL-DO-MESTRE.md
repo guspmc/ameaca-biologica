@@ -120,3 +120,6 @@ Essa projeção deve ser atualizada quando a Ficha mudar e ser limitada aos pers
 - Se uma gravação receber HTTP 409 por versão desatualizada, o Painel preserva o estado local e bloqueia novas atualizações automáticas vindas do servidor.
 - A interface informa o conflito e oferece uma ação explícita para descartar as alterações locais e carregar a versão do servidor, sempre mediante confirmação. Não há descarte silencioso nem mesclagem automática.
 - O teste de fluxo também verifica que campos de texto/seleção em foco suspendem a atualização visual periódica.
+
+- A proteção também cobre o evento SSE da Mesa: o redesenho geral é adiado enquanto o foco estiver em INPUT, TEXTAREA ou SELECT dentro do conteúdo da Mesa. Ao sair do campo, o redesenho pendente é executado.
+- Ao iniciar um novo combate, a versão recebida do servidor é preservada; assim, a gravação continua sujeita à verificação de concorrência (não cai no modo de compatibilidade de clientes antigos).
