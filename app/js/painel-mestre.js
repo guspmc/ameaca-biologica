@@ -251,7 +251,7 @@ function montarPainelCombateMestre(){
     for(const x of [['personagem','Personagem'],['criatura','Criatura']]){const o=document.createElement('option');o.value=x[0];o.textContent=x[1];tipo.append(o);}
     const [la,agi]=campo('AGI (desempate)','combate-agi','input','0');const [lb,bonus]=campo('Bônus de Iniciativa','combate-bonus','input','0');
     agi.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
-    tipo.addEventListener('change',()=>{if(tipo.value==='personagem')bonus.value=agi.value;});
+    tipo.addEventListener('change',()=>{if(tipo.value==='personagem'){bonus.value=agi.value;catalogo.value='';}});
     const add=document.createElement('button');add.type='submit';add.className='botao primario';add.textContent='Adicionar';form.append(lc,catalogo,ln,nome,lt,tipo,la,agi,lb,bonus,add);
     preencherSeletorCriaturasCombate();
     const msg=document.createElement('p');msg.id='combate-msg';msg.className='mensagem';msg.hidden=true;
