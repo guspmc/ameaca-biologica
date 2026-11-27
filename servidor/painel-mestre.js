@@ -44,7 +44,9 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
           const pvPerseguicaoMaximo=Number(p.pvPerseguicaoMaximo),pvCombateMaximo=p.pvCombateMaximo==null?null:Number(p.pvCombateMaximo);
           if(p.fase!=='perseguicao'&&p.fase!=='combate'||!Number.isInteger(pvPerseguicaoMaximo)||pvPerseguicaoMaximo<1||pvPerseguicaoMaximo>9999||
             (pvCombateMaximo!==null&&(!Number.isInteger(pvCombateMaximo)||pvCombateMaximo<1||pvCombateMaximo>9999)))return {erro:'Dados da Fase de Perseguição inválidos.'};
-          Object.assign(extra,{perseguidor:true,fase:p.fase,pvPerseguicaoMaximo,pvCombateMaximo});
+          const proximidadePerseguidor=p.proximidadePerseguidor===undefined?5:Number(p.proximidadePerseguidor);
+          if(!Number.isInteger(proximidadePerseguidor)||proximidadePerseguidor<0||proximidadePerseguidor>10)return {erro:'Proximidade do Perseguidor deve estar entre 0 e 10.'};
+          Object.assign(extra,{perseguidor:true,fase:p.fase,pvPerseguicaoMaximo,pvCombateMaximo,proximidadePerseguidor});
         }
         Object.assign(participante,extra);
       }
