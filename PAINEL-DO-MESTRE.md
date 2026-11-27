@@ -69,7 +69,7 @@ Antes do merge, atualizar esta branch com a `main` e revisar principalmente `ind
 
 ## Encontros preparados
 
-Os encontros salvos podem ser editados individualmente: nome, nível, quantidade de personagens, intensidade, pontos, orçamento, composição, cenário e direção/comportamento. A edição preserva o identificador do encontro e valida os campos numéricos antes de salvar. A exclusão exige confirmação.
+Os encontros salvos podem ser editados individualmente: nome, nível, quantidade de personagens, intensidade, pontos, orçamento, composição, cenário e direção/comportamento. A edição preserva o identificador do encontro e valida os campos numéricos antes de salvar. A exclusão exige confirmação. Também podem ser duplicados: a cópia recebe um novo identificador, o sufixo “(cópia)” no nome e mantém seus próprios dados, sem alterar o encontro original.
 
 ## Gerenciamento de condições
 
