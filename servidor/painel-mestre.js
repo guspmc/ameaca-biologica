@@ -32,8 +32,16 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
         duracao: String(x.duracao || '').trim().slice(0, 80),
         observacao: String(x.observacao || '').trim().slice(0, 300)
       })).filter(x => x.nome) : (original?.condicoes || []);
-      participantes.push({ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,condicoes,
-        entradaTardia:original?original.entradaTardia:Boolean(p.entradaTardia),ordem:original?original.ordem:i });
+      const participante={ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,condicoes,
+        entradaTardia:original?original.entradaTardia:Boolean(p.entradaTardia),ordem:original?original.ordem:i };
+      if(tipo==='criatura' && p.criaturaId){
+        const pvMaximo=Number(p.pvMaximo),pvAtual=Number(p.pvAtual),defesa=Number(p.defesa);
+        if(typeof p.criaturaId!=='string'||p.criaturaId.length>80||!Number.isInteger(pvMaximo)||pvMaximo<1||pvMaximo>9999||
+          !Number.isInteger(pvAtual)||pvAtual<0||pvAtual>pvMaximo||!Number.isInteger(defesa)||defesa<0||defesa>100||
+          typeof p.movimento!=='string'||p.movimento.length>80) return {erro:'Dados de ficha da Criatura inválidos.'};
+        Object.assign(participante,{criaturaId:p.criaturaId,pvAtual,pvMaximo,defesa,movimento:p.movimento});
+      }
+      participantes.push(participante);
     }
     const rodada=Number(corpo.rodada);
     if (!Number.isInteger(rodada) || rodada<1 || rodada>9999) return { erro:'Rodada inválida.' };
