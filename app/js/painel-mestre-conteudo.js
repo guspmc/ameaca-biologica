@@ -248,8 +248,6 @@ function desenharConteudoMestre() {
     li.append(elemento('strong', item.titulo), elemento('p', item.tipo + (item.visivel ? ' · marcado para compartilhar' : ' · privado')));
     const editarDoc = elemento('button', 'Editar', 'botao pequeno');
     editarDoc.type = 'button'; editarDoc.addEventListener('click', () => editarDocumentoMestre(item.id));
-    const editarItem = elemento('button', 'Editar', 'botao pequeno');
-    editarItem.type = 'button'; editarItem.addEventListener('click', () => editarItemMestre(item.id));
     const publicar = elemento('button', item.visivel ? 'Retirar publicação' : 'Publicar', 'botao pequeno');
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
@@ -261,11 +259,13 @@ function desenharConteudoMestre() {
     const li = elemento('li', '', 'registro-mestre');
     li.append(elemento('strong', item.nome), elemento('p', (item.categoria || 'Item') + ' · ' + (item.efeito || item.descricao || 'Sem efeito descrito')));
     const estadoPublicacao = elemento('span', item.visivel ? 'Publicado para Jogadores' : 'Privado', 'dica');
+    const editar = elemento('button', 'Editar', 'botao pequeno');
+    editar.type = 'button'; editar.addEventListener('click', () => editarItemMestre(item.id));
     const publicar = elemento('button', item.visivel ? 'Retirar publicação' : 'Publicar', 'botao pequeno');
     publicar.type = 'button'; publicar.addEventListener('click', () => { item.visivel = !item.visivel; salvarConteudoMestre(); });
     const remover = elemento('button', 'Excluir', 'botao pequeno perigo');
     remover.type = 'button'; remover.addEventListener('click', () => { if (!confirm('Excluir este item personalizado?')) return; conteudoMestre.itens = conteudoMestre.itens.filter(x => x.id !== item.id); salvarConteudoMestre(); });
-    li.append(estadoPublicacao, editarItem, publicar, remover); itens.append(li);
+    li.append(estadoPublicacao, editar, publicar, remover); itens.append(li);
   }
 }
 
