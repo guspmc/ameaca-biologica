@@ -84,6 +84,15 @@ r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 assert.equal(r.status,200);
 assert.equal(r.dados.combate.participantes[0].fase,'perseguicao');
 assert.equal(r.dados.combate.participantes[0].pvCombateMaximo,135);
+assert.equal(r.dados.combate.participantes[0].proximidadePerseguidor,5);
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'b1',nome:'Tirano perseguidor',tipo:'criatura',agi:1,bonusIniciativa:1,d20:10,criaturaId:'tirano-t103-perseguidor',pvAtual:80,pvMaximo:80,defesa:18,movimento:'9 m',perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:80,pvCombateMaximo:135,proximidadePerseguidor:9}
+]});
+assert.equal(r.status,200);assert.equal(r.dados.combate.participantes[0].proximidadePerseguidor,9);
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'b1',nome:'Tirano perseguidor',tipo:'criatura',agi:1,bonusIniciativa:1,d20:10,criaturaId:'tirano-t103-perseguidor',pvAtual:80,pvMaximo:80,defesa:18,movimento:'9 m',perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:80,pvCombateMaximo:135,proximidadePerseguidor:11}
+]});
+assert.equal(r.status,400);
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 {id:'b1',nome:'Cerberus',tipo:'criatura',agi:4,bonusIniciativa:4,d20:10,criaturaId:'cerberus',pvAtual:0,pvMaximo:12,defesa:14,movimento:'15 m'}
 ]});
