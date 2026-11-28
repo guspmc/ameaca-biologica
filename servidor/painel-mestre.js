@@ -50,7 +50,15 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
             (pvCombateMaximo!==null&&(!Number.isInteger(pvCombateMaximo)||pvCombateMaximo<1||pvCombateMaximo>9999)))return {erro:'Dados da Fase de Perseguição inválidos.'};
           const proximidadePerseguidor=p.proximidadePerseguidor===undefined?5:Number(p.proximidadePerseguidor);
           if(!Number.isInteger(proximidadePerseguidor)||proximidadePerseguidor<0||proximidadePerseguidor>10)return {erro:'Proximidade do Perseguidor deve estar entre 0 e 10.'};
-          Object.assign(extra,{perseguidor:true,fase:p.fase,pvPerseguicaoMaximo,pvCombateMaximo,proximidadePerseguidor});
+          const rodadasAtordoado=p.rodadasAtordoado===undefined?0:Number(p.rodadasAtordoado);
+          const aguardandoRetorno=p.aguardandoRetorno===undefined?false:Boolean(p.aguardandoRetorno);
+          const rodadaInicioAtordoado=p.rodadaInicioAtordoado==null?null:Number(p.rodadaInicioAtordoado);
+          if(!Number.isInteger(rodadasAtordoado)||rodadasAtordoado<0||rodadasAtordoado>4||
+            (aguardandoRetorno&&(!Number.isInteger(rodadaInicioAtordoado)||rodadaInicioAtordoado<1||rodadaInicioAtordoado>9999))||
+            (!aguardandoRetorno&&(rodadasAtordoado!==0||rodadaInicioAtordoado!==null)))
+            return {erro:'Estado de Atordoamento do Perseguidor inválido.'};
+          Object.assign(extra,{perseguidor:true,fase:p.fase,pvPerseguicaoMaximo,pvCombateMaximo,proximidadePerseguidor,
+            rodadasAtordoado,aguardandoRetorno,rodadaInicioAtordoado});
         }
         Object.assign(participante,extra);
       }
