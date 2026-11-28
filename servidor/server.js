@@ -283,18 +283,15 @@ function lerArquivoUpload(req, limite) {
 // As regras e o catálogo chegam com a implementação de Fichas da main do Claude.
 // A guarda mantém esta branch executável isoladamente enquanto essas dependências não existem.
 let regrasResumoFichas = null;
-let condicoesResumoFichas = [];
 try {
   regrasResumoFichas = require('../app/js/regras.js');
-  condicoesResumoFichas = require('../app/js/dados-livro.js').CONDICOES || [];
 } catch {
-  // A integração final com a main fornecerá esses módulos.
+  // A integração final com a main fornecerá o módulo oficial de regras.
 }
 const resumoFichasMestre = criarResumoFichasMestre({
   carregar: () => lerDados('fichas.json', {}),
   infoMesa: (mesaId) => mesas.info(mesaId),
   calcular: regrasResumoFichas?.calcular || (() => { throw new Error('Módulo de regras das Fichas indisponível.'); }),
-  condicoesCatalogo: condicoesResumoFichas,
 });
 
 
