@@ -86,6 +86,7 @@ function preencherSeletorCriaturasCombate(){
   }
   seletor.value=atual;
 }
+function proximaOrdemCombate(){return combateMestre.participantes.reduce((maior,p)=>Math.max(maior,Number.isInteger(p.ordem)?p.ordem:-1),-1)+1;}
 function prepararEncontroNoCombate(encontro){
   if(!combateMestre||!Array.isArray(encontro?.criaturas)){mensagem($('aviso-mesa'),'Não foi possível preparar este encontro.','erro');return;}
   const catalogo=window.BESTIARIO_AB||[];
@@ -104,7 +105,7 @@ function prepararEncontroNoCombate(encontro){
         pvMaximo:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
         ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,proximidadePerseguidor:5,
           pvCombateMaximo:(window.BESTIARIO_AB||[]).find(x=>x.id===criatura.formaCombateId)?.pv||null}:{}),
-        entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length+novas.length});
+        entradaTardia:combateMestre.combateAtivo,ordem:proximaOrdemCombate()+novas.length});
     }
   }
   if(!novas.length){mensagem($('aviso-mesa'),'As criaturas deste encontro não foram encontradas no Bestiário.','aviso');return;}
@@ -131,7 +132,7 @@ function adicionarParticipanteCombate(ev){
   const agi=criatura?criatura.atributos.agi:Number($('combate-agi').value),bonus=criatura?criatura.iniciativa:Number($('combate-bonus').value);
   if(!nome||!Number.isInteger(agi)||agi < -10||agi>30||!Number.isInteger(bonus)||bonus < -10||bonus>30){mensagem($('combate-msg'),'Informe nome, AGI e bônus de Iniciativa válidos.','erro');return;}
   if(combateMestre.participantes.some(p=>p.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){mensagem($('combate-msg'),'Já existe um participante com esse nome.','erro');return;}
-  const participante={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo,agi,bonusIniciativa:bonus,d20:0,iniciativa:0,entradaTardia:combateMestre.combateAtivo,ordem:combateMestre.participantes.length};
+  const participante={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()).slice(0,40),nome,tipo,agi,bonusIniciativa:bonus,d20:0,iniciativa:0,entradaTardia:combateMestre.combateAtivo,ordem:proximaOrdemCombate()};
   if(criatura)Object.assign(participante,{criaturaId:criatura.id,pvAtual:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,
     pvMaximo:criatura.categoria==='Perseguidor'?criatura.pvPerseguicao:criatura.pv,defesa:criatura.defesa,movimento:criatura.movimento,
     ...(criatura.categoria==='Perseguidor'?{perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:criatura.pvPerseguicao,proximidadePerseguidor:5,
@@ -289,7 +290,7 @@ function desenharCombateMestre(){
         controles.append(aproximar,afastar);distancia.append(tituloDistancia,legenda,trilho,estadoDistancia,controles);li.append(distancia);
         const avancar=document.createElement('button');avancar.type='button';avancar.className='botao pequeno';avancar.textContent='Declarar Forma de Combate';
         avancar.disabled=!Number.isInteger(p.pvCombateMaximo)||p.pvCombateMaximo<1;
-        avancar.addEventListener('click',()=>{if(!confirm('Encerrar a Fase de Perseguição e iniciar a Forma de Combate com '+p.pvCombateMaximo+' PV?'))return;p.fase='combate';p.pvAtual=p.pvCombateMaximo;p.pvMaximo=p.pvCombateMaximo;salvarCombateMestre();});
+        avancar.addEventListener('click',()=>{if(!confirm('Encerrar a Fase de Perseguição e iniciar a Forma de Combate com '+p.pvCombateMaximo+' PV?'))return;p.fase='combate';p.pvAtual=p.pvCombateMaximo;p.pvMaximo=p.pvCombateMaximo;p.rodadasAtordoado=0;p.aguardandoRetorno=false;p.rodadaInicioAtordoado=null;salvarCombateMestre();});
         li.append(avancar);
       }
     }
