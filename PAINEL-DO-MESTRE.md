@@ -184,7 +184,7 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - Arquivo do Mestre v1.0, p. 14: para Criaturas, Iniciativa = 1d20 + Iniciativa indicada na ficha; Fortitude, Reflexos, Vontade e Percepção já são valores totais prontos para uso.
 - Arquivo do Mestre v1.0, p. 21: categorias, pontos, orçamento para quatro Personagens e ajuste aproximado de 25% por personagem acima/abaixo de quatro.
 - Arquivo do Mestre v1.0, pp. 28–49: catálogo de B.O.Ws. incluído nesta etapa.
-- Arquivo do Mestre v1.0, pp. 50–55: Perseguidores e suas regras específicas ainda não foram integrados ao Bestiário comum.
+- Arquivo do Mestre v1.0, pp. 50–55: regras específicas dos Perseguidores, integradas na sexta etapa abaixo.
 
 
 ## Sexta etapa — Perseguidores e montagem manual de encontros
