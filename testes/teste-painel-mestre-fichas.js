@@ -9,7 +9,7 @@ const fichas = {
       id: 'ativa', usuario: 'Ana', estado: 'ativa', dados: {
         nome: 'Claire', conceito: 'Sobrevivente', historia: 'SEGREDO',
         nivel: 1, atributos: { FOR: 1 }, habilidades: ['segredo'],
-        anotacoes: 'ANOTAÇÃO PRIVADA', jogo: { condicoes: ['cego'] },
+        anotacoes: 'ANOTAÇÃO PRIVADA', jogo: { condicoes: ['cego', 'corrosao', 'condicao-inventada'] },
       },
     },
     rascunho: { id: 'rascunho', usuario: 'Ana', estado: 'rascunho', dados: { nome: 'Rascunho' } },
@@ -27,7 +27,7 @@ const painel = criarResumoFichasMestre({
   carregar: () => fichas,
   infoMesa: (id) => id === 'mesaA' ? { mestre: 'Mestre', aprovados: ['Ana', 'Bia'] } : null,
   calcular,
-  condicoesCatalogo: [{ id: 'cego', nome: 'Cego' }],
+  condicoesCatalogo: [{ id: 'cego', nome: 'Cego' }, { id: 'corrosao', nome: 'Corrosão' }],
 });
 
 assert.equal(painel.listar('mesaA', 'Ana').status, 403, 'Jogador não pode consultar a projeção do Mestre');
@@ -47,15 +47,15 @@ assert.deepEqual(resumo.pv, { atual: 5, maximo: 10 });
 assert.deepEqual(resumo.sa, { atual: 2, maximo: 4 });
 assert.deepEqual(resumo.bi, { atual: 1, maximo: 3 });
 assert.deepEqual(resumo.periciasPassivas, { percepcao: 15, fortitude: 12, reflexos: 14, vontade: 11 });
-assert.ok(!('condicoes' in resumo), 'Condições não são expostas ao Mestre');
+assert.deepEqual(resumo.condicoes, ['Cego', 'Corrosão'], 'Mestre recebe somente nomes de condições oficiais da Ficha Ativa');
 assert.deepEqual(Object.keys(resumo).sort(), [
-  'bi', 'defesa', 'id', 'iniciativa', 'jogador', 'personagem', 'periciasPassivas', 'pv', 'sa',
+  'bi', 'condicoes', 'defesa', 'id', 'iniciativa', 'jogador', 'personagem', 'periciasPassivas', 'pv', 'sa',
 ].sort());
 assert.ok(!JSON.stringify(resumo).includes('SEGREDO'));
 assert.ok(!JSON.stringify(resumo).includes('ANOTAÇÃO PRIVADA'));
 assert.ok(!JSON.stringify(resumo).includes('atributos'));
 assert.ok(!JSON.stringify(resumo).includes('habilidades'));
-assert.ok(!JSON.stringify(resumo).includes('condicoes'));
+assert.ok(!JSON.stringify(resumo).includes('condicao-inventada'));
 assert.ok(!('nivel' in resumo));
 assert.ok(!('movimento' in resumo));
 assert.ok(!('reducaoDano' in resumo));
