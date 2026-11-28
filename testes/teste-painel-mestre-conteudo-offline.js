@@ -31,6 +31,14 @@ const codigo = fs.readFileSync(path.join(__dirname, '../app/js/painel-mestre-con
 vm.runInContext(codigo, contexto, { filename: 'painel-mestre-conteudo.js' });
 
 (async () => {
+  // O Bestiário deve usar o arquivo estático do PWA quando o Mestre está Offline.
+  contexto.buscar = async (...args) => { chamadas.push(args); return [{ id: 'bow-teste', nome: 'Criatura de teste' }]; };
+  await vm.runInContext('carregarBestiarioMestre()', contexto);
+  assert.equal(chamadas[0][0], '/dados/bestiario.json');
+  assert.equal(vm.runInContext('BESTIARIO_AB.length', contexto), 1);
+  chamadas.length = 0;
+  contexto.buscar = async (...args) => { chamadas.push(args); return respostaServidor; };
+
   // Conteúdo previamente sincronizado continua disponível quando a conexão cai durante a sessão.
   const sincronizado = { versao: 3, anotacoes: 'Sessão no laboratório', encontros: [{id:'e1'}], documentos: [], itens: [] };
   vm.runInContext('conteudoMestre = '+JSON.stringify(sincronizado), contexto);
