@@ -73,5 +73,20 @@ vm.runInContext(codigo, contexto, { filename: 'painel-mestre-conteudo.js' });
   assert.equal(vm.runInContext('conteudoMestreOfflinePendente()', contexto), true);
   assert.equal(vm.runInContext('lerConteudoMestreOffline().anotacoes', contexto), 'Edição conflitante');
 
+  // Uma resposta atrasada da Mesa A não pode sobrescrever o conteúdo da Mesa B.
+  contexto.estado.mesaId = 'mesa-a';
+  contexto.estado.modo = 'local';
+  vm.runInContext("conteudoMestre = { versao: 7, anotacoes: 'Anotação da Mesa A', encontros: [], documentos: [], itens: [] }", contexto);
+  let resolverGravacao;
+  contexto.buscar = () => new Promise(resolve => { resolverGravacao = resolve; });
+  const gravacaoMesaA = vm.runInContext('salvarConteudoMestre()', contexto);
+  contexto.estado.mesaId = 'mesa-b';
+  vm.runInContext("conteudoMestre = { versao: 2, anotacoes: 'Conteúdo da Mesa B', encontros: [], documentos: [], itens: [] }", contexto);
+  resolverGravacao({ conteudo: { versao: 8, anotacoes: 'Anotação da Mesa A', encontros: [], documentos: [], itens: [] } });
+  await gravacaoMesaA;
+  assert.equal(vm.runInContext('conteudoMestre.anotacoes', contexto), 'Conteúdo da Mesa B');
+  assert.equal(vm.runInContext("JSON.parse(localStorage.getItem('ab-conteudo-mestre:mesa-a')).conteudo.anotacoes", contexto), 'Anotação da Mesa A');
+  assert.equal(vm.runInContext("localStorage.getItem('ab-conteudo-mestre:mesa-b')", contexto), null);
+
   console.log('Conteúdo do Painel do Mestre offline: tudo OK');
 })().catch(erro => { console.error(erro); process.exitCode = 1; });
