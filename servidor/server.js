@@ -428,8 +428,16 @@ const servidor = http.createServer(async (req, res) => {
           const publicacoes = conteudoMestre.publicacoes(mesaId);
           const publicados = [...publicacoes.documentos.map(doc => doc.arquivoUrl), ...publicacoes.itens.map(item => item.imagemUrl)];
           const rota = '/api/mesas/' + encodeURIComponent(mesaId) + '/arquivos/' + encodeURIComponent(partesArquivo[4]);
+          const protocolo = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
+          const origemRequisicao = protocolo + '://' + String(req.headers.host || '');
           const autorizado = publicados.some(urlArquivo => {
-            try { return new URL(urlArquivo).pathname === rota; } catch { return urlArquivo === rota; }
+            if (typeof urlArquivo !== 'string') return false;
+            if (urlArquivo === rota) return true;
+            try {
+              const publicada = new URL(urlArquivo);
+              return publicada.origin === origemRequisicao && publicada.pathname === rota &&
+                !publicada.search && !publicada.hash;
+            } catch { return false; }
           });
           if (!autorizado) return json(res, 404, { erro: 'Arquivo não encontrado.' });
         }
