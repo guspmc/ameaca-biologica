@@ -31,7 +31,7 @@ const codigo = fs.readFileSync(path.join(__dirname, '../app/js/painel-mestre-con
 vm.runInContext(codigo, contexto, { filename: 'painel-mestre-conteudo.js' });
 
 (async () => {
-  // Conteúdo sincronizado fica disponível offline após recarregar a página.
+  // Conteúdo previamente sincronizado continua disponível quando a conexão cai durante a sessão.
   const sincronizado = { versao: 3, anotacoes: 'Sessão no laboratório', encontros: [{id:'e1'}], documentos: [], itens: [] };
   vm.runInContext('conteudoMestre = '+JSON.stringify(sincronizado), contexto);
   assert.equal(vm.runInContext('guardarConteudoMestreOffline(false)', contexto), true);
