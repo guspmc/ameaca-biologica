@@ -152,7 +152,11 @@ assert.equal(condicaoPorNome('Desacordado').duracao,
 assert.equal(vm.runInContext('duracaoInicialCondicao('+JSON.stringify(condicaoPorNome('Colapso Viral'))+')', contexto), '');
 assert.equal(vm.runInContext('duracaoInicialCondicao('+JSON.stringify(condicaoPorNome('Cabeça Carmesim'))+')', contexto), '');
 assert.equal(vm.runInContext('duracaoInicialCondicao('+JSON.stringify(condicaoPorNome('Infectado Especial'))+')', contexto), '');
-assert.equal(vm.runInContext('duracaoInicialCondicao('+JSON.stringify(condicaoPorNome('Corrosão'))+')', contexto), 'Conforme a fonte');
+assert.equal(vm.runInContext('duracaoInicialCondicao('+JSON.stringify(condicaoPorNome('Corrosão'))+')', contexto), '');
+assert.equal(condicaoPorNome('Agarrado').pagina, 81);
+assert.equal(condicaoPorNome('Corrosão').pagina, 82);
+assert.equal(condicaoPorNome('Queimadura').pagina, 83);
+assert.ok(catalogoCondicoes.every(c => Number.isInteger(c.pagina) && c.pagina >= 81 && c.pagina <= 83));
 
 
 
