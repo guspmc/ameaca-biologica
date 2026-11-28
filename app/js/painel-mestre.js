@@ -3,24 +3,26 @@
 const renderizarMesaBase = renderizarMesa;
 const carregarMesaAtualBase = carregarMesaAtual;
 let combateMestre=null, carregandoCombate=false, salvandoCombate=false, conflitoCombate=false;
+let salvarCombatePendente=false, salvarCombatePendenteMesaId=null;
 
 // O snapshot local mantém o estado do Mestre durante quedas de conexão.
-// A sincronização usa a versão otimista já validada pelo servidor.
-function chaveCombateOffline(){return 'ab-combate-mestre:'+String(estado.mesaId||'');}
-function guardarCombateOffline(pendente=true){
-  if(!combateMestre||!estado.mesaId)return false;
-  try{localStorage.setItem(chaveCombateOffline(),JSON.stringify({estado:combateMestre,pendente:!!pendente,atualizadoEm:new Date().toISOString()}));return true;}
+// Cada operação recebe o ID da Mesa capturado no início; respostas atrasadas
+// nunca podem gravar o estado de uma Mesa na chave ou na tela de outra.
+function chaveCombateOffline(mesaId=estado.mesaId){return 'ab-combate-mestre:'+String(mesaId||'');}
+function guardarCombateOffline(pendente=true,mesaId=estado.mesaId,estadoCombate=combateMestre){
+  if(!estadoCombate||!mesaId)return false;
+  try{localStorage.setItem(chaveCombateOffline(mesaId),JSON.stringify({estado:estadoCombate,pendente:!!pendente,atualizadoEm:new Date().toISOString()}));return true;}
   catch{return false;}
 }
-function envelopeCombateOffline(){
-  try{const bruto=localStorage.getItem(chaveCombateOffline());if(!bruto)return null;const salvo=JSON.parse(bruto);
+function envelopeCombateOffline(mesaId=estado.mesaId){
+  try{const bruto=localStorage.getItem(chaveCombateOffline(mesaId));if(!bruto)return null;const salvo=JSON.parse(bruto);
     // Compatibilidade com snapshots antigos, que ainda não tinham metadados.
     return salvo&&salvo.estado&&typeof salvo.estado==='object'?salvo:{estado:salvo,pendente:true};
   }catch{return null;}
 }
-function lerCombateOffline(){const salvo=envelopeCombateOffline();return salvo?.estado||null;}
-function combateOfflinePendente(){return envelopeCombateOffline()?.pendente===true;}
-function limparCombateOffline(){try{localStorage.removeItem(chaveCombateOffline());}catch{}}
+function lerCombateOffline(mesaId=estado.mesaId){const salvo=envelopeCombateOffline(mesaId);return salvo?.estado||null;}
+function combateOfflinePendente(mesaId=estado.mesaId){return envelopeCombateOffline(mesaId)?.pendente===true;}
+function limparCombateOffline(mesaId=estado.mesaId){try{localStorage.removeItem(chaveCombateOffline(mesaId));}catch{}}
 
 function painelMestreEmEdicao(){
   const raiz=$('bloco-combate-mestre'),ativo=document.activeElement;
@@ -58,63 +60,111 @@ function duracaoInicialCondicao(){
 function referenciaPaginaCondicao(item){
   return 'Arquivo do Jogador, p. '+item.pagina;
 }
-function apiPainelMestre(metodo='GET',corpo) {
-  return buscar(estado.base+'/api/painel-mestre/'+encodeURIComponent(estado.mesaId)+'/combate',{
+function apiPainelMestre(metodo='GET',corpo,mesaId=estado.mesaId) {
+  return buscar(estado.base+'/api/painel-mestre/'+encodeURIComponent(mesaId)+'/combate',{
     method:metodo,headers:{Authorization:'Bearer '+estado.token,...(corpo?{'Content-Type':'application/json'}:{})},
     body:corpo?JSON.stringify(corpo):undefined
   });
 }
 async function carregarCombateMestre(silencioso=false,forcar=false) {
-  if(!estado.mesaId||estado.mesaAtual?.papel!=='mestre'||carregandoCombate||salvandoCombate||(!forcar&&(conflitoCombate||painelMestreEmEdicao())))return;
+  const mesaIdDaOperacao=estado.mesaId;
+  if(!mesaIdDaOperacao||estado.mesaAtual?.papel!=='mestre'||carregandoCombate||salvandoCombate||(!forcar&&(conflitoCombate||painelMestreEmEdicao())))return;
   if(estado.modo!=='local'){
-    const local=lerCombateOffline();
-    if(local){combateMestre=local;desenharCombateMestre();}
+    const local=lerCombateOffline(mesaIdDaOperacao);
+    if(local&&estado.mesaId===mesaIdDaOperacao){combateMestre=local;desenharCombateMestre();}
     return;
   }
-  const pendente=lerCombateOffline();
-  if(pendente&&combateOfflinePendente()&&!conflitoCombate){
+  const pendente=lerCombateOffline(mesaIdDaOperacao);
+  if(pendente&&combateOfflinePendente(mesaIdDaOperacao)&&!conflitoCombate){
+    if(estado.mesaId!==mesaIdDaOperacao)return;
     combateMestre=pendente;
     desenharCombateMestre();
     await salvarCombateMestre();
     return;
   }
   carregandoCombate=true;
-  try{const r=await apiPainelMestre();combateMestre=r.combate;conflitoCombate=false;guardarCombateOffline(false);desenharCombateMestre();}
-  catch(e){
-    const local=lerCombateOffline();if(!combateMestre&&local){combateMestre=local;desenharCombateMestre();}
-    if(!silencioso)mensagem($('aviso-mesa'),e.message,'aviso');
+  try{
+    const r=await apiPainelMestre('GET',undefined,mesaIdDaOperacao);
+    if(estado.mesaId!==mesaIdDaOperacao){
+      guardarCombateOffline(false,mesaIdDaOperacao,r.combate);
+      return;
+    }
+    combateMestre=r.combate;conflitoCombate=false;
+    guardarCombateOffline(false,mesaIdDaOperacao,combateMestre);
+    desenharCombateMestre();
+  }catch(e){
+    const local=lerCombateOffline(mesaIdDaOperacao);
+    if(estado.mesaId===mesaIdDaOperacao){
+      if(!combateMestre&&local){combateMestre=local;desenharCombateMestre();}
+      if(!silencioso)mensagem($('aviso-mesa'),e.message,'aviso');
+    }
+  }finally{
+    carregandoCombate=false;
+    // Se a Mesa mudou durante a consulta, carrega a Mesa atualmente aberta.
+    if(estado.mesaId&&estado.mesaId!==mesaIdDaOperacao&&estado.mesaAtual?.papel==='mestre'){
+      carregarCombateMestre(true,true);
+    }
   }
-  finally{carregandoCombate=false;}
 }
-let salvarCombatePendente=false;
 async function salvarCombateMestre() {
   if(!combateMestre)return;
-  if(salvandoCombate){salvarCombatePendente=true;return;}
+  const mesaIdDaOperacao=estado.mesaId;
+  if(!mesaIdDaOperacao)return;
+  if(salvandoCombate){
+    salvarCombatePendente=true;
+    salvarCombatePendenteMesaId=mesaIdDaOperacao;
+    return;
+  }
   if(estado.modo!=='local'){
-    const salvo=guardarCombateOffline();
-    desenharCombateMestre();
-    mensagem($('aviso-mesa'),salvo?'Alterações guardadas neste aparelho. Serão sincronizadas quando o servidor voltar.':'Não foi possível guardar as alterações offline neste navegador.','aviso');
+    const salvo=guardarCombateOffline(true,mesaIdDaOperacao,combateMestre);
+    if(estado.mesaId===mesaIdDaOperacao){
+      desenharCombateMestre();
+      mensagem($('aviso-mesa'),salvo?'Alterações guardadas neste aparelho. Serão sincronizadas quando o servidor voltar.':'Não foi possível guardar as alterações offline neste navegador.','aviso');
+    }
     return;
   }
   salvandoCombate=true;
-  let erro=null;
+  let erro=null,ultimaCopiaEnviada=null;
   try{
     do{
       salvarCombatePendente=false;
+      salvarCombatePendenteMesaId=null;
+      if(estado.mesaId!==mesaIdDaOperacao)break;
       const copia=JSON.parse(JSON.stringify(combateMestre));
-      const r=await apiPainelMestre('PUT',copia);
-      combateMestre=r.combate;
-      guardarCombateOffline(false);
-    }while(salvarCombatePendente);
+      ultimaCopiaEnviada=copia;
+      const r=await apiPainelMestre('PUT',copia,mesaIdDaOperacao);
+      if(estado.mesaId!==mesaIdDaOperacao){
+        guardarCombateOffline(false,mesaIdDaOperacao,r.combate||copia);
+        break;
+      }
+      const houveEdicaoDuranteEnvio=JSON.stringify(combateMestre)!==JSON.stringify(copia);
+      if(houveEdicaoDuranteEnvio){
+        if(r.combate&&Number.isInteger(r.combate.versao))combateMestre.versao=r.combate.versao;
+        guardarCombateOffline(true,mesaIdDaOperacao,combateMestre);
+        salvarCombatePendente=true;
+        salvarCombatePendenteMesaId=mesaIdDaOperacao;
+      }else{
+        combateMestre=r.combate;
+        guardarCombateOffline(false,mesaIdDaOperacao,combateMestre);
+      }
+    }while(salvarCombatePendente&&salvarCombatePendenteMesaId===mesaIdDaOperacao);
   }catch(e){
     erro=e;
-    if(e.status===409)conflitoCombate=true;
-    else guardarCombateOffline();
-  }
-  finally{
+    if(e.status===409&&estado.mesaId===mesaIdDaOperacao)conflitoCombate=true;
+    const snapshot=estado.mesaId===mesaIdDaOperacao?combateMestre:ultimaCopiaEnviada;
+    if(snapshot)guardarCombateOffline(true,mesaIdDaOperacao,snapshot);
+  }finally{
+    const mesaAtual=estado.mesaId;
+    const salvarOutraMesa=Boolean(salvarCombatePendente&&salvarCombatePendenteMesaId===mesaAtual&&mesaAtual!==mesaIdDaOperacao);
+    salvarCombatePendente=false;
+    salvarCombatePendenteMesaId=null;
     salvandoCombate=false;
-    desenharCombateMestre();
-    if(erro)mensagem($('aviso-mesa'),eStatusOffline(erro)?'Sem conexão com o servidor. Alterações guardadas neste aparelho e aguardam sincronização.':erro.message,eStatusOffline(erro)?'aviso':'erro');
+    if(mesaAtual===mesaIdDaOperacao){
+      desenharCombateMestre();
+      if(erro)mensagem($('aviso-mesa'),eStatusOffline(erro)?'Sem conexão com o servidor. Alterações guardadas neste aparelho e aguardam sincronização.':erro.message,eStatusOffline(erro)?'aviso':'erro');
+    }
+    if(salvarOutraMesa)salvarCombateMestre();
+    else if(mesaAtual&&mesaAtual!==mesaIdDaOperacao&&estado.mesaAtual?.papel==='mestre')carregarCombateMestre(true,true);
   }
 }
 function eStatusOffline(erro){return !erro?.status||erro.status>=500;}
