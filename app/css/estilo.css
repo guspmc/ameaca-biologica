@@ -167,7 +167,18 @@ select:focus { outline: 2px solid var(--acento); outline-offset: 1px; }
 .combate-dados strong{font-size:1.25rem;color:var(--acento)}
 .combate-participante input{min-width:0;width:76px;padding:8px}
 .combate-participante .botao{padding:7px 9px}
-@media(max-width:430px){.combate-participante{grid-template-columns:minmax(0,1fr) auto}.combate-participante input{grid-column:1;width:100%}.combate-participante .botao{grid-column:2;grid-row:2}.combate-dados{grid-column:2;grid-row:1}}
+@media(max-width:430px){
+  .combate-form{grid-template-columns:minmax(0,1fr)}
+  .combate-form>*{grid-column:1/-1;min-width:0}
+  .combate-form input,.combate-form select{min-height:44px}
+  .combate-participante{grid-template-columns:minmax(0,1fr) auto}
+  .combate-participante input{grid-column:1;width:100%;min-height:44px}
+  .combate-participante .botao{grid-column:2;grid-row:2;min-height:40px}
+  .combate-dados{grid-column:2;grid-row:1}
+  .combate-acoes .botao{flex:1 1 100%;min-height:44px}
+  .condicao-seletor{width:100%;min-height:44px}
+  .condicao-combate .botao{min-height:36px}
+}
 
 
 /* Conteúdo e ferramentas do Painel do Mestre */
