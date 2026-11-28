@@ -140,7 +140,7 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 
 - A rota `GET /api/painel-mestre/:mesaId/fichas` exige sessão válida e valida que o solicitante é o Mestre da Mesa.
 - A projeção inclui somente Fichas `ativa` de jogadores ainda aprovados na Mesa.
-- A interface apresenta identificação, PV/SA/BI atuais e máximos, Iniciativa, Defesa e Perícias Passivas (Fortitude, Reflexos, Vontade e Percepção).
+- A interface apresenta identificação, PV/SA/BI atuais e máximos, Iniciativa, Defesa e Perícias Passivas (Fortitude, Reflexos, Vontade e Percepção). Ao adicionar uma Ficha Ativa à iniciativa, o participante mantém apenas o identificador da Ficha como referência; o rastreador exibe PV/SA/BI e Defesa a partir da projeção operacional atualizada, sem copiar nem alterar a Ficha.
 - O Mestre não recebe atributos, perícias completas, habilidades, conceito, história, inventário ou anotações da Ficha.
 - A integração lê o arquivo persistido de Fichas e injeta o cálculo oficial de `REGRAS`; não modifica os dados da Ficha.
 - Até o merge com a implementação de Fichas da `main`, a rota responde HTTP 503 quando as dependências oficiais ainda não estão disponíveis nesta branch isolada.
