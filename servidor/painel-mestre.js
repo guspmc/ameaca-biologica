@@ -29,12 +29,25 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
       ids.add(id); nomes.add(chave);
       const original=anterior.participantes.find(x=>x.id===id);
       if (Array.isArray(p.condicoes) && p.condicoes.length > 30) return { erro:'Cada participante pode ter até 30 instâncias de condições.' };
-      const condicoes = Array.isArray(p.condicoes) ? p.condicoes.slice(0, 30).map((x) => ({
-        id: String(x.id || require('crypto').randomUUID()).slice(0, 40),
-        nome: String(x.nome || '').trim().slice(0, 60),
-        duracao: String(x.duracao || '').trim().slice(0, 80),
-        observacao: String(x.observacao || '').trim().slice(0, 300)
-      })).filter(x => x.nome) : (original?.condicoes || []);
+      const condicoes = Array.isArray(p.condicoes) ? p.condicoes.slice(0, 30).map((x) => {
+        const item = {
+          id: String(x.id || require('crypto').randomUUID()).slice(0, 40),
+          tipo: x.tipo === 'progressao' ? 'progressao' : 'condicao',
+          nome: String(x.nome || '').trim().slice(0, 60),
+          duracao: String(x.duracao || '').trim().slice(0, 80),
+          observacao: String(x.observacao || '').trim().slice(0, 300)
+        };
+        // O registro de notificação é metadado de entrega; nunca altera o efeito
+        // mecânico, que já está aplicado no estado do combate pelo Mestre.
+        if (x.notificacao && typeof x.notificacao === 'object') {
+          item.notificacao = {
+            id: String(x.notificacao.id || item.id).slice(0, 40),
+            estado: x.notificacao.estado === 'entregue' ? 'entregue' : 'pendente',
+            criadaEm: String(x.notificacao.criadaEm || new Date().toISOString()).slice(0, 40)
+          };
+        }
+        return item;
+      }).filter(x => x.nome) : (original?.condicoes || []);
       const participante={ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,condicoes,
         entradaTardia:original?original.entradaTardia:Boolean(anterior.combateAtivo||p.entradaTardia),ordem:original?original.ordem:proximaOrdem++ };
       if(tipo==='personagem' && p.fichaId!==undefined){
