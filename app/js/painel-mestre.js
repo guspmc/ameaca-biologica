@@ -3,7 +3,7 @@
 const renderizarMesaBase = renderizarMesa;
 const carregarMesaAtualBase = carregarMesaAtual;
 let combateMestre=null, carregandoCombate=false, salvandoCombate=false, conflitoCombate=false;
-let salvarCombatePendente=false, salvarCombatePendenteMesaId=null;
+let salvarCombatePendente=false, salvarCombatePendenteMesaId=null, mesaSalvandoCombateId=null;
 
 // O snapshot local mantém o estado do Mestre durante quedas de conexão.
 // Cada operação recebe o ID da Mesa capturado no início; respostas atrasadas
@@ -111,6 +111,9 @@ async function salvarCombateMestre() {
   const mesaIdDaOperacao=estado.mesaId;
   if(!mesaIdDaOperacao)return;
   if(salvandoCombate){
+    // Preserva o snapshot da Mesa que solicitou a nova gravação, mesmo que
+    // a resposta da requisição anterior chegue depois de uma troca de Mesa.
+    guardarCombateOffline(true,mesaIdDaOperacao,combateMestre);
     salvarCombatePendente=true;
     salvarCombatePendenteMesaId=mesaIdDaOperacao;
     return;
@@ -124,6 +127,7 @@ async function salvarCombateMestre() {
     return;
   }
   salvandoCombate=true;
+  mesaSalvandoCombateId=mesaIdDaOperacao;
   let erro=null,ultimaCopiaEnviada=null;
   try{
     do{
@@ -134,7 +138,8 @@ async function salvarCombateMestre() {
       ultimaCopiaEnviada=copia;
       const r=await apiPainelMestre('PUT',copia,mesaIdDaOperacao);
       if(estado.mesaId!==mesaIdDaOperacao){
-        guardarCombateOffline(false,mesaIdDaOperacao,r.combate||copia);
+        const origemAindaPendente=salvarCombatePendente&&salvarCombatePendenteMesaId===mesaIdDaOperacao;
+        if(!origemAindaPendente)guardarCombateOffline(false,mesaIdDaOperacao,r.combate||copia);
         break;
       }
       const houveEdicaoDuranteEnvio=JSON.stringify(combateMestre)!==JSON.stringify(copia);
@@ -151,14 +156,16 @@ async function salvarCombateMestre() {
   }catch(e){
     erro=e;
     if(e.status===409&&estado.mesaId===mesaIdDaOperacao)conflitoCombate=true;
+    const origemAindaPendente=salvarCombatePendente&&salvarCombatePendenteMesaId===mesaIdDaOperacao;
     const snapshot=estado.mesaId===mesaIdDaOperacao?combateMestre:ultimaCopiaEnviada;
-    if(snapshot)guardarCombateOffline(true,mesaIdDaOperacao,snapshot);
+    if(snapshot&&!origemAindaPendente)guardarCombateOffline(true,mesaIdDaOperacao,snapshot);
   }finally{
     const mesaAtual=estado.mesaId;
     const salvarOutraMesa=Boolean(salvarCombatePendente&&salvarCombatePendenteMesaId===mesaAtual&&mesaAtual!==mesaIdDaOperacao);
     salvarCombatePendente=false;
     salvarCombatePendenteMesaId=null;
     salvandoCombate=false;
+    mesaSalvandoCombateId=null;
     if(mesaAtual===mesaIdDaOperacao){
       desenharCombateMestre();
       if(erro)mensagem($('aviso-mesa'),eStatusOffline(erro)?'Sem conexão com o servidor. Alterações guardadas neste aparelho e aguardam sincronização.':erro.message,eStatusOffline(erro)?'aviso':'erro');
