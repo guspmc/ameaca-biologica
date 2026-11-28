@@ -265,6 +265,7 @@ function cancelarEdicaoItem() {
   $('item-categoria').selectedIndex = 0;
   $('item-descricao').value = '';
   $('item-efeito').value = '';
+  $('item-espacos').value = '1';
   $('item-imagem').value = '';
   $('item-imagem-preview').hidden = true;
   $('item-publicar').checked = false;
@@ -279,6 +280,7 @@ function editarItemMestre(id) {
   $('item-categoria').value = item.categoria;
   $('item-descricao').value = item.descricao;
   $('item-efeito').value = item.efeito;
+  $('item-espacos').value = String(Number.isInteger(item.espacos) ? item.espacos : 1);
   $('item-imagem').value = item.imagemUrl || '';
   atualizarPreviewImagemItem();
   $('item-publicar').checked = Boolean(item.visivel);
@@ -597,6 +599,7 @@ function montarConteudoMestre() {
   for (const t of ['Arma', 'Proteção', 'Consumível', 'Chave', 'Equipamento', 'Outro']) { const o = elemento('option', t); o.value = t; catItem.append(o); }
   const [lid, descItem] = campoConteudo('Descrição', 'item-descricao', 'textarea'); descItem.rows = 3;
   const [lie, efeitoItem] = campoConteudo('Efeito / regra', 'item-efeito', 'textarea'); efeitoItem.rows = 3;
+  const [les, espacosItem] = campoConteudo('Espaços no Inventário (0 a 20)', 'item-espacos', 'input', '1'); espacosItem.type = 'number'; espacosItem.min = '0'; espacosItem.max = '20'; espacosItem.step = '1';
   const [lim, imagemItem] = campoConteudo('Imagem do item (URL)', 'item-imagem');
   imagemItem.type = 'url'; imagemItem.placeholder = 'https://… ou envie uma imagem';
   const uploadImagem = elemento('input'); uploadImagem.type = 'file'; uploadImagem.accept = '.png,.jpg,.jpeg,.webp';
@@ -614,9 +617,11 @@ function montarConteudoMestre() {
   const labelPublicarItem = elemento('label', 'Compartilhar item com os Jogadores'); labelPublicarItem.prepend(publicarItem);
   const guardarItem = elemento('button', 'Salvar item', 'botao'); guardarItem.type = 'submit'; guardarItem.id = 'item-guardar';
   const cancelarItem = elemento('button', 'Cancelar edição', 'botao pequeno'); cancelarItem.type = 'button'; cancelarItem.id = 'item-cancelar'; cancelarItem.hidden = true; cancelarItem.addEventListener('click', cancelarEdicaoItem);
-  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, lim, imagemItem, uploadImagem, enviarImagem, previewItem, labelPublicarItem, guardarItem, cancelarItem);
+  fi.append(li, nomeItem, lic, catItem, lid, descItem, lie, efeitoItem, les, espacosItem, lim, imagemItem, uploadImagem, enviarImagem, previewItem, labelPublicarItem, guardarItem, cancelarItem);
   fi.addEventListener('submit', e => { e.preventDefault(); if (!nomeItem.value.trim()) return;
-    const dados = { nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, imagemUrl: imagemItem.value.trim(), visivel: publicarItem.checked };
+    const espacos = Number(espacosItem.value);
+    if (!Number.isInteger(espacos) || espacos < 0 || espacos > 20) { mensagem(msg, 'Os Espaços devem ser um número inteiro entre 0 e 20.', 'aviso'); espacosItem.focus(); return; }
+    const dados = { nome: nomeItem.value.trim(), categoria: catItem.value, descricao: descItem.value, efeito: efeitoItem.value, espacos, imagemUrl: imagemItem.value.trim(), visivel: publicarItem.checked };
     if (itemEmEdicao) { const item = conteudoMestre.itens.find(x => x.id === itemEmEdicao); if (item) Object.assign(item, dados); }
     else conteudoMestre.itens.unshift({ id: novoIdConteudo(), ...dados });
     cancelarEdicaoItem(); salvarConteudoMestre(); });
