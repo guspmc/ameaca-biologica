@@ -14,7 +14,8 @@ const fichas = {
     },
     rascunho: { id: 'rascunho', usuario: 'Ana', estado: 'rascunho', dados: { nome: 'Rascunho' } },
     pendente: { id: 'pendente', usuario: 'Ana', estado: 'pendente', dados: { nome: 'Pendente' } },
-    exJogador: { id: 'ex', usuario: 'Bia', estado: 'ativa', dados: { nome: 'Ada' } },
+    ativaBia: { id: 'ativa-bia', usuario: 'Bia', estado: 'ativa', dados: { nome: 'Jill' } },
+    exJogador: { id: 'ex', usuario: 'Caio', estado: 'ativa', dados: { nome: 'Ada' } },
   },
 };
 const calcular = () => ({
@@ -24,7 +25,7 @@ const calcular = () => ({
 });
 const painel = criarResumoFichasMestre({
   carregar: () => fichas,
-  infoMesa: (id) => id === 'mesaA' ? { mestre: 'Mestre', aprovados: ['Ana'] } : null,
+  infoMesa: (id) => id === 'mesaA' ? { mestre: 'Mestre', aprovados: ['Ana', 'Bia'] } : null,
   calcular,
   condicoesCatalogo: [{ id: 'cego', nome: 'Cego' }],
 });
@@ -33,9 +34,14 @@ assert.equal(painel.listar('mesaA', 'Ana').status, 403, 'Jogador não pode consu
 assert.equal(painel.listar('inexistente', 'Mestre').status, 404, 'Mesa inexistente deve ser recusada');
 const resposta = painel.listar('mesaA', 'Mestre');
 assert.equal(resposta.status, 200);
-assert.equal(resposta.fichas.length, 1, 'Somente Ficha ativa de jogador ainda aprovado');
-const resumo = resposta.fichas[0];
+assert.equal(resposta.fichas.length, 2, 'Duas Fichas ativas de Jogadores aprovados devem aparecer');
+const resumo = resposta.fichas.find(f => f.jogador === 'Ana');
+assert.ok(resumo, 'A Ficha da Ana deve estar presente');
 assert.equal(resumo.personagem, 'Claire');
+const resumoBia = resposta.fichas.find(f => f.jogador === 'Bia');
+assert.ok(resumoBia, 'A Ficha da Bia deve estar presente');
+assert.equal(resumoBia.personagem, 'Jill');
+assert.ok(!resposta.fichas.some(f => f.jogador === 'Caio'), 'Ficha de usuário não aprovado não pode aparecer');
 assert.equal(resumo.jogador, 'Ana');
 assert.deepEqual(resumo.pv, { atual: 5, maximo: 10 });
 assert.deepEqual(resumo.sa, { atual: 2, maximo: 4 });
