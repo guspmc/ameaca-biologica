@@ -5,6 +5,8 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
   function ordenar(lista) {
     return [...lista].sort((a,b) => {
       if (a.entradaTardia !== b.entradaTardia) return a.entradaTardia ? 1 : -1;
+      // Entradas tardias ficam no fim e preservam a ordem de chegada.
+      if (a.entradaTardia && b.entradaTardia) return a.ordem-b.ordem;
       return b.iniciativa-a.iniciativa || b.agi-a.agi || b.d20-a.d20 || a.ordem-b.ordem;
     });
   }
