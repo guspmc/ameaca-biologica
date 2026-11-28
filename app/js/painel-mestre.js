@@ -223,6 +223,17 @@ function desenharCombateMestre(){
     const d20=document.createElement('input');d20.type='number';d20.min='1';d20.max='20';d20.value=p.d20||'';d20.placeholder='d20';d20.setAttribute('aria-label','Resultado natural do d20 de '+p.nome);d20.addEventListener('change',()=>ajustarD20Combate(p.id,d20.value));
     const remover=document.createElement('button');remover.type='button';remover.className='botao pequeno perigo';remover.textContent='Remover';remover.addEventListener('click',()=>removerParticipanteCombate(p.id));
     li.append(identidade,dados,d20,remover);
+    if(p.tipo==='personagem'&&p.fichaId){
+      const fichaVinculada=(resumoFichasMestre||[]).find(f=>f.id===p.fichaId);
+      if(fichaVinculada){
+        const recursosFicha=document.createElement('p');recursosFicha.className='dica';
+        recursosFicha.textContent='Ficha · PV '+fichaVinculada.pv.atual+'/'+fichaVinculada.pv.maximo+
+          ' · SA '+fichaVinculada.sa.atual+'/'+fichaVinculada.sa.maximo+
+          ' · BI '+fichaVinculada.bi.atual+'/'+fichaVinculada.bi.maximo+
+          ' · Defesa '+fichaVinculada.defesa;
+        li.append(recursosFicha);
+      }
+    }
     if(p.tipo==='criatura'&&p.pvMaximo!==undefined){
       const ficha=document.createElement('p');ficha.className='dica';ficha.textContent=(p.perseguidor&&p.fase==='perseguicao'?'PV de Perseguição ':'PV ')+p.pvAtual+'/'+p.pvMaximo+' · Defesa '+p.defesa+' · Movimento '+p.movimento;
       const pv=document.createElement('input');pv.type='number';pv.min='0';pv.max=String(p.pvMaximo);pv.value=p.pvAtual;pv.setAttribute('aria-label','PV atuais de '+p.nome);
@@ -390,7 +401,7 @@ function adicionarFichaAtivaAoCombate(ficha) {
   }
   const participante = {
     id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()).slice(0, 40),
-    nome, tipo: 'personagem', agi, bonusIniciativa: agi,
+    nome, tipo: 'personagem', agi, bonusIniciativa: agi, fichaId: String(ficha.id),
     d20: 0, iniciativa: 0,
     entradaTardia: Boolean(combateMestre.combateAtivo),
     ordem: combateMestre.participantes.length,
