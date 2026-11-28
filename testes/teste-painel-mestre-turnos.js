@@ -287,6 +287,25 @@ console.log('Painel do Mestre: turnos OK');
     assert.equal(armazenamento.has('ab-combate-mestre:mesa-b'),false);
   }
 
+  // Edições feitas durante o PUT ficam em cache pendente da Mesa A mesmo após trocar para B.
+  {
+    const {ctx,armazenamento}=novoContextoPersistencia();
+    let resolver;
+    ctx.buscar=()=>new Promise(resolve=>{resolver=resolve;});
+    vm.runInContext('combateMestre='+JSON.stringify(snapshotA),ctx);
+    const operacao=vm.runInContext('salvarCombateMestre()',ctx);
+    vm.runInContext('combateMestre.rodada=9; salvarCombateMestre()',ctx);
+    ctx.estado.mesaId='mesa-b';
+    ctx.estado.mesaAtual={papel:'jogador'};
+    vm.runInContext('combateMestre='+JSON.stringify(snapshotB),ctx);
+    resolver({combate:snapshotA});
+    await operacao;
+    const cacheA=JSON.parse(armazenamento.get('ab-combate-mestre:mesa-a'));
+    assert.equal(cacheA.estado.rodada,9);
+    assert.equal(cacheA.pendente,true);
+    assert.equal(vm.runInContext('combateMestre.mesaId',ctx),'mesa-b');
+  }
+
   // GET atrasado também fica isolado: a resposta de A não invade a Mesa B aberta.
   {
     const {ctx,armazenamento}=novoContextoPersistencia();
