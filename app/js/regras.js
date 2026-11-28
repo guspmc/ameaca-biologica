@@ -166,8 +166,12 @@
     return e;
   }
 
-  const espacosMunicao = (municoes) =>
-    ARSENAL.MUNICOES.reduce((s, m) => s + Math.ceil((municoes[m.id] || 0) / m.porEspaco), 0);
+  // Munições da mesma pilha (grupo) dividem os Espaços: ex.: Cartuchos GM 79 comuns e especiais, 10 por Espaço.
+  function espacosMunicao(municoes) {
+    const pilhas = {};
+    for (const m of ARSENAL.MUNICOES) pilhas[m.grupo || m.id] = (pilhas[m.grupo || m.id] || 0) + (municoes[m.id] || 0);
+    return Object.entries(pilhas).reduce((s, [id, q]) => s + Math.ceil(q / ARSENAL.municaoPorId(id).porEspaco), 0);
+  }
 
   // Colete equipado (só um vale): { def, rd, capAgi } ou null.
   function protecaoEquipada(d) {
@@ -512,6 +516,94 @@
     return { itens, moedas: escolha.moedas };
   }
 
+  /* ---------- Subir de Nível (capítulo 1, "Progressão de Personagem"; capítulo 6, "Progressão e Nível") ---------- */
+
+  // Maior Nível liberado pela contagem opcional de Missões Completadas.
+  function nivelPorMissoes(missoes) {
+    const t = LIVRO.PROGRESSAO.missoes;
+    let n = 1;
+    for (let i = 0; i < t.length; i++) if (missoes >= t[i]) n = i + 1;
+    return n;
+  }
+
+  // O que o Nível recebe: +1 Atributo, +1 Ponto de Perícia e/ou uma Habilidade (tipo indicado).
+  function ganhosDoNivel(nivel) {
+    const P = LIVRO.PROGRESSAO;
+    const tier = ['basica', 'avancada', 'superior', 'avassaladora'].find((t) => P[t].includes(nivel)) || null;
+    return { atributo: P.atributo.includes(nivel), pontoPericia: P.pontoPericia.includes(nivel), habilidade: tier };
+  }
+
+  // Foto da Ficha no Nível anterior: é o que a evolução não pode mudar.
+  function fotoBase(d) {
+    return JSON.parse(JSON.stringify({
+      nivel: d.nivel, origem: d.origem, origemPericias: d.origemPericias, origemTreino: d.origemTreino, classe: d.classe,
+      atributos: d.atributos, pericias: d.pericias, habilidades: d.habilidades, treinoExtra: d.treinoExtra,
+    }));
+  }
+
+  // Na evolução, Identificação e Nível não são editáveis: volta ao valor da foto (+1 Nível).
+  function travarEvolucao(d, base) {
+    d.nivel = base.nivel + 1;
+    d.origem = base.origem; d.origemPericias = base.origemPericias.slice(); d.origemTreino = base.origemTreino; d.classe = base.classe;
+    return d;
+  }
+
+  // Erros específicos de uma evolução (além de `validar`): nada do Nível anterior pode ser desfeito.
+  function validarEvolucao(d, base) {
+    const erros = [];
+    if (!base) return erros;
+    if (d.nivel !== base.nivel + 1) erros.push(`Uma evolução sobe exatamente 1 Nível (de ${base.nivel} para ${base.nivel + 1}).`);
+    if (d.origem !== base.origem || d.classe !== base.classe || d.origemTreino !== base.origemTreino
+      || d.origemPericias.join() !== base.origemPericias.join()) erros.push('Origem e Classe não mudam ao subir de Nível.');
+    const g = ganhosDoNivel(d.nivel);
+    let ganhoAtr = 0;
+    for (const id of ATRIBUTO_IDS) {
+      if (d.atributos[id] < base.atributos[id]) erros.push('Atributos não podem diminuir ao subir de Nível.');
+      ganhoAtr += d.atributos[id] - base.atributos[id];
+    }
+    if (ganhoAtr > (g.atributo ? 1 : 0)) {
+      erros.push(g.atributo ? 'O Nível ' + d.nivel + ' concede só +1 Atributo.' : `O Nível ${d.nivel} não concede Atributo.`);
+    }
+    for (const p of PERICIA_IDS) {
+      if (d.pericias[p] < base.pericias[p]) erros.push('O Treinamento já adquirido em Perícias não pode diminuir.');
+    }
+    for (const id of base.habilidades) {
+      if (!d.habilidades.includes(id)) erros.push('Habilidades já escolhidas não podem ser trocadas ao subir de Nível.');
+    }
+    const novas = d.habilidades.filter((id) => !base.habilidades.includes(id)).map(habilidadePorId).filter(Boolean);
+    if (novas.some((h) => h.tier !== g.habilidade)) {
+      erros.push(g.habilidade ? `O Nível ${d.nivel} concede apenas Habilidade ${LIVRO.TIERS.find((t) => t.id === g.habilidade).nome}.` : `O Nível ${d.nivel} não concede Habilidade.`);
+    }
+    if (base.habilidades.includes('tentativa-e-erro') && d.treinoExtra !== base.treinoExtra) erros.push('A Perícia extra de Tentativa e Erro já foi escolhida.');
+    return [...new Set(erros)];
+  }
+
+  /* ---------- Inventário em blocos (Espaços) ---------- */
+
+  // Blocos que ocupam Espaços, na ordem: itens (um bloco com N Espaços), munição por pilha e Moedas.
+  // Itens com 0 Espaços (Lanterna de Bolso/de Cabeça) vão em `semEspaco`. Itens Característicos de Classe não entram aqui.
+  function blocosInventario(d) {
+    const blocos = [];
+    const semEspaco = [];
+    d.itens.forEach((item, idx) => {
+      const e = espacosDoItem(item);
+      if (e <= 0) semEspaco.push({ tipo: 'item', idx, espacos: 0 });
+      else blocos.push({ tipo: 'item', idx, espacos: e });
+    });
+    const pilhas = {};
+    for (const m of ARSENAL.MUNICOES) {
+      const q = d.municoes[m.id] || 0;
+      if (q > 0) { const g = m.grupo || m.id; (pilhas[g] = pilhas[g] || []).push({ id: m.id, q }); }
+    }
+    for (const [g, partes] of Object.entries(pilhas)) {
+      const total = partes.reduce((s, p) => s + p.q, 0);
+      blocos.push({ tipo: 'municao', grupo: g, partes, total, espacos: Math.ceil(total / ARSENAL.municaoPorId(g).porEspaco) });
+    }
+    if (d.moedas > 0) blocos.push({ tipo: 'moedas', total: d.moedas, espacos: Math.ceil(d.moedas / 3) });
+    const usados = blocos.reduce((s, b) => s + b.espacos, 0);
+    return { blocos, semEspaco, usados };
+  }
+
   /* ---------- Validação ---------- */
 
   function validar(d, opcoes = {}) {
@@ -614,6 +706,7 @@
 
   return {
     LIMITES, novaFicha, normalizar, calcular, validar, vagasDeHabilidade, equipamentoInicial,
+    nivelPorMissoes, ganhosDoNivel, fotoBase, travarEvolucao, validarEvolucao, blocosInventario,
     espacosDoItem, capacidadeDaArma, protecaoEquipada, temProficiencia, armasDaFicha, montarAtaque, resolverAtaque,
     gastarMunicao, recarregar, usarConsumivel, rolarExpressao, somaDados,
     origemPorId, classePorId, habilidadePorId, periciasGratuitas, outraPericiaDaOrigem,

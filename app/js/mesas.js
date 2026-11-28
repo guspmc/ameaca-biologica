@@ -306,6 +306,8 @@ function painelDoMestre(m) {
     cartaoFichasMestre().then((el) => { cartaoFichasEl.replaceWith(el); });
   }
 
+  if (typeof cartaoProgressaoMestre === 'function') partes.push(cartaoProgressaoMestre(m), cartaoItensMestre(m));
+
   partes.push(h('div', { class: 'cartao desativado' },
     h('h2', {}, 'Em breve'),
     h('p', { class: 'dica' }, 'Resumo das Fichas, turnos e iniciativa, documentos, anotações e itens personalizados.')));
@@ -322,7 +324,7 @@ function visaoDoJogador(m) {
   } else {
     const gente = [m.mestre, ...m.jogadores.map((j) => j.usuario)];
     partes.push(cartao('Mesa',
-      h('p', {}, `Nível máximo de personagem: ${m.limiteNivel}`),
+      h('p', {}, `Nível máximo de personagem: ${m.limiteNivel}` + (m.nivelLiberado != null ? ` · Nível liberado: ${m.nivelLiberado}` : '')),
       h('ul', { class: 'lista' }, gente.map((nome, i) => h('li', {},
         pontoOnline(nome), nome,
         i === 0 ? h('span', { class: 'etiqueta' }, 'Mestre') : null,
@@ -342,7 +344,10 @@ function visaoDoJogador(m) {
 
 function renderizarMesa() {
   if (estado.tela !== 'mesa') return;
-  if (typeof emFicha === 'function' && emFicha()) return; // Ficha aberta (ficha.js)
+  if (typeof emFicha === 'function' && emFicha()) { // Ficha aberta (ficha.js)
+    if (typeof aoMesaMudouComFicha === 'function') aoMesaMudouComFicha();
+    return;
+  }
   const raiz = $('conteudo-mesa');
 
   // Não apaga um campo que a pessoa está editando; redesenha quando ela terminar.

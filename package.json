@@ -1,6 +1,6 @@
 {
   "name": "ameaca-biologica",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Laboratório de Ameaça Biológica RPG: fichas, Painel do Mestre e Mesas em servidor local.",
   "private": true,
   "scripts": {

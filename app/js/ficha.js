@@ -293,9 +293,58 @@ function secaoIdentificacao(d) {
 
 /* ---------- Seção: Atributos e Perícias ---------- */
 
+/* ---------- Subir de Nível guiado ---------- */
+
+// Rascunho criado por "Subir de Nível": só o que o Nível concede pode mudar (Atributo, Perícias, Habilidade).
+const emEvolucao = () => !!(fichaAtual && fichaAtual.base && fichaAtual.estado === 'rascunho');
+const ganhosEvolucao = () => REGRAS.ganhosDoNivel(fichaAtual.dados.nivel);
+
+// Habilidade que a pessoa pode marcar agora na evolução (tipo do Nível, ramo com a anterior, vaga livre).
+function habilidadeLiberada(hab) {
+  const d = fichaAtual.dados;
+  const jaTinha = fichaAtual.base.habilidades.includes(hab.id);
+  if (jaTinha) return false; // já escolhida: não se troca
+  const g = ganhosEvolucao();
+  if (hab.tier !== g.habilidade) return false;
+  const novas = d.habilidades.filter((id) => !fichaAtual.base.habilidades.includes(id));
+  if (!d.habilidades.includes(hab.id) && novas.length >= 1) return false; // uma Habilidade nova por Nível
+  const doRamo = (tier) => d.habilidades.some((id) => { const x = REGRAS.habilidadePorId(id); return x && x.ramo === hab.ramo && x.tier === tier; });
+  if (hab.tier === 'avancada' && !doRamo('basica')) return false;
+  if (hab.tier === 'superior' && !doRamo('avancada')) return false;
+  return true;
+}
+
+// Cartão no topo da evolução: o que este Nível concede e como a Ficha muda.
+function cartaoEvolucao(d) {
+  const g = ganhosEvolucao();
+  const tiers = { basica: 'Básica', avancada: 'Avançada', superior: 'Superior', avassaladora: 'Avassaladora' };
+  const itens = [];
+  if (g.atributo) itens.push('+1 ponto de Atributo (máximo 5)');
+  if (g.pontoPericia) itens.push('+1 Ponto de Perícia (dentro das Perícias da Classe, até Mestre)');
+  if (g.habilidade) itens.push(`1 Habilidade ${tiers[g.habilidade]}` + (g.habilidade === 'basica' ? ' (pode ser de outro ramo)' : ' (do mesmo ramo da anterior)'));
+  const antes = REGRAS.calcular(REGRAS.normalizar({ ...d, ...JSON.parse(JSON.stringify(fichaAtual.base)) }));
+  const depois = calc || REGRAS.calcular(d);
+  const linha = (rot, a, b) => h('span', { class: 'evo-valor' }, `${rot} ${a}`, a !== b ? ` → ${b}` : '');
+  return h('div', { class: 'cartao-evolucao' },
+    h('h3', {}, `Subindo para o Nível ${d.nivel}`),
+    h('ul', {}, ...itens.map((t) => h('li', {}, t))),
+    h('div', { class: 'evo-valores' },
+      linha('PV máx.', antes.pvMax, depois.pvMax), linha('SA máx.', antes.saMax, depois.saMax),
+      linha('BI máx.', antes.biMax, depois.biMax), linha('Defesa', antes.defesa, depois.defesa)),
+    h('p', { class: 'dica' }, 'O resto da Ficha fica travado até o Mestre aprovar. Os valores acima são recalculados sozinhos.'));
+}
+
 function secaoAtributos(d) {
   function mudouAtributo(id, valor) {
-    fichaAtual.dados.atributos[id] = Math.min(5, Math.max(0, Number(valor) || 0));
+    let v = Math.min(5, Math.max(0, Number(valor) || 0));
+    if (emEvolucao()) {
+      const b = fichaAtual.base.atributos;
+      v = Math.max(v, b[id]);
+      const somaBase = LIVRO.ATRIBUTOS.reduce((s, a) => s + b[a.id], 0);
+      const outros = LIVRO.ATRIBUTOS.reduce((s, a) => s + (a.id === id ? 0 : fichaAtual.dados.atributos[a.id]), 0);
+      v = Math.min(v, somaBase + (ganhosEvolucao().atributo ? 1 : 0) - outros);
+    }
+    fichaAtual.dados.atributos[id] = v;
     agendarSalvarFicha();
     redesenhar();
   }
@@ -312,13 +361,25 @@ function secaoAtributos(d) {
 
   const atributoEl = (a) => h('div', { class: 'atributo-linha' },
     h('label', { for: 'at-' + a.id }, a.nome),
-    h('input', { id: 'at-' + a.id, type: 'number', min: '0', max: '5', value: d.atributos[a.id],
+    h('input', { id: 'at-' + a.id, type: 'number', min: emEvolucao() ? String(fichaAtual.base.atributos[a.id]) : '0', max: '5', value: d.atributos[a.id],
+      disabled: emEvolucao() && !ganhosEvolucao().atributo,
       onchange: (e) => mudouAtributo(a.id, e.target.value) }),
     h('span', { class: 'atributo-dica' }, LIVRO.PERICIAS.filter((p) => p.atributo === a.id).map((p) => p.nome).join(', ')));
 
   const pericias = calc ? calc.pericias : {};
   const graus = calc ? calc.graus : {};
   const livres = REGRAS.periciasGratuitas(d);
+
+  // Evolução: não baixa o que já tinha; só sobe se o Nível deu ponto e ainda sobra algum.
+  function grauLiberado(pid, i, atual, livre) {
+    if (i < fichaAtual.base.pericias[pid]) return false;
+    if (i === atual) return true;
+    if (!ganhosEvolucao().pontoPericia) return false;
+    const efetivo = Math.max(i, livre ? 1 : 0);
+    const custo = (efetivo - (livre ? 1 : 0)) - (atual - (livre ? 1 : 0));
+    const sobra = calc ? calc.pontosPericia.total - calc.pontosPericia.gastos : 0;
+    return custo <= sobra;
+  }
 
   const periciaEl = (p) => {
     const val = pericias[p.id] ?? 0;
@@ -334,6 +395,7 @@ function secaoAtributos(d) {
             name: 'grau-' + p.id,
             value: String(i),
             checked: grau === i,
+            disabled: emEvolucao() && !grauLiberado(p.id, i, grau, livre),
             onchange: () => mudouPericia(p.id, i),
           }),
           g.nome === 'Não Treinada' ? 'Não' : g.nome))));
@@ -360,7 +422,7 @@ function secaoAtributos(d) {
   const habilidadeEl = (h2) => {
     const temela = d.habilidades.includes(h2.id);
     return h('label', { class: 'hab-label' + (temela ? ' ativo' : '') },
-      h('input', { type: 'checkbox', checked: temela, onchange: () => toggleHabilidade(h2.id) }),
+      h('input', { type: 'checkbox', checked: temela, disabled: emEvolucao() && !habilidadeLiberada(h2), onchange: () => toggleHabilidade(h2.id) }),
       h('span', { class: 'hab-nome' }, h2.nome),
       h('span', { class: 'etiqueta' }, h2.tier),
       h2.descricao ? h('span', { class: 'hab-desc' }, h2.descricao) : null);
@@ -372,6 +434,7 @@ function secaoAtributos(d) {
   const permiteExtra = classe
     ? h('select', {
         id: 'fi-treino-extra',
+        disabled: emEvolucao() && fichaAtual.base.habilidades.includes('tentativa-e-erro'),
         onchange: (e) => { fichaAtual.dados.treinoExtra = e.target.value; agendarSalvarFicha(); redesenhar(); },
       },
         h('option', { value: '' }, '— escolha —'),
@@ -458,46 +521,11 @@ function secaoInventario(d) {
   const usado = calc ? calc.inventarioUsado : 0;
   const maximo = calc ? calc.inventarioMax : 4;
 
-  function adicionarItem() {
-    fichaAtual.dados.itens.push({ nome: 'Novo item', espacos: 1, nota: '', ref: '', mun: 0, pecas: [], equip: false });
-    agendarSalvarFicha();
-    renderizarEditor();
-    // Foca no nome do último item.
-    setTimeout(() => {
-      const campos = document.querySelectorAll('#lista-itens .item-nome');
-      if (campos.length) campos[campos.length - 1].focus();
-    }, 50);
-  }
-
-  function removerItem(idx) {
-    fichaAtual.dados.itens.splice(idx, 1);
-    limparAtaques();
-    agendarSalvarFicha();
-    renderizarEditor();
-  }
-
-  function mudouItem(idx, campo, valor) {
-    fichaAtual.dados.itens[idx][campo] = campo === 'espacos' ? Math.max(0, Number(valor) || 0) : String(valor);
-    agendarSalvarFicha();
-    if (campo === 'espacos') redesenhar();
-  }
-
   function mudouMoedas(valor) {
     fichaAtual.dados.moedas = Math.min(99, Math.max(0, Number(valor) || 0));
     agendarSalvarFicha();
     redesenhar();
   }
-
-  const listaItens = h('div', { id: 'lista-itens' },
-    d.itens.map((item, idx) => item.ref ? linhaItemArsenal(item, idx, () => removerItem(idx)) :
-      h('div', { class: 'item-linha' },
-        h('input', { class: 'item-nome', type: 'text', placeholder: 'Nome do item', value: item.nome, maxlength: '60',
-          oninput: (e) => mudouItem(idx, 'nome', e.target.value) }),
-        h('input', { class: 'item-espacos', type: 'number', min: '0', max: '20', value: item.espacos, title: 'Espaços',
-          onchange: (e) => mudouItem(idx, 'espacos', e.target.value) }),
-        h('input', { class: 'item-nota', type: 'text', placeholder: 'Nota', value: item.nota, maxlength: '200',
-          oninput: (e) => mudouItem(idx, 'nota', e.target.value) }),
-        h('button', { type: 'button', class: 'botao pequeno perigo', onclick: () => removerItem(idx), 'aria-label': 'Remover item' }, '✕'))));
 
   // Equipamento inicial (só no rascunho, sem itens ainda).
   const mostraEq = fichaAtual.estado === 'rascunho' && d.itens.length === 0 && REGRAS.classePorId(d.classe);
@@ -530,10 +558,7 @@ function secaoInventario(d) {
       : null,
 
     avisoDoArsenal(),
-    listaItens,
-
-    seletorArsenal(d),
-    h('button', { type: 'button', class: 'botao pequeno', onclick: adicionarItem }, '+ Item livre'),
+    painelEspacos(d),
 
     h('h3', {}, 'Munição (reserva)'),
     painelMunicao(d),
@@ -588,8 +613,31 @@ function agendarSalvarJogo() {
 
 // Em Ficha Ativa, Identificação e Atributos não mudam (só os valores de jogo e o inventário).
 function travar(el) {
+  if (fichaAtual.estado === 'ativa' || emEvolucao()) el.setAttribute('inert', '');
+  return el;
+}
+function travarAtiva(el) {
   if (fichaAtual.estado === 'ativa') el.setAttribute('inert', '');
   return el;
+}
+// Na evolução, Combate e Inventário só são consultados: o jogo continua na Ficha Ativa de origem.
+function travarEvolucao(el) {
+  if (emEvolucao()) el.setAttribute('inert', '');
+  return el;
+}
+
+// O Mestre liberou Nível ou itens com a Ficha aberta: atualiza o botão "Subir de Nível" e o seletor de itens.
+let marcaLiberacao = '';
+function aoMesaMudouComFicha() {
+  const m = estado.mesaAtual;
+  if (!m) return;
+  const marca = JSON.stringify([m.nivelLiberado, m.itensLiberados]);
+  if (marca === marcaLiberacao) return;
+  const primeira = marcaLiberacao === '';
+  const ativo = document.activeElement;
+  if (!primeira && fichaAtual && ativo && /^(INPUT|TEXTAREA|SELECT)$/.test(ativo.tagName)) return; // tenta de novo no próximo aviso
+  marcaLiberacao = marca;
+  if (!primeira && fichaAtual) redesenhar();
 }
 
 // Enquanto a Ficha está aberta, a Mesa não redesenha por cima dela.
@@ -631,7 +679,9 @@ function renderizarEditor() {
   }
   if (fichaAtual.estado === 'ativa') {
     const teto = Math.min(estado.mesaAtual ? estado.mesaAtual.limiteNivel : 1, REGRAS.LIMITES.nivelMax);
-    if (d.nivel < teto) botoesEstado.push(botaoFicha(`Subir para o Nível ${d.nivel + 1}`, 'primario', evoluirFicha));
+    const liberado = estado.mesaAtual && estado.mesaAtual.nivelLiberado != null ? estado.mesaAtual.nivelLiberado : 1;
+    if (d.nivel < teto && d.nivel < liberado) botoesEstado.push(botaoFicha(`Subir para o Nível ${d.nivel + 1}`, 'primario', evoluirFicha));
+    else if (d.nivel < teto) botoesEstado.push(h('p', { class: 'dica' }, `Subir de Nível: aguardando o Mestre liberar o Nível ${d.nivel + 1} (Missões Completadas ou Marco Narrativo).`));
     botoesEstado.push(botaoFicha('Desativar ficha', 'perigo', desativarFicha));
   }
   if (fichaAtual.estado !== 'pendente') botoesEstado.push(botaoFicha('Duplicar', '', duplicarFicha));
@@ -656,7 +706,7 @@ function renderizarEditor() {
       ...botoesEstado,
 
       fichaAtual.evolucao && fichaAtual.estado !== 'ativa'
-        ? h('p', { class: 'mensagem info' }, 'Evolução de uma Ficha Ativa: quando o Mestre aprovar, esta Ficha substitui a de Nível menor. Distribua os pontos novos do Nível e envie.')
+        ? h('p', { class: 'mensagem info' }, 'Evolução de uma Ficha Ativa: escolha o que o novo Nível concede e envie. Quando o Mestre aprovar, esta Ficha substitui a de Nível menor, mantendo itens, munição e anotações.')
         : null,
       fichasOffline ? h('p', { class: 'mensagem info' }, 'Ficha Offline: fica só neste aparelho, sem aprovação do Mestre. Tudo é editável.') : null,
 
@@ -664,8 +714,8 @@ function renderizarEditor() {
 
       // Duas colunas no PC (Identificação + Atributos | Combate + Inventário); uma só no celular.
       h('div', { class: 'ficha-colunas' },
-        h('div', { class: 'ficha-coluna' }, travar(secaoIdentificacao(d)), travar(secaoAtributos(d))),
-        h('div', { class: 'ficha-coluna' }, secaoCombate(d), secaoInventario(d)))),
+        h('div', { class: 'ficha-coluna' }, emEvolucao() ? cartaoEvolucao(d) : null, travar(secaoIdentificacao(d)), travarAtiva(secaoAtributos(d))),
+        h('div', { class: 'ficha-coluna' }, travarEvolucao(secaoCombate(d)), travarEvolucao(secaoInventario(d))))),
 
     // Barra inferior (atalhos de seção).
     criarBarraInferior());

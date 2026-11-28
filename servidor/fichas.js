@@ -89,7 +89,7 @@ function criarFichas({ carregar, salvar, infoMesa }) {
         return { ok: true, status: 200, ficha: { id: f.id, usuario: f.usuario, personagem: f.dados.nome, estado: f.estado } };
       }
       if (!mesmo(f.usuario, usuario)) return erro(403, 'Esta ficha não é sua.');
-      return { ok: true, status: 200, ficha: { id: f.id, estado: f.estado, evolucao: !!f.substitui, dados: f.dados } };
+      return { ok: true, status: 200, ficha: { id: f.id, estado: f.estado, evolucao: !!f.substitui, ...(f.base ? { base: f.base } : {}), dados: f.dados } };
     },
 
     // ---- Criação ----
@@ -135,6 +135,7 @@ function criarFichas({ carregar, salvar, infoMesa }) {
         if (f.estado !== 'ativa') return erro(409, 'Só Fichas Ativas podem subir de Nível.');
         const teto = Math.min(r.info.limiteNivel, REGRAS.LIMITES.nivelMax);
         if (f.dados.nivel >= teto) return erro(409, `Esta Mesa só permite Nível até ${r.info.limiteNivel}.`);
+        if (f.dados.nivel >= r.info.nivelLiberado) return erro(409, `O Mestre ainda não liberou o Nível ${f.dados.nivel + 1} (Missões Completadas ou Marco Narrativo).`);
         if (doJogador(mesaId, usuario).some((x) => x.substitui === f.id)) return erro(409, 'Esta Ficha já tem uma evolução em andamento.');
       }
       const rascunhos = doJogador(mesaId, usuario).filter((x) => x.estado === 'rascunho').length;
@@ -147,7 +148,7 @@ function criarFichas({ carregar, salvar, infoMesa }) {
       else dados.nome = (dados.nome ? dados.nome + ' ' : '') + '(cópia)';
       const id = crypto.randomBytes(8).toString('hex');
       const agora = new Date().toISOString();
-      fichas[mesaId][id] = { id, usuario, estado: 'rascunho', criadaEm: agora, atualizadaEm: agora, dados, ...(evoluir ? { substitui: f.id } : {}) };
+      fichas[mesaId][id] = { id, usuario, estado: 'rascunho', criadaEm: agora, atualizadaEm: agora, dados, ...(evoluir ? { substitui: f.id, base: REGRAS.fotoBase(f.dados) } : {}) };
       gravar();
       return { ok: true, status: 201, id };
     },
@@ -167,7 +168,13 @@ function criarFichas({ carregar, salvar, infoMesa }) {
       if (!mesmo(f.usuario, usuario)) return erro(403, 'Esta ficha não é sua.');
       if (f.estado === 'pendente') return erro(409, 'Esta ficha está aguardando aprovação. Retire a solicitação para editá-la.');
 
-      if (f.estado === 'rascunho') {
+      if (f.estado === 'rascunho' && f.base) {
+        // Evolução guiada: só Atributos, Perícias e Habilidades mudam; o resto vem da Ficha de origem.
+        const e = dadosEntrada || {};
+        f.dados = REGRAS.travarEvolucao(REGRAS.normalizar({
+          ...f.dados, atributos: e.atributos, pericias: e.pericias, habilidades: e.habilidades, treinoExtra: e.treinoExtra,
+        }), f.base);
+      } else if (f.estado === 'rascunho') {
         f.dados = REGRAS.normalizar(dadosEntrada);
       } else {
         // Ativa: só campos de jogo.
@@ -224,6 +231,8 @@ function criarFichas({ carregar, salvar, infoMesa }) {
       // Validar segundo as regras do livro + limite de nível da Mesa.
       const info = r.info;
       const v = REGRAS.validar(f.dados, { limiteNivel: info.limiteNivel });
+      if (f.base) v.erros.push(...REGRAS.validarEvolucao(f.dados, f.base));
+      if (f.dados.nivel > info.nivelLiberado) v.erros.push(`O Mestre ainda não liberou o Nível ${f.dados.nivel}.`);
       if (v.erros.length > 0 || v.pendencias.length > 0) {
         return erro(422, 'A ficha tem problemas: ' + [...v.erros, ...v.pendencias].join(' | '));
       }
@@ -268,6 +277,7 @@ function criarFichas({ carregar, salvar, infoMesa }) {
       if (!f) return erro(404, 'Ficha não encontrada.');
       if (!mesmo(f.usuario, usuario)) return erro(403, 'Esta ficha não é sua.');
       if (f.estado !== 'ativa') return erro(409, 'Só fichas ativas podem ser desativadas.');
+      if (doJogador(mesaId, usuario).some((x) => x.substitui === f.id)) return erro(409, 'Esta Ficha tem uma evolução em andamento. Exclua ou conclua a evolução antes.');
 
       f.estado = 'rascunho';
       f.atualizadaEm = new Date().toISOString();
@@ -302,14 +312,24 @@ function criarFichas({ carregar, salvar, infoMesa }) {
       if (acao === 'aprovar') {
         // Revalida na hora da aprovação (limiteNivel pode ter mudado).
         const v = REGRAS.validar(f.dados, { limiteNivel: info.limiteNivel });
+        if (f.base) v.erros.push(...REGRAS.validarEvolucao(f.dados, f.base));
         if (v.erros.length > 0) {
           return erro(422, 'A ficha tem erros que impedem a aprovação: ' + v.erros.join(' | '));
         }
         f.estado = 'ativa';
-        // Evolução aprovada: a Ficha de origem (de Nível menor) sai de cena.
+        // Evolução aprovada: o que mudou no jogo (itens, munição, anotações, condições, BI) vem da Ficha de origem,
+        // que sai de cena. A subida é aplicada num Descanso Completo: PV e SA voltam ao máximo (a BI não muda).
         const antiga = f.substitui ? achar(mesaId, f.substitui) : null;
-        if (antiga && mesmo(antiga.usuario, f.usuario)) delete fichas[mesaId][antiga.id];
+        if (antiga && mesmo(antiga.usuario, f.usuario)) {
+          const o = antiga.dados;
+          f.dados = REGRAS.normalizar({
+            ...f.dados, itens: o.itens, municoes: o.municoes, kendo: o.kendo, moedas: o.moedas, anotacoes: o.anotacoes,
+            jogo: { ...o.jogo, pv: null, sa: null },
+          });
+          delete fichas[mesaId][antiga.id];
+        }
         delete f.substitui;
+        delete f.base;
       } else if (acao === 'recusar') {
         f.estado = 'rascunho';
       } else {

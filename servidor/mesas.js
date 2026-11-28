@@ -8,6 +8,8 @@
  * e, quando existirem, ficam fora das visões do Mestre).
  */
 
+const REGRAS = require('../app/js/regras.js');
+const ARSENAL = require('../app/js/dados-arsenal.js');
 const crypto = require('crypto');
 
 // Sem I, L, O, 0 e 1, para o código não ser confundido ao ser lido em voz alta.
@@ -78,6 +80,16 @@ function criarMesas({ carregar, salvar }) {
     return r;
   }
 
+  // Nível que os personagens da Mesa já podem alcançar: Missões Completadas (tabela do livro) ou Marco Narrativo, até o limite da Mesa.
+  const nivelLiberado = (m) => Math.min(m.limiteNivel, Math.max(REGRAS.nivelPorMissoes(m.missoes || 0), m.nivelMarco || 1));
+  // Progressão e itens liberados: todos os membros da Mesa veem (o Jogador precisa saber o que pode pegar).
+  const progressao = (m) => ({
+    missoes: m.missoes || 0,
+    nivelMarco: m.nivelMarco || 1,
+    nivelLiberado: nivelLiberado(m),
+    itensLiberados: Array.isArray(m.itensLiberados) ? m.itensLiberados : null, // null = todos os itens do livro
+  });
+
   function resumo(m, usuario) {
     const base = {
       id: m.id,
@@ -142,6 +154,7 @@ function criarMesas({ carregar, salvar }) {
         mestre: m.mestre,
         limiteJogadores: m.limiteJogadores,
         limiteNivel: m.limiteNivel,
+        ...progressao(m),
       };
       if (mesmo(m.mestre, usuario)) {
         return {
@@ -241,6 +254,22 @@ function criarMesas({ carregar, salvar }) {
         if (n.erro) return erro(400, n.erro);
         novo.limiteNivel = n.valor;
       }
+      if (campos.missoes !== undefined) {
+        const q = validarInteiro(campos.missoes, 0, 99, 'As Missões Completadas');
+        if (q.erro) return erro(400, q.erro);
+        novo.missoes = q.valor;
+      }
+      if (campos.nivelMarco !== undefined) {
+        const n = validarInteiro(campos.nivelMarco, 1, REGRAS.LIMITES.nivelMax, 'O Nível do Marco Narrativo');
+        if (n.erro) return erro(400, n.erro);
+        novo.nivelMarco = n.valor;
+      }
+      if (campos.itensLiberados !== undefined) {
+        if (campos.itensLiberados === null) novo.itensLiberados = null;
+        else if (Array.isArray(campos.itensLiberados) && campos.itensLiberados.length <= 400) {
+          novo.itensLiberados = [...new Set(campos.itensLiberados.filter((id) => typeof id === 'string' && ARSENAL.itemPorId(id)))];
+        } else return erro(400, 'Lista de itens liberados inválida.');
+      }
 
       Object.assign(m, novo);
       gravar();
@@ -273,6 +302,7 @@ function criarMesas({ carregar, salvar }) {
       return {
         mestre: m.mestre,
         limiteNivel: m.limiteNivel,
+        nivelLiberado: nivelLiberado(m),
         membros: membros(m),
         aprovados: aprovados(m).map((j) => j.usuario),
       };

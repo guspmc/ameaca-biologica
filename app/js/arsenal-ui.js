@@ -7,8 +7,6 @@
 
 const opcoesAtaque = {};     // chave do ataque -> escolhas da pessoa (modo, Mirar, Vantagem...)
 const resultadosAtaque = {}; // chave do ataque -> linhas do último resultado
-let categoriaArsenal = 'pistola';
-let itemArsenal = '';
 let avisoArsenal = '';
 
 function limparAtaques() {
@@ -119,31 +117,11 @@ function usarItem(idx) {
   mudouArsenal(`${rel.nome}: ${rel.texto.join(', ') || 'usado'}.`);
 }
 
-function seletorArsenal(d) {
-  const cat = ARSENAL.CATEGORIAS.find((c) => c.id === categoriaArsenal) || ARSENAL.CATEGORIAS[0];
-  if (!cat.itens.some((i) => i.id === itemArsenal)) itemArsenal = cat.itens[0].id;
-  const rotulo = (i) => {
-    const g = ARSENAL.GRAUS.find((x) => x.id === i.grau);
-    return i.nome + (g ? ` (${g.nome})` : '');
-  };
-  return h('div', { class: 'seletor-arsenal' },
-    h('label', { for: 'sel-cat-arsenal' }, 'Adicionar do Arsenal'),
-    h('select', { id: 'sel-cat-arsenal', onchange: (e) => { categoriaArsenal = e.target.value; itemArsenal = ''; redesenhar(); } },
-      ...ARSENAL.CATEGORIAS.map((c) => h('option', { value: c.id, selected: c.id === cat.id }, c.nome))),
-    h('select', { id: 'sel-item-arsenal', 'aria-label': 'Item', onchange: (e) => { itemArsenal = e.target.value; } },
-      ...cat.itens.map((i) => h('option', { value: i.id, selected: i.id === itemArsenal }, rotulo(i)))),
-    h('button', { type: 'button', class: 'botao pequeno', onclick: () => {
-      const i = ARSENAL.itemPorId(itemArsenal);
-      if (!i || d.itens.length >= REGRAS.LIMITES.itens) return;
-      d.itens.push({ nome: i.nome, espacos: i.espacos, nota: '', ref: i.id, mun: 0, pecas: [], equip: false });
-      limparAtaques();
-      mudouArsenal(`${i.nome} adicionado.`);
-    } }, '+ Adicionar ao Inventário'));
-}
-
 function painelMunicao(d) {
+  const com = ARSENAL.MUNICOES.filter((m) => (d.municoes[m.id] || 0) > 0);
+  if (!com.length) return h('p', { class: 'dica' }, 'Sem munição na reserva. Use o "+" do Inventário → Munição para adicionar.');
   return h('div', { class: 'municoes' },
-    ARSENAL.MUNICOES.map((m) => {
+    com.map((m) => {
       const q = d.municoes[m.id] || 0;
       return h('label', { class: 'municao-item' },
         h('span', {}, m.nome),

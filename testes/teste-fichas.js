@@ -227,18 +227,50 @@ function req(metodo, caminho, corpo, token) {
     confere('Evoluir rascunho: recusado (409)', rEvoRasc.status === 409);
     await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/solicitar`, {}, tokAna);
     await req('POST', `/api/mesas/${mesa3}/solicitacoes-fichas/${idImp}/aprovar`, {}, tokMestre);
+
+    // O Nível seguinte só vale depois que o Mestre libera (Missões Completadas ou Marco Narrativo).
+    const rSemLiberar = await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/evoluir`, {}, tokAna);
+    confere('Evoluir antes de o Mestre liberar o Nível (409)', rSemLiberar.status === 409 && /liberou/.test(rSemLiberar.corpo.erro), rSemLiberar.corpo.erro);
+    const rMissao = await req('POST', `/api/mesas/${mesa3}/configurar`, { missoes: 1 }, tokMestre);
+    const mesaLib = (await req('GET', `/api/mesas/${mesa3}`, null, tokAna)).corpo.mesa;
+    confere('1 Missão Completada libera o Nível 2 (tabela do livro), visível ao Jogador', rMissao.status === 200 && mesaLib.nivelLiberado === 2 && mesaLib.missoes === 1);
+    const rMissaoRuim = await req('POST', `/api/mesas/${mesa3}/configurar`, { missoes: 500 }, tokMestre);
+    confere('Missões fora do limite (400)', rMissaoRuim.status === 400);
+    const rJogadorConf = await req('POST', `/api/mesas/${mesa3}/configurar`, { nivelMarco: 10 }, tokAna);
+    confere('Jogador não libera Nível (403)', rJogadorConf.status === 403);
+    await req('POST', `/api/mesas/${mesa3}/configurar`, { limiteNivel: 3, nivelMarco: 3 }, tokMestre);
+    confere('Marco Narrativo libera até o limite da Mesa', (await req('GET', `/api/mesas/${mesa3}`, null, tokAna)).corpo.mesa.nivelLiberado === 3);
+    await req('POST', `/api/mesas/${mesa3}/configurar`, { limiteNivel: 2, nivelMarco: 1 }, tokMestre);
+
+    // Valores de jogo da Ficha Ativa que devem sobreviver à evolução.
+    await req('PUT', `/api/mesas/${mesa3}/fichas/${idImp}`, { jogo: { pv: 3, sa: 1, bi: 2, condicoes: ['cego'] }, moedas: 2, anotacoes: 'jogando' }, tokAna);
     const rEvo = await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/evoluir`, {}, tokAna);
     confere('Evoluir Ficha Ativa: novo rascunho (201)', rEvo.status === 201);
     const idEvo = rEvo.corpo.id;
     const fEvo = await lerFicha(mesa3, idEvo);
     confere('Evolução: rascunho de Nível 2, marcado como evolução, mesmo personagem', fEvo.estado === 'rascunho' && fEvo.dados.nivel === 2 && fEvo.evolucao === true && fEvo.dados.nome === 'Claire');
+    confere('Evolução guarda a foto do Nível anterior', fEvo.base && fEvo.base.nivel === 1 && fEvo.base.classe === 'agente');
     confere('Ficha de origem continua Ativa enquanto isso', (await lerFicha(mesa3, idImp)).estado === 'ativa');
     const rEvo2 = await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/evoluir`, {}, tokAna);
     confere('Evolução repetida enquanto há uma em andamento (409)', rEvo2.status === 409);
+    const rDesativarEvo = await req('POST', `/api/mesas/${mesa3}/fichas/${idImp}/desativar`, {}, tokAna);
+    confere('Não desativar a Ficha de origem durante a evolução (409)', rDesativarEvo.status === 409);
 
     // Nível 2 pede uma Habilidade Básica nova: sem ela, a solicitação é recusada com os motivos.
     const rSolEvo = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/solicitar`, {}, tokAna);
     confere('Evolução incompleta é recusada com o motivo (422)', rSolEvo.status === 422 && /Habilidade/.test(rSolEvo.corpo.erro), rSolEvo.corpo.erro);
+
+    // Tentativas de mexer no que o Nível não concede: o servidor ignora ou recusa.
+    await req('PUT', `/api/mesas/${mesa3}/fichas/${idEvo}`, { ...fEvo.dados, nome: 'Outra', classe: 'operador', origem: 'militar', nivel: 9, moedas: 99, itens: [{ nome: 'x' }], habilidades: ['rolamento', 'anatomia-de-combate'] }, tokAna);
+    const dTrava = (await lerFicha(mesa3, idEvo)).dados;
+    confere('Evolução: Identificação, Nível, itens e moedas não mudam pelo editor', dTrava.nome === 'Claire' && dTrava.classe === 'agente' && dTrava.origem === fEvo.dados.origem && dTrava.nivel === 2 && dTrava.moedas !== 99 && dTrava.itens.length === fEvo.dados.itens.length);
+    await req('PUT', `/api/mesas/${mesa3}/fichas/${idEvo}`, { ...fEvo.dados, atributos: { ...fEvo.dados.atributos, FOR: fEvo.dados.atributos.FOR + 1 }, habilidades: ['rolamento', 'anatomia-de-combate'] }, tokAna);
+    const rSolAtr = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/solicitar`, {}, tokAna);
+    confere('Evolução do Nível 2 não concede Atributo (422)', rSolAtr.status === 422 && /Atributo/.test(rSolAtr.corpo.erro), rSolAtr.corpo.erro);
+    await req('PUT', `/api/mesas/${mesa3}/fichas/${idEvo}`, { ...fEvo.dados, habilidades: ['anatomia-de-combate'] }, tokAna);
+    const rSolTroca = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/solicitar`, {}, tokAna);
+    confere('Habilidade já escolhida não pode ser trocada (422)', rSolTroca.status === 422, rSolTroca.corpo.erro);
+
     await req('PUT', `/api/mesas/${mesa3}/fichas/${idEvo}`, { ...fEvo.dados, habilidades: ['rolamento', 'anatomia-de-combate'] }, tokAna);
     const rSolEvo2 = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/solicitar`, {}, tokAna);
     confere('Evolução completa é enviada (200)', rSolEvo2.status === 200, rSolEvo2.corpo.erro);
@@ -247,6 +279,14 @@ function req(metodo, caminho, corpo, token) {
     await req('POST', `/api/mesas/${mesa3}/solicitacoes-fichas/${idEvo}/aprovar`, {}, tokMestre);
     const depois = (await req('GET', `/api/mesas/${mesa3}/fichas`, null, tokAna)).corpo.fichas;
     confere('Evolução aprovada: a Ficha antiga some e fica só a de Nível 2 Ativa', depois.length === 1 && depois[0].id === idEvo && depois[0].estado === 'ativa' && depois[0].dados.nivel === 2);
+    const dNova = depois[0].dados;
+    confere('Evolução aprovada: moedas, anotações e condições vêm do jogo; PV e SA voltam ao máximo; BI mantida',
+      dNova.moedas === 2 && dNova.anotacoes === 'jogando' && dNova.jogo.condicoes.includes('cego') && dNova.jogo.pv === null && dNova.jogo.sa === null && dNova.jogo.bi === 2, JSON.stringify(dNova.jogo));
+    const rLiberarItens = await req('POST', `/api/mesas/${mesa3}/configurar`, { itensLiberados: ['lemi', 'nao-existe', 'erva-verde'] }, tokMestre);
+    const mesaItens = (await req('GET', `/api/mesas/${mesa3}`, null, tokAna)).corpo.mesa;
+    confere('Mestre libera itens do catálogo (ids inválidos são descartados) e o Jogador vê a lista', rLiberarItens.status === 200 && JSON.stringify(mesaItens.itensLiberados) === JSON.stringify(['lemi', 'erva-verde']), JSON.stringify(mesaItens.itensLiberados));
+    await req('POST', `/api/mesas/${mesa3}/configurar`, { itensLiberados: null }, tokMestre);
+    confere('itensLiberados null = todos', (await req('GET', `/api/mesas/${mesa3}`, null, tokAna)).corpo.mesa.itensLiberados === null);
 
     const rDup = await req('POST', `/api/mesas/${mesa3}/fichas/${idEvo}/duplicar`, {}, tokAna);
     confere('Duplicar: novo rascunho (201) com "(cópia)" e sem marca de evolução', rDup.status === 201 && (await lerFicha(mesa3, rDup.corpo.id)).dados.nome.endsWith('(cópia)') && (await lerFicha(mesa3, rDup.corpo.id)).evolucao === false);

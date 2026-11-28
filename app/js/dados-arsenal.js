@@ -184,6 +184,12 @@
     { id: 'magnum', nome: 'Magnum', porEspaco: 10, lote: 5, preco: 4 },
     { id: 'cargas', nome: 'Cargas (Spark Shot)', porEspaco: 10, lote: null, preco: null },
     { id: 'gm79', nome: 'Cartuchos GM 79', porEspaco: 10, lote: null, preco: null },
+    // Variantes: o livro as trata como munição própria. Os Cartuchos GM 79 especiais dividem a mesma pilha (10 por Espaço).
+    { id: 'gm79-acido', nome: 'Cartucho GM 79 — Ácido', porEspaco: 10, lote: null, preco: null, grupo: 'gm79' },
+    { id: 'gm79-explosivo', nome: 'Cartucho GM 79 — Explosivo', porEspaco: 10, lote: null, preco: null, grupo: 'gm79' },
+    { id: 'gm79-incendiario', nome: 'Cartucho GM 79 — Incendiário', porEspaco: 10, lote: null, preco: null, grupo: 'gm79' },
+    { id: '9mm-alto-impacto', nome: '9 mm Alto Impacto (+1d6 de Dano em acerto)', porEspaco: 30, lote: null, preco: null, grupo: '9mm' },
+    { id: 'calibre12-incendiaria', nome: 'Calibre 12 Incendiária (Queimadura 1 turno)', porEspaco: 15, lote: null, preco: null, grupo: 'calibre12' },
     { id: 'virotes', nome: 'Virotes', porEspaco: 10, lote: null, preco: null },
     { id: 'combustivel', nome: 'Combustível', porEspaco: 100, lote: null, preco: null },
     { id: 'foguete', nome: 'Foguete', porEspaco: 1, lote: null, preco: null },

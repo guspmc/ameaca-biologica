@@ -103,5 +103,39 @@ confere('Dados do livro: 3 Classes, 12 Perícias, 17 Origens, 30 Habilidades (10
   L.CLASSES.length === 3 && L.PERICIAS.length === 12 && L.ORIGENS.length === 17 && L.HABILIDADES.length === 30
   && L.CLASSES.every((cl) => L.HABILIDADES.filter((h) => h.classe === cl.id).length === 10));
 
+
+// Progressão (capítulo 6) e ganhos por Nível (capítulo 1)
+confere('Missões Completadas -> Nível liberado (0:1, 1:2, 3:3, 6:4, 41:9, 42:10)', [0, 1, 3, 6, 41, 42].map(R.nivelPorMissoes).join() === '1,2,3,4,9,10');
+const gn = (n) => JSON.stringify(R.ganhosDoNivel(n));
+confere('Nível 2: Habilidade Básica; 3: +1 Atributo; 4: Avançada + Ponto de Perícia; 8: Superior + Ponto; 10: Avassaladora',
+  gn(2) === '{"atributo":false,"pontoPericia":false,"habilidade":"basica"}' && gn(3) === '{"atributo":true,"pontoPericia":false,"habilidade":null}'
+  && gn(4) === '{"atributo":false,"pontoPericia":true,"habilidade":"avancada"}' && gn(8) === '{"atributo":false,"pontoPericia":true,"habilidade":"superior"}'
+  && gn(10) === '{"atributo":false,"pontoPericia":false,"habilidade":"avassaladora"}');
+
+// Evolução: nada do Nível anterior se desfaz
+const base0 = R.normalizar({ nome: 'E', origem: 'policial', origemTreino: 'pontaria', origemPericias: ['percepcao', 'pontaria'], classe: 'agente', nivel: 1,
+  atributos: { FOR: 1, AGI: 3, VIG: 2, AST: 1 }, habilidades: ['rolamento'] });
+const foto = R.fotoBase(base0);
+const evo = (mut) => { const d = JSON.parse(JSON.stringify(base0)); d.nivel = 2; mut(d); return R.validarEvolucao(d, foto); };
+confere('Evolução sem mudanças proibidas: sem erros do guia', evo(() => {}).length === 0);
+confere('Evolução: Atributo no Nível 2 é recusado', evo((d) => { d.atributos.FOR = 2; }).some((e) => /Atributo/.test(e)));
+confere('Evolução: baixar Atributo é recusado', evo((d) => { d.atributos.AGI = 2; }).some((e) => /diminuir/.test(e)));
+confere('Evolução: trocar Origem/Classe é recusado', evo((d) => { d.classe = 'operador'; }).some((e) => /Origem e Classe/.test(e)));
+confere('Evolução: perder Habilidade é recusado', evo((d) => { d.habilidades = ['anatomia-de-combate']; }).some((e) => /trocadas/.test(e)));
+confere('Evolução: Habilidade Avançada no Nível 2 é recusada (só Básica)', evo((d) => { d.habilidades.push('finalizacao-a-distancia'); }).some((e) => /Básica/.test(e)));
+confere('Evolução: Habilidade Básica no Nível 2 é aceita', evo((d) => { d.habilidades.push('anatomia-de-combate'); }).length === 0);
+const d3 = JSON.parse(JSON.stringify(base0)); d3.nivel = 3; d3.atributos.FOR = 2;
+confere('Nível 3: +1 Atributo é aceito; +2 não', R.validarEvolucao(d3, { ...foto, nivel: 2 }).length === 0 && R.validarEvolucao({ ...d3, atributos: { ...d3.atributos, AST: 2 } }, { ...foto, nivel: 2 }).length === 1);
+confere('travarEvolucao devolve Identificação e põe Nível +1', R.travarEvolucao({ ...base0, classe: 'operador', nivel: 9 }, foto).classe === 'agente' && R.travarEvolucao({ ...base0, nivel: 9 }, foto).nivel === 2);
+
+// Inventário em blocos
+const dInv = R.normalizar({ atributos: { FOR: 1, AGI: 1, VIG: 1, AST: 1 }, moedas: 4, municoes: { '9mm': 31, 'gm79': 5, 'gm79-acido': 6 },
+  itens: [{ ref: 'w-870', nome: 'W-870' }, { ref: 'lanterna-de-bolso', nome: 'Lanterna de Bolso' }] });
+const bl = R.blocosInventario(dInv);
+confere('Blocos: W-870 = 2 Espaços; Lanterna de Bolso = sem Espaço; 31 de 9 mm = 2; Moedas (4) = 2; GM 79 comum+ácido (11) = 2 (mesma pilha)',
+  bl.blocos.find((b) => b.tipo === 'item').espacos === 2 && bl.semEspaco.length === 1 && bl.blocos.find((b) => b.grupo === '9mm').espacos === 2
+  && bl.blocos.find((b) => b.tipo === 'moedas').espacos === 2 && bl.blocos.find((b) => b.grupo === 'gm79').espacos === 2 && bl.usados === 8, JSON.stringify(bl));
+confere('Espaços usados dos blocos = Espaços usados do cálculo', bl.usados === R.calcular(dInv).inventarioUsado, `${bl.usados} x ${R.calcular(dInv).inventarioUsado}`);
+
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTUDO OK');
 process.exit(falhas ? 1 : 0);

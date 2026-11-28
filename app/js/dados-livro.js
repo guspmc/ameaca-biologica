@@ -159,6 +159,7 @@
     avassaladora: [10],
     atributo: [3, 5, 7, 9], // +1 Atributo (máximo absoluto 5)
     pontoPericia: [4, 8], // +1 Ponto de Perícia
+    missoes: [0, 1, 3, 6, 10, 15, 21, 28, 35, 42], // Missões Completadas exigidas para o Nível 1 a 10 (capítulo 6, opcional)
   };
 
   const CONDICOES = [
@@ -176,6 +177,8 @@
     { id: 'intoxicado', nome: 'Intoxicado', texto: 'Movimento reduzido em 3 m. Desvantagem em Testes de Ataque e Testes de Perícia. Testes de Atributo permanecem normais.' },
     { id: 'queimadura', nome: 'Queimadura', texto: 'Sofre 1d6 de Dano ao final de cada turno. No início de cada turno, Reflexos DT 12 apaga as chamas.' },
     { id: 'surdo', nome: 'Surdo', texto: 'Falha automaticamente em testes que dependam exclusivamente de audição.' },
+    { id: 'infectado-especial', nome: 'Infectado Especial', texto: 'Transformação por Colapso Viral (3 falhas na Reanimação). Perde Habilidades de Classe, mas mantém Atributos, Perícias e uso de armas; Ataques com armas de fogo têm Desvantagem. Ataca a criatura consciente mais próxima.' },
+    { id: 'cabeca-carmesim', nome: 'Cabeça Carmesim', texto: 'Transformação posterior de um Infectado Especial a 0 PV. Não usa Armas nem Habilidades; todo Ataque que causa Dano também causa +2 BI. Revertida se a BI chegar a 0.' },
     { id: 'surpreendido', nome: 'Surpreendido', texto: 'No primeiro turno, não pode se mover nem realizar Ações. Não pode usar Reações nem gastar SA.' },
   ];
 
