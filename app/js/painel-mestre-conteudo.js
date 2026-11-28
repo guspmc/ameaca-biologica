@@ -604,7 +604,7 @@ function montarDocumentosPublicos() {
         if (item.imagemUrl.includes('/api/mesas/')) {
           fetch(item.imagemUrl, { headers: { Authorization: 'Bearer ' + estado.token } })
             .then(resposta => resposta.ok ? resposta.blob() : Promise.reject())
-            .then(blob => { img.src = URL.createObjectURL(blob); }).catch(() => {});
+            .then(blob => { const url = URL.createObjectURL(blob); urlsImagemPublicaMesa.add(url); img.src = url; }).catch(() => {});
         } else img.src = item.imagemUrl;
         sec.append(img);
       }
