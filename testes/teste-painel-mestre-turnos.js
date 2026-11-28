@@ -103,13 +103,14 @@ assert.equal(estado().participantes.length, 0);
 
 // Uma Ficha Ativa aprovada pode entrar na iniciativa com nome e AGI calculada.
 preparar([], null, 1);
-vm.runInContext("adicionarFichaAtivaAoCombate({ personagem: 'Claire', iniciativa: 4 })", contexto);
+vm.runInContext("adicionarFichaAtivaAoCombate({ id: '0123456789abcdef', personagem: 'Claire', iniciativa: 4 })", contexto);
 let combateFicha = estado();
 assert.equal(combateFicha.participantes.length, 1);
 assert.equal(combateFicha.participantes[0].nome, 'Claire');
 assert.equal(combateFicha.participantes[0].tipo, 'personagem');
 assert.equal(combateFicha.participantes[0].agi, 4);
 assert.equal(combateFicha.participantes[0].bonusIniciativa, 4);
+assert.equal(combateFicha.participantes[0].fichaId, '0123456789abcdef');
 assert.equal(combateFicha.participantes[0].d20, 0);
 assert.equal(combateFicha.participantes[0].entradaTardia, true);
 // Não duplica um personagem já adicionado.
