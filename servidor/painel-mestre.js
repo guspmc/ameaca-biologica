@@ -14,6 +14,7 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
     if (!corpo || typeof corpo !== 'object' || !Array.isArray(corpo.participantes)) return { erro:'Dados de combate inválidos.' };
     if (corpo.participantes.length > 30) return { erro:'O combate aceita até 30 participantes.' };
     const ids=new Set(), nomes=new Set(), participantes=[];
+    let proximaOrdem=(anterior.participantes||[]).reduce((maior,p)=>Math.max(maior,Number.isInteger(p.ordem)?p.ordem:-1),-1)+1;
     for (let i=0;i<corpo.participantes.length;i++) {
       const p=corpo.participantes[i] || {};
       const id=String(p.id || '').slice(0,40), nome=String(p.nome || '').trim().slice(0,40);
@@ -35,7 +36,7 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
         observacao: String(x.observacao || '').trim().slice(0, 300)
       })).filter(x => x.nome) : (original?.condicoes || []);
       const participante={ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,condicoes,
-        entradaTardia:original?original.entradaTardia:Boolean(p.entradaTardia),ordem:original?original.ordem:i };
+        entradaTardia:original?original.entradaTardia:Boolean(p.entradaTardia),ordem:original?original.ordem:proximaOrdem++ };
       if(tipo==='personagem' && p.fichaId!==undefined){
         if(typeof p.fichaId!=='string'||! /^[a-f0-9]{16}$/i.test(p.fichaId))return {erro:'Referência da Ficha de Personagem inválida.'};
         participante.fichaId=p.fichaId;
@@ -55,7 +56,8 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
           const rodadasAtordoado=p.rodadasAtordoado===undefined?0:Number(p.rodadasAtordoado);
           const aguardandoRetorno=p.aguardandoRetorno===undefined?false:Boolean(p.aguardandoRetorno);
           const rodadaInicioAtordoado=p.rodadaInicioAtordoado==null?null:Number(p.rodadaInicioAtordoado);
-          if(!Number.isInteger(rodadasAtordoado)||rodadasAtordoado<0||rodadasAtordoado>4||
+          if((p.fase==='combate'&&(aguardandoRetorno||rodadasAtordoado!==0||rodadaInicioAtordoado!==null))||
+            !Number.isInteger(rodadasAtordoado)||rodadasAtordoado<0||rodadasAtordoado>4||
             (aguardandoRetorno&&(!Number.isInteger(rodadaInicioAtordoado)||rodadaInicioAtordoado<1||rodadaInicioAtordoado>9999))||
             (!aguardandoRetorno&&(rodadasAtordoado!==0||rodadaInicioAtordoado!==null)))
             return {erro:'Estado de Atordoamento do Perseguidor inválido.'};
