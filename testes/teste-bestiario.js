@@ -2,6 +2,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const catalogo = JSON.parse(fs.readFileSync(path.join(__dirname, '../app/dados/bestiario.json'), 'utf8'));
 assert.equal(catalogo.length, 24, 'O catálogo deve conter 22 criaturas comuns e 2 fichas de Perseguidores.');
 const ids = new Set();
@@ -23,4 +24,24 @@ assert.ok(catalogo.some(c => c.id === 'nemesis-t-type-forma-final' && c.pv === 2
 assert.ok(catalogo.some(c => c.id === 'infectado' && c.pv === 15));
 assert.ok(catalogo.some(c => c.id === 'tirano-t103-perseguidor' && c.pvPerseguicao === 80));
 assert.ok(catalogo.some(c => c.id === 'nemesis-t-type-perseguidor' && c.pvPerseguicao === 100));
+
+// Regressão: o sorteio automático não pode incluir Chefes nem Perseguidores.
+const moduloCliente = fs.readFileSync(path.join(__dirname, '../app/js/painel-mestre-conteudo.js'), 'utf8');
+assert.ok(moduloCliente.includes("nome: c.nome, categoria: c.categoria, pontos: c.pontos"),
+  'O catálogo auxiliar precisa preservar o campo categoria.');
+const prefixo = moduloCliente.slice(0, moduloCliente.indexOf('function elemento('));
+const contexto = { Math: Object.create(Math) };
+contexto.Math.random = () => 0;
+const resultado = vm.runInNewContext(prefixo + `
+  CRIATURAS_AB = [
+    { id: 'comum', nome: 'Comum', categoria: 'Comum', pontos: 1 },
+    { id: 'elite', nome: 'Elite', categoria: 'Elite', pontos: 4 },
+    { id: 'chefe', nome: 'Chefe', categoria: 'Chefe', pontos: 8 },
+    { id: 'perseguidor', nome: 'Perseguidor', categoria: 'Perseguidor', pontos: null }
+  ];
+  sortearEncontroAB(1, 4, 0);
+`, contexto);
+assert.ok(resultado.criaturas.length > 0);
+assert.ok(resultado.criaturas.every(c => c.id !== 'chefe' && c.id !== 'perseguidor'),
+  'O sorteio automático deve excluir Chefes e Perseguidores.');
 console.log('Bestiário: 22 criaturas comuns e 2 Perseguidores; estrutura de fichas OK');
