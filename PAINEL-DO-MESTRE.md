@@ -82,11 +82,11 @@ O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquiv
 - Arquivo do Jogador v1.0, p. 43: Teste Passivo = 10 + valor da Perícia; vantagem +5 e desvantagem -5.
 - Arquivo do Mestre v1.0, apêndice, p. 70: resumo das condições e lembrete de que durações de fontes diferentes podem ser acompanhadas separadamente.
 
-Ainda pendente:
-- Concluída a projeção e a primeira integração do resumo operacional: a rota `GET /api/painel-mestre/:mesaId/fichas` entrega somente Fichas Ativas de jogadores aprovados, e o Painel exibe identificação, PV/SA/BI atuais e máximos, Iniciativa, Defesa e as quatro Perícias Passivas autorizadas. A rota depende dos módulos oficiais de Ficha/Regras da `main`; enquanto as branches estiverem separadas, responde 503 de forma explícita.
+## Situação das integrações
 
-- Transformar itens criados em objetos distribuíveis às Fichas, respeitando as permissões da Mesa.
-- Testes HTTP de integração para autenticação, aprovação de Jogadores e filtragem das publicações adicionados à suíte; acompanhar o resultado do CI antes de considerar a etapa validada.
+- **Resumo operacional:** a projeção e a rota estão implementadas nesta branch, com acesso restrito ao Mestre e campos permitidos. A execução real depende dos módulos oficiais de Ficha/Regras da `main`; enquanto as branches estiverem separadas, a rota responde 503 de forma explícita.
+- **Itens publicados no inventário:** a publicação e o catálogo de leitura estão implementados no Painel. A ação do Jogador para copiar um item à própria Ficha depende da API e da interface da Ficha da `main`; o contrato e os critérios de aceite estão detalhados ao final deste documento.
+- **Testes HTTP:** os testes de autenticação, aprovação e filtragem estão na suíte desta branch. A validação multiplayer real continua sendo uma etapa pós-merge, não algo que a suíte unitária substitui.
 ### Contrato planejado para o resumo das Fichas
 
 A integração com a Ficha deve fornecer ao Painel uma projeção de sessão, nunca o objeto completo da Ficha. Campos previstos:
@@ -122,6 +122,15 @@ Essa projeção é limitada aos personagens aprovados na Mesa e consultada perio
 
 - A proteção também cobre o evento SSE da Mesa: o redesenho geral é adiado enquanto o foco estiver em INPUT, TEXTAREA ou SELECT dentro do conteúdo da Mesa. Ao sair do campo, o redesenho pendente é executado.
 - Ao iniciar um novo combate, a versão recebida do servidor é preservada; assim, a gravação continua sujeita à verificação de concorrência (não cai no modo de compatibilidade de clientes antigos).
+
+
+## Concorrência entre sessões no conteúdo do Mestre
+
+- O conteúdo da Mesa possui versão numérica incrementada a cada gravação aceita.
+- O navegador envia a versão carregada em cada alteração. Se outra aba ou aparelho gravar primeiro, o servidor responde HTTP 409 e não sobrescreve a versão mais recente.
+- A interface preserva a edição local e oferece uma ação explícita, com confirmação, para descartar a cópia local e carregar a versão do servidor.
+- Atualizações remotas recebidas enquanto um campo do Painel de conteúdo está em foco não substituem o texto em edição; a interface informa que há uma versão remota e permite decidir como recuperá-la.
+- Conteúdos antigos sem versão são lidos como versão 0 e recebem uma versão na primeira gravação feita pelo cliente atualizado.
 
 
 ## Projeção operacional de Fichas (preparação para integração)
@@ -163,7 +172,7 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 
 - Catálogo de 22 B.O.Ws. transcritas do Arquivo do Mestre v1.0, pp. 28–49: categoria e pontos de ameaça, função, tamanho, PV, Defesa, Movimento, Atributos, Iniciativa, resistências, ataques e traços.
 - A aba **Bestiário** permite pesquisar por nome, categoria, função ou tamanho e expandir cada ficha para consulta.
-- O sorteador de encontros usa os IDs do catálogo, em vez de guardar apenas nomes em texto. Mantém as categorias e pontuações do livro: Comum 1, Perigosa 2, Elite 4 e Chefe 8. O sorteio automático continua excluindo Chefes; Perseguidores permanecem fora do orçamento comum conforme a p. 21 e serão tratados em módulo próprio.
+- O sorteador de encontros usa os IDs do catálogo, em vez de guardar apenas nomes em texto. Mantém as categorias e pontuações do livro: Comum 1, Perigosa 2, Elite 4 e Chefe 8. O sorteio automático exclui Chefes e Perseguidores; a montagem manual permite incluí-los conforme as regras específicas.
 - Encontros preparados guardam a composição estruturada (ID da criatura e quantidade). O Mestre pode usar **Preparar combate** para enviar a composição diretamente à ordem de iniciativa.
 - Ao selecionar uma criatura do Bestiário na preparação de iniciativa, o Painel preenche AGI e o valor de Iniciativa da ficha. Também registra PV atuais/máximos, Defesa e Movimento para acompanhamento durante o combate.
 - O PV atual da criatura pode ser atualizado no rastreador sem alterar os valores originais do Bestiário. A ficha-base do catálogo permanece intacta.
@@ -188,6 +197,7 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 - O Mestre pode declarar **Forma de Combate** no rastreador. O sistema então passa aos PV da ficha normal correspondente presente no catálogo (Tirano T-103 Forma II ou Nemesis T-Type Forma II). A transição exige confirmação e reinicia os PV para o máximo da ficha de combate. Essa ação é manual, conforme a decisão narrativa do Mestre.
 - As fichas de Perseguidor preservam os dados da fase de perseguição separadamente dos PV da forma de combate. As regras de fases posteriores e eventuais adaptações narrativas continuam sob controle do Mestre; não foram automatizadas.
 - Testes cobrem a presença das duas fichas, seus PV de perseguição e a persistência da fase no estado de combate.
+- Correção de regressão: o catálogo auxiliar do sorteador agora preserva `categoria` com o mesmo nome usado pelo filtro, garantindo que Chefes e Perseguidores realmente fiquem fora do sorteio automático. O teste do Bestiário inclui uma verificação específica para isso.
 
 ### Referências
 
@@ -209,9 +219,10 @@ A projeção está ligada à rota HTTP e à interface do Painel. O servidor cons
 
 - O resumo operacional de cada Ficha Ativa aprovada oferece a ação **Adicionar à iniciativa**.
 - A ação cria um participante do tipo Personagem e utiliza o nome e a AGI calculada pela Ficha; para Personagens, o bônus de Iniciativa permanece igual à AGI, conforme a regra já aplicada pelo rastreador.
+- O participante mantém somente o identificador da Ficha como referência estável. PV/SA/BI e Defesa são exibidos no rastreador por meio da projeção operacional atualizada, sem copiar esses valores para o estado do combate.
 - Se o combate já estiver em andamento, o personagem entra como participante tardio, permanecendo no fim da ordem atual.
 - A ação impede nomes duplicados e respeita o limite de 30 participantes. Depois de adicionado, o cartão da Ficha informa que o personagem já está na iniciativa.
-- Esta integração apenas copia nome e AGI para o rastreador. Não altera PV, SA, BI, condições ou qualquer dado da Ficha do Jogador. O resumo continua sendo uma projeção de leitura restrita ao Mestre.
+- Nenhuma ação do Painel altera a Ficha do Jogador. O resumo continua sendo uma projeção de leitura restrita ao Mestre.
 
 
 ## Limite definitivo de acesso do Mestre às Fichas
@@ -228,14 +239,14 @@ O Painel do Mestre é estritamente de leitura em relação às Fichas dos Jogado
 - A leitura exige sessão e vínculo com a Mesa. Jogadores aprovados só acessam arquivos vinculados a documentos ou imagens de itens publicados; arquivos privados não são expostos. Ao encerrar a Mesa, seu diretório de anexos é removido.
 - Testes unitários cobrem upload, leitura, isolamento entre Mesas, rejeição de caminhos inválidos, tipos não permitidos, arquivos vazios/grandes e limpeza.
 
-## Integração com a main do Claude — revisão de 27/11/2026
+## Integração com a main do Claude — revisão de 28/11/2026
 
 A main avançou até a versão 0.7 (Fichas, Arsenal, tema Dossiê, evolução de nível e Fichas Offline). A branch do Painel permanece independente; não foi feito merge nem rebase.
 
 1. **Atualização do resumo de Fichas:** a main emite o evento SSE `ficha` com payload `{ mesaId, fichaId }` nas operações que retornam `avisar`, como solicitar/aprovar Ficha. A rotina `salvar()` ainda não retorna `avisar`, então alterações de PV/SA/BI/inventário não disparam SSE até o Claude incluir o Mestre e os Jogadores aprovados no retorno após gravar. O listener desta branch aceita `{ mesaId, fichaId }` e o legado `{ id }`; a consulta periódica de quatro segundos permanece como contingência.
 2. **Resumo operacional:** o módulo `servidor/painel-mestre-fichas.js` é compatível com a estrutura `{ mesaId: { fichaId: ficha } }`, com a lista de aprovados de `mesas.info()` e com os campos calculados por `REGRAS.calcular()`. A rota protegida do Painel continua retornando somente a projeção permitida; nunca a Ficha completa.
 3. **Itens publicados e inventário:** os itens publicados são disponibilizados como catálogo da Mesa. A inclusão no inventário pessoal precisa ser iniciada e confirmada pelo Jogador, por meio da API da Ficha. O Mestre não pode inserir, alterar ou remover itens diretamente na Ficha.
-4. **Integração de arquivos compartilhados:** o merge deverá combinar cuidadosamente `servidor/server.js` (rotas de Fichas da main + rotas do Painel e uploads desta branch), `app/index.html` (arquivos da Ficha/tema + scripts do Painel), `app/sw.js` (listas de cache das duas frentes), `app/css/estilo.css` e `package.json` (versão e todos os testes). Não substituir um lado pelo outro.
+4. **Integração de arquivos compartilhados:** o merge deverá combinar cuidadosamente `servidor/server.js` (rotas de Fichas da main + rotas do Painel e uploads desta branch), `app/index.html` (arquivos da Ficha/tema + scripts do Painel e o stylesheet `tema-dossie.css`), `app/sw.js` (listas de cache das duas frentes e uma versão nova), `app/css/estilo.css` e `package.json` (versão e todos os testes). Preservar também os novos módulos `dados-livro.js`, `dados-arsenal.js`, `regras.js`, `ficha.js`, `arsenal-ui.js` e `fichas-offline.js` da main. Não substituir um lado pelo outro.
 5. **Validação final:** depois da integração, testar login, Mesa, aprovação de Ficha, resumo restrito, atualização SSE, iniciativa, conteúdo publicado, upload/leitura de anexos e funcionamento offline. Esta branch não altera os módulos de Ficha pertencentes ao Claude.
 
 ## Plano de fechamento — resumo de Fichas, itens e testes multiplayer
