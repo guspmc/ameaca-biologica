@@ -16,7 +16,7 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
     for (const [chave, limite, campos] of [
       ['encontros', 40, ['id', 'nome', 'nivel', 'jogadores', 'dificuldade', 'pontos', 'orcamento', 'composicao', 'criaturas', 'cenario', 'direcao']],
       ['documentos', 60, ['id', 'titulo', 'tipo', 'conteudo', 'arquivoUrl', 'visivel']],
-      ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito', 'imagemUrl', 'visivel']]
+      ['itens', 100, ['id', 'nome', 'categoria', 'descricao', 'efeito', 'espacos', 'imagemUrl', 'visivel']]
     ]) {
       const origem = Array.isArray(corpo[chave]) ? corpo[chave] : [];
       if (origem.length > limite) return { erro: 'Limite de registros excedido em ' + chave + '.' };
@@ -32,6 +32,7 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
             })).filter(c => c.id) : [];
           }
           else if (campo === 'visivel') novo.visivel = Boolean(item.visivel);
+          else if (campo === 'espacos') novo.espacos = Number.isInteger(Number(item.espacos)) ? Math.max(0, Math.min(20, Number(item.espacos))) : 1;
           else if (campo === 'imagemUrl' || campo === 'arquivoUrl') {
             const url = validarTexto(item[campo], 1000);
             try { const parsed = new URL(url); novo[campo] = ['http:', 'https:'].includes(parsed.protocol) ? url : ''; }
@@ -52,7 +53,7 @@ function criarConteudoMestre({ carregar, salvar, ehMestre }) {
       const mesa = dados[mesaId] || vazio(mesaId);
       return {
         documentos: mesa.documentos.filter(doc => doc.visivel).map(({ id, titulo, tipo, conteudo, arquivoUrl }) => ({ id, titulo, tipo, conteudo, arquivoUrl })),
-        itens: mesa.itens.filter(item => item.visivel).map(({ id, nome, categoria, descricao, efeito, imagemUrl }) => ({ id, nome, categoria, descricao, efeito, imagemUrl }))
+        itens: mesa.itens.filter(item => item.visivel).map(({ id, nome, categoria, descricao, efeito, espacos, imagemUrl }) => ({ id, nome, categoria, descricao, efeito, espacos: Number.isInteger(espacos) ? espacos : 1, imagemUrl }))
       };
     },
     documentosPublicos(mesaId) {
