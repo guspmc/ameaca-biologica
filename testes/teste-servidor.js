@@ -111,6 +111,18 @@ async function ouvir(token, ms) {
     confere('Mestre aprova Jogador', aprovacao.status === 200);
     const privado = await fetch(B + '/api/mesas/' + mesaCriada.id + '/publicacoes', { headers: { Authorization: 'Bearer ' + b.token } });
     confere('Jogador aprovado consulta publicações vazias', privado.status === 200);
+    const pdfTeste = Buffer.from('%PDF-1.4\\nTeste de anexo\\n%%EOF');
+    const enviarArquivo = async nome => fetch(B + '/api/mesas/' + mesaCriada.id + '/arquivos', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + ana.token, 'Content-Type': 'application/pdf', 'X-File-Name': encodeURIComponent(nome) },
+      body: pdfTeste
+    });
+    const uploadPublicado = await enviarArquivo('relatorio.pdf');
+    const arquivoPublicado = await uploadPublicado.json();
+    confere('Mestre envia PDF para a Mesa', uploadPublicado.status === 201 && Boolean(arquivoPublicado.url));
+    const uploadPrivado = await enviarArquivo('rascunho.pdf');
+    const arquivoPrivado = await uploadPrivado.json();
+    confere('Mestre envia segundo PDF privado', uploadPrivado.status === 201 && Boolean(arquivoPrivado.url));
     const conteudo = await fetch(B + '/api/painel-mestre/' + mesaCriada.id + '/conteudo', {
       method: 'PUT',
       headers: { Authorization: 'Bearer ' + ana.token, 'Content-Type': 'application/json' },
@@ -119,11 +131,11 @@ async function ouvir(token, ms) {
         anotacoes: 'Somente o Mestre vê',
         encontros: [],
         documentos: [
-          { id: 'doc-publico', titulo: 'Relatório', tipo: 'Arquivo', conteudo: 'Documento compartilhado', visivel: true },
+          { id: 'doc-publico', titulo: 'Relatório', tipo: 'Arquivo', conteudo: 'Documento compartilhado', arquivoUrl: 'http://127.0.0.1:' + PORTA + arquivoPublicado.url, visivel: true },
           { id: 'doc-privado', titulo: 'Segredo', tipo: 'Nota', conteudo: 'Documento reservado', visivel: false }
         ],
         itens: [
-          { id: 'item-publico', nome: 'Cartão de acesso', categoria: 'Chave', descricao: 'Cartão azul', efeito: 'Abre a ala B', visivel: true },
+          { id: 'item-publico', nome: 'Cartão de acesso', categoria: 'Chave', descricao: 'Cartão azul', efeito: 'Abre a ala B', imagemUrl: 'https://attacker.example' + arquivoPrivado.url, visivel: true },
           { id: 'item-privado', nome: 'Protótipo', categoria: 'Equipamento', visivel: false }
         ]
       })
@@ -133,6 +145,12 @@ async function ouvir(token, ms) {
     confere('Jogador recebe apenas documento e item publicados',
       publicacoes.documentos?.length === 1 && publicacoes.documentos[0].titulo === 'Relatório' &&
       publicacoes.itens?.length === 1 && publicacoes.itens[0].nome === 'Cartão de acesso');
+    const leituraArquivoPublicado = await fetch(B + arquivoPublicado.url, { headers: { Authorization: 'Bearer ' + b.token } });
+    confere('Jogador aprovado lê anexo realmente publicado', leituraArquivoPublicado.status === 200);
+    const leituraArquivoPrivado = await fetch(B + arquivoPrivado.url, { headers: { Authorization: 'Bearer ' + b.token } });
+    confere('URL externa com caminho igual não libera anexo privado', leituraArquivoPrivado.status === 404);
+    const leituraArquivoMestre = await fetch(B + arquivoPrivado.url, { headers: { Authorization: 'Bearer ' + ana.token } });
+    confere('Mestre pode ler seu anexo ainda não publicado', leituraArquivoMestre.status === 200);
     const naoAprovado = await post('/api/entrar', { usuario: 'Caio', senha: '1234' });
     const caio = await naoAprovado.json();
     const pedidoCaio = await fetch(B + '/api/mesas/entrar', {
