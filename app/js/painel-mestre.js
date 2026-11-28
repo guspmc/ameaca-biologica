@@ -110,6 +110,9 @@ async function salvarCombateMestre() {
   if(!combateMestre)return;
   const mesaIdDaOperacao=estado.mesaId;
   if(!mesaIdDaOperacao)return;
+  // Impede uma ação atrasada da tela anterior de gravar o snapshot antigo
+  // sob o ID da Mesa recém-selecionada.
+  if(combateMestre.mesaId&&String(combateMestre.mesaId)!==String(mesaIdDaOperacao))return;
   if(salvandoCombate){
     // Preserva o snapshot da Mesa que solicitou a nova gravação, mesmo que
     // a resposta da requisição anterior chegue depois de uma troca de Mesa.
