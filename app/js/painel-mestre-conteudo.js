@@ -36,11 +36,11 @@ let itemImagemPreviewRequisicao = 0;
 
 // Cache isolado por Mesa; o conteúdo privado nunca é gravado no cache público.
 function chaveConteudoMestreOffline() { return 'ab-conteudo-mestre:' + String(estado.mesaId || ''); }
-function guardarConteudoMestreOffline(pendente = true) {
-  if (!estado.mesaId || !conteudoMestre) return false;
+function guardarConteudoMestreOffline(pendente = true, mesaId = estado.mesaId, conteudo = conteudoMestre) {
+  if (!mesaId || !conteudo) return false;
   try {
-    localStorage.setItem(chaveConteudoMestreOffline(), JSON.stringify({
-      conteudo: conteudoMestre, pendente: Boolean(pendente), atualizadoEm: new Date().toISOString()
+    localStorage.setItem('ab-conteudo-mestre:' + String(mesaId), JSON.stringify({
+      conteudo, pendente: Boolean(pendente), atualizadoEm: new Date().toISOString()
     }));
     return true;
   } catch { return false; }
@@ -128,35 +128,55 @@ async function carregarConteudoMestre(silencioso = true) {
 
 async function salvarConteudoMestre() {
   if (salvandoConteudoMestre) { salvarConteudoPendente = true; return; }
+  const mesaIdDaOperacao = estado.mesaId;
+  if (!mesaIdDaOperacao) return;
   if (estado.modo !== 'local') {
-    const salvo = guardarConteudoMestreOffline(true);
+    const salvo = guardarConteudoMestreOffline(true, mesaIdDaOperacao);
     desenharConteudoMestre();
     mensagem($('conteudo-msg'), salvo ? 'Alterações guardadas neste aparelho. Serão sincronizadas quando o servidor voltar.' : 'Não foi possível guardar as alterações offline neste navegador.', 'aviso');
     return;
   }
   salvandoConteudoMestre = true;
   let erro = null;
+  let ultimaCopiaEnviada = null;
+  let mesaMudouDuranteGravacao = false;
   try {
     do {
       salvarConteudoPendente = false;
       const copia = JSON.parse(JSON.stringify(conteudoMestre));
+      ultimaCopiaEnviada = copia;
       const r = await apiConteudoMestre('PUT', copia);
-      conteudoMestre = r.conteudo;
-      guardarConteudoMestreOffline(false);
+      if (estado.mesaId !== mesaIdDaOperacao) {
+        guardarConteudoMestreOffline(false, mesaIdDaOperacao, copia);
+        mesaMudouDuranteGravacao = true;
+        break;
+      }
+      const houveEdicaoDuranteEnvio = JSON.stringify(conteudoMestre) !== JSON.stringify(copia);
+      if (houveEdicaoDuranteEnvio) {
+        conteudoMestre.versao = r.conteudo.versao;
+        salvarConteudoPendente = true;
+        guardarConteudoMestreOffline(true, mesaIdDaOperacao, conteudoMestre);
+      } else {
+        conteudoMestre = r.conteudo;
+        guardarConteudoMestreOffline(false, mesaIdDaOperacao, conteudoMestre);
+      }
     } while (salvarConteudoPendente);
   } catch (e) {
     erro = e;
-    guardarConteudoMestreOffline(true);
+    guardarConteudoMestreOffline(true, mesaIdDaOperacao,
+      estado.mesaId === mesaIdDaOperacao ? conteudoMestre : (ultimaCopiaEnviada || conteudoMestre));
   }
   finally {
     salvandoConteudoMestre = false;
-    desenharConteudoMestre();
-    if (erro) {
-      mensagem($('conteudo-msg'), erro.status === 409 ? erro.message : 'Não foi possível sincronizar. As alterações permanecem guardadas neste aparelho.', erro.status === 409 ? 'erro' : 'aviso');
-      if (erro.status === 409 && $('conteudo-conflito')) $('conteudo-conflito').hidden = false;
-    } else {
-      if ($('conteudo-conflito')) $('conteudo-conflito').hidden = true;
-      mensagem($('conteudo-msg'), 'Alterações salvas e sincronizadas.', 'info');
+    if (estado.mesaId === mesaIdDaOperacao) {
+      desenharConteudoMestre();
+      if (erro) {
+        mensagem($('conteudo-msg'), erro.status === 409 ? erro.message : 'Não foi possível sincronizar. As alterações permanecem guardadas neste aparelho.', erro.status === 409 ? 'erro' : 'aviso');
+        if (erro.status === 409 && $('conteudo-conflito')) $('conteudo-conflito').hidden = false;
+      } else if (!mesaMudouDuranteGravacao) {
+        if ($('conteudo-conflito')) $('conteudo-conflito').hidden = true;
+        mensagem($('conteudo-msg'), 'Alterações salvas e sincronizadas.', 'info');
+      }
     }
   }
 }
