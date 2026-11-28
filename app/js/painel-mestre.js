@@ -150,8 +150,20 @@ function ajustarD20Combate(id,valor){
 function avancarTurnoCombate(){
   const lista=combateMestre.participantes;if(!lista.length)return;
   const i=lista.findIndex(p=>p.id===combateMestre.turnoAtual);
-  if(i<0||i===lista.length-1){combateMestre.rodada++;combateMestre.turnoAtual=lista[0].id;}
-  else combateMestre.turnoAtual=lista[i+1].id;
+  if(i<0||i===lista.length-1){
+    for(const p of lista){
+      if(p.perseguidor&&p.fase==='perseguicao'&&p.aguardandoRetorno&&
+        Number.isInteger(p.rodadasAtordoado)&&p.rodadaInicioAtordoado<combateMestre.rodada){
+        p.rodadasAtordoado=Math.max(0,p.rodadasAtordoado-1);
+      }
+    }
+    combateMestre.rodada++;combateMestre.turnoAtual=lista[0].id;
+  } else combateMestre.turnoAtual=lista[i+1].id;
+  const atual=lista.find(p=>p.id===combateMestre.turnoAtual);
+  if(atual?.perseguidor&&atual.fase==='perseguicao'&&atual.aguardandoRetorno&&atual.rodadasAtordoado===0){
+    atual.pvAtual=atual.pvPerseguicaoMaximo;atual.pvMaximo=atual.pvPerseguicaoMaximo;
+    atual.aguardandoRetorno=false;atual.rodadaInicioAtordoado=null;
+  }
   salvarCombateMestre();
 }
 function removerParticipanteCombate(id){
@@ -236,10 +248,25 @@ function desenharCombateMestre(){
     }
     if(p.tipo==='criatura'&&p.pvMaximo!==undefined){
       const ficha=document.createElement('p');ficha.className='dica';ficha.textContent=(p.perseguidor&&p.fase==='perseguicao'?'PV de Perseguição ':'PV ')+p.pvAtual+'/'+p.pvMaximo+' · Defesa '+p.defesa+' · Movimento '+p.movimento;
-      const pv=document.createElement('input');pv.type='number';pv.min='0';pv.max=String(p.pvMaximo);pv.value=p.pvAtual;pv.setAttribute('aria-label','PV atuais de '+p.nome);
-      pv.addEventListener('change',()=>{const valor=Number(pv.value);if(Number.isInteger(valor)&&valor>=0&&valor<=p.pvMaximo){p.pvAtual=valor;salvarCombateMestre();}else pv.value=p.pvAtual;});
+      const pv=document.createElement('input');pv.type='number';pv.min='0';pv.max=String(p.pvMaximo);pv.value=p.pvAtual;pv.disabled=Boolean(p.perseguidor&&p.fase==='perseguicao'&&p.aguardandoRetorno);pv.setAttribute('aria-label','PV atuais de '+p.nome);
+      pv.addEventListener('change',()=>{
+        const valor=Number(pv.value);
+        if(Number.isInteger(valor)&&valor>=0&&valor<=p.pvMaximo&&!pv.disabled){
+          const pvAnterior=p.pvAtual;p.pvAtual=valor;
+          if(p.perseguidor&&p.fase==='perseguicao'&&pvAnterior>0&&valor===0){
+            p.rodadasAtordoado=Math.floor(Math.random()*4)+1;
+            p.aguardandoRetorno=true;p.rodadaInicioAtordoado=combateMestre.rodada;
+          }
+          salvarCombateMestre();
+        }else pv.value=p.pvAtual;
+      });
       li.append(ficha,pv);
       if(p.perseguidor&&p.fase==='perseguicao'){
+        if(p.aguardandoRetorno){
+          const atordoado=document.createElement('p');atordoado.className='mensagem aviso';
+          atordoado.textContent=p.rodadasAtordoado>0?'Atordoado pela regra de Perseguição · '+p.rodadasAtordoado+' rodada(s) restante(s). Não recebe Dano nesse período.':'Atordoado · aguardando seu próximo turno para recuperar todos os PV de Perseguição.';
+          li.append(atordoado);
+        }
         const regra=document.createElement('p');regra.className='dica';regra.textContent='Durante a perseguição: não pode sofrer Morte Instantânea normalmente nem fica Vulnerável. Efeito direto de Morte Instantânea reduz PV de Perseguição a 0.';
         li.append(regra);
         const distancia=document.createElement('section');distancia.className='regua-perseguidor';
