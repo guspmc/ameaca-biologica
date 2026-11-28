@@ -70,6 +70,8 @@ async function salvarCombateMestre() {
 function ordenarCombateMestre(){
   combateMestre.participantes.sort((a,b)=>{
     if(a.entradaTardia!==b.entradaTardia)return a.entradaTardia?1:-1;
+    // Quem entra após o início permanece no fim, na ordem em que chegou.
+    if(a.entradaTardia&&b.entradaTardia)return a.ordem-b.ordem;
     return b.iniciativa-a.iniciativa||b.agi-a.agi||b.d20-a.d20||a.ordem-b.ordem;
   });
 }
