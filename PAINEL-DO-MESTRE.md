@@ -87,6 +87,13 @@ O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquiv
 - Upload de novos anexos continua dependendo do servidor; o cache offline guarda referências e conteúdo textual, não transfere arquivos novos sem conexão.
 - O cache local contém conteúdo privado do Mestre no armazenamento do navegador. Em aparelhos compartilhados, o Mestre deve encerrar a sessão e proteger o acesso ao perfil do navegador.
 
+### Ajustes de usabilidade em telas estreitas
+
+- Em larguras de até 430 px, o formulário de iniciativa passa a usar uma coluna, evitando campos espremidos lado a lado.
+- Campos do formulário e seletor de condições recebem altura mínima de 44 px; ações principais ocupam a largura disponível.
+- Botões de edição/remoção de condições recebem área mínima maior para facilitar o toque.
+- O rastreador mantém o cartão do participante em duas linhas no celular, separando identidade, iniciativa, ajuste do d20 e ação.
+
 ## Efeitos de Personagem e funcionamento offline
 
 - Os registros aplicados pelo Mestre passaram a distinguir **condições** de **efeitos de progressão**, mantendo ambos no estado operacional do combate. O primeiro efeito de progressão cadastrado é Nível Negativo por Morte; no Nível 1, há também o registro específico da penalidade de −2 em Testes de Atributo, Perícia e Ataque até subir de Nível, conforme Arquivo do Jogador, p. 101.
