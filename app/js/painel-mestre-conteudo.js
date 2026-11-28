@@ -10,7 +10,9 @@ async function carregarBestiarioMestre() {
   if (BESTIARIO_AB.length || carregandoBestiarioMestre) return;
   carregandoBestiarioMestre = true;
   try {
-    const dados = await buscar(estado.base + '/dados/bestiario.json');
+    // Em Offline, usa o arquivo estático do próprio PWA (pré-cacheado pelo service worker).
+    const origem = estado.modo === 'local' && estado.base ? estado.base : '';
+    const dados = await buscar(origem + '/dados/bestiario.json');
     BESTIARIO_AB = Array.isArray(dados) ? dados : [];
     CRIATURAS_AB = BESTIARIO_AB.map(c => ({ id: c.id, nome: c.nome, categoria: c.categoria, pontos: c.pontos }));
     window.BESTIARIO_AB = BESTIARIO_AB;
