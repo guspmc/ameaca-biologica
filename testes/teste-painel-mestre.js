@@ -157,4 +157,19 @@ r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,turnoAtual:'a',combateAtivo:t
 assert.equal(r.status,200);
 assert.deepEqual(r.dados.combate.participantes.map(p=>p.id),['a','t1','t2']);
 
+// Remover participantes não pode fazer uma nova entrada reutilizar ordem já ocupada.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,turnoAtual:'a',combateAtivo:true,participantes:[
+{id:'a',nome:'Alice',tipo:'personagem',agi:3,bonusIniciativa:3,d20:17,ordem:0},
+{id:'t2',nome:'Tardio 2',tipo:'personagem',agi:8,bonusIniciativa:8,d20:0,ordem:2,entradaTardia:true},
+{id:'t3',nome:'Tardio 3',tipo:'personagem',agi:2,bonusIniciativa:2,d20:0,ordem:3,entradaTardia:true}
+]});
+assert.equal(r.status,200);
+assert.deepEqual(r.dados.combate.participantes.map(p=>p.ordem),[0,2,3]);
+
+// Um Perseguidor em Forma de Combate não pode conservar Atordoamento da fase anterior.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,participantes:[
+{id:'perseguidor-combate',nome:'Tirano Forma II',tipo:'criatura',agi:1,bonusIniciativa:1,d20:10,criaturaId:'tirano-t103-forma-ii',pvAtual:135,pvMaximo:135,defesa:18,movimento:'9 m',perseguidor:true,fase:'combate',pvPerseguicaoMaximo:80,pvCombateMaximo:135,proximidadePerseguidor:5,rodadasAtordoado:2,aguardandoRetorno:true,rodadaInicioAtordoado:2}
+]});
+assert.equal(r.status,400);
+
 console.log('Painel do Mestre: tudo OK');
