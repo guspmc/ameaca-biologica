@@ -1,7 +1,7 @@
 'use strict';
 
 // Módulo de conteúdo do Mestre. Não lê nem altera Fichas de Personagem.
-const CONTEUDO_MESTRE_VAZIO = () => ({ anotacoes: '', encontros: [], documentos: [], itens: [] });
+const CONTEUDO_MESTRE_VAZIO = () => ({ versao: 0, anotacoes: '', encontros: [], documentos: [], itens: [] });
 let BESTIARIO_AB = [];
 let CRIATURAS_AB = [];
 let carregandoBestiarioMestre = false;
@@ -73,6 +73,7 @@ async function carregarConteudoMestre(silencioso = true) {
   try {
     const r = await apiConteudoMestre();
     conteudoMestre = r.conteudo || CONTEUDO_MESTRE_VAZIO();
+    if ($('conteudo-conflito')) $('conteudo-conflito').hidden = true;
     desenharConteudoMestre();
   } catch (e) {
     if (!silencioso) mensagem($('aviso-mesa'), e.message, 'erro');
@@ -88,14 +89,20 @@ async function salvarConteudoMestre() {
       salvarConteudoPendente = false;
       const copia = JSON.parse(JSON.stringify(conteudoMestre));
       const r = await apiConteudoMestre('PUT', copia);
+      conteudoMestre.versao = r.conteudo.versao;
       if (!salvarConteudoPendente) conteudoMestre = r.conteudo;
     } while (salvarConteudoPendente);
   } catch (e) { erro = e; }
   finally {
     salvandoConteudoMestre = false;
     desenharConteudoMestre();
-    if (erro) mensagem($('conteudo-msg'), erro.message, 'erro');
-    else mensagem($('conteudo-msg'), 'Alterações salvas.', 'info');
+    if (erro) {
+      mensagem($('conteudo-msg'), erro.message, 'erro');
+      if (erro.status === 409 && $('conteudo-conflito')) $('conteudo-conflito').hidden = false;
+    } else {
+      if ($('conteudo-conflito')) $('conteudo-conflito').hidden = true;
+      mensagem($('conteudo-msg'), 'Alterações salvas.', 'info');
+    }
   }
 }
 
@@ -371,7 +378,14 @@ function montarConteudoMestre() {
   const trocarAba = (nome) => { for (const [chave] of abas) { if (paineis[chave]) paineis[chave].hidden = chave !== nome; const botao = menu.querySelector('[data-aba="' + chave + '"]'); if (botao) { botao.setAttribute('aria-selected', String(chave === nome)); botao.tabIndex = chave === nome ? 0 : -1; } } };
   for (const [chave, rotulo] of abas) { const botao = elemento('button', rotulo, 'botao pequeno'); botao.type = 'button'; botao.dataset.aba = chave; botao.setAttribute('role','tab'); botao.setAttribute('aria-selected',String(chave==='itens')); botao.addEventListener('click',()=>trocarAba(chave)); menu.append(botao); }
   card.append(menu);
-  const msg = elemento('p', '', 'mensagem'); msg.id = 'conteudo-msg'; msg.hidden = true; card.append(msg);
+  const msg = elemento('p', '', 'mensagem'); msg.id = 'conteudo-msg'; msg.hidden = true;
+  const conflito = elemento('button', 'Descartar alterações locais e carregar a versão do servidor', 'botao pequeno');
+  conflito.id = 'conteudo-conflito'; conflito.type = 'button'; conflito.hidden = true;
+  conflito.addEventListener('click', () => {
+    if (!confirm('Isso substituirá o conteúdo local desta Mesa pela versão salva no servidor. Deseja continuar?')) return;
+    carregarConteudoMestre(false);
+  });
+  card.append(msg, conflito);
 
   const encontro = elemento('section', '', 'subpainel-mestre'); encontro.dataset.secao = 'encontros'; paineis.encontros = encontro;
   encontro.append(elemento('h3', 'Criador de encontros'));
