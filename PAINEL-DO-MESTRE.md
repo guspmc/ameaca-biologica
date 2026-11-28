@@ -338,3 +338,40 @@ Prioridade sugerida, sem alterar as regras do livro nem ampliar o acesso do Mest
 - **Exportação/importação dos dados do Mestre:** backup separado das Fichas dos Jogadores, com restauração por Mesa.
 
 Qualquer recurso futuro que envolva recursos ou dados das Fichas deve continuar estritamente de leitura e limitado à projeção operacional já aprovada pelo usuário.
+
+### 5. Contrato proposto — notificações de efeitos para o Jogador
+
+Esta etapa ainda não está implementada. O contrato abaixo é uma proposta para combinar com o Claude antes de alterar os módulos de Ficha da `main`.
+
+**Princípios obrigatórios**
+- O efeito mecânico é aplicado imediatamente no estado operacional do combate pelo Mestre. A entrega, leitura ou confirmação da notificação nunca condiciona esse efeito.
+- A notificação é um aviso ao proprietário da Ficha vinculada ao participante. O Mestre não recebe confirmação de leitura nem consulta a caixa de entrada do Jogador.
+- A notificação não autoriza escrita do Mestre na Ficha. O Jogador decide como registrar/acompanhar o efeito na sua própria interface, respeitando as regras e o estado da sessão.
+- Condições e efeitos de progressão compartilham o canal de entrega, mas preservam o campo `tipo` e suas regras distintas. Nível Negativo não deve ser convertido em condição comum.
+- Requisições repetidas, reconexões e reenvio do combate devem ser idempotentes pelo identificador da notificação.
+
+**Fluxo sugerido**
+1. O Mestre adiciona um efeito a um participante vinculado a uma Ficha Ativa. O Painel gera um ID estável para aquela aplicação e grava o efeito no estado de combate.
+2. Quando o servidor recebe e valida a alteração do combate, identifica aplicações novas comparando os IDs anteriores e atuais. Editar duração/observação não cria outra notificação; remover o efeito não apaga o histórico já entregue.
+3. O servidor grava uma notificação durável, vinculada a `mesaId`, `fichaId` e ao Jogador proprietário. A gravação deve ocorrer uma única vez por ID.
+4. O servidor emite SSE ao Jogador, contendo apenas `mesaId`, `fichaId` e `notificacaoId`. O evento serve como aviso para consultar a caixa de entrada; não é a fonte durável.
+5. A interface do Jogador consulta suas próprias notificações e apresenta o aviso. A confirmação de leitura atualiza apenas o estado da notificação, nunca o efeito mecânico.
+6. Se o Jogador estiver desconectado, a notificação permanece armazenada e aparece na próxima consulta/reconexão. Se o Mestre estiver totalmente offline, o evento só poderá ser criado/entregue quando o snapshot pendente for sincronizado com o servidor.
+
+**Endpoints a avaliar com o Claude**
+- `GET /api/mesas/:mesaId/fichas/:fichaId/notificacoes`: lista somente notificações da Ficha pertencente ao usuário autenticado.
+- `POST /api/mesas/:mesaId/fichas/:fichaId/notificacoes/:notificacaoId/ler`: marca a notificação como lida pelo próprio Jogador.
+- A criação deve ser interna ao fluxo autenticado de gravação do combate do Mestre; não expor uma rota que permita ao Jogador fabricar notificações ou indicar outra Ficha como destinatária.
+
+**Dados mínimos sugeridos**
+- `id`, `mesaId`, `fichaId`, `tipo` (`condicao` ou `progressao`), `nome`, `duracao`, `observacao`, `criadaEm`, `lidaEm`.
+- Não incluir PV, SA, BI, atributos, perícias, inventário ou qualquer outro conteúdo da Ficha.
+- A autorização deve confirmar em toda consulta/confirmação que a Ficha pertence ao usuário e que ele continua aprovado na Mesa. O Mestre recebe 403 para a caixa de entrada.
+
+**Critérios de aceite**
+- O Jogador recebe o aviso em tempo real quando conectado e o encontra após reconectar quando estava offline.
+- O mesmo ID nunca cria avisos duplicados, inclusive após reenvio do snapshot do Mestre.
+- Marcar como lida não remove nem altera o efeito no combate.
+- Alterar duração/observação não dispara nova notificação; remover o efeito não apaga a notificação já recebida.
+- Um Jogador não consulta notificações de outra Ficha; o Mestre não consulta a caixa de entrada nem recebe estado de leitura.
+- O efeito continua aplicado mesmo se o Jogador nunca abrir o aviso.
