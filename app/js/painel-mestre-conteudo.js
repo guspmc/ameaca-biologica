@@ -29,6 +29,8 @@ let conteudoMestre = CONTEUDO_MESTRE_VAZIO();
 let carregandoConteudoMestre = false;
 let salvandoConteudoMestre = false;
 let salvarConteudoPendente = false;
+let itemImagemPreviewUrl = null;
+let itemImagemPreviewRequisicao = 0;
 
 
 async function enviarArquivoMestre(arquivo) {
@@ -221,6 +223,11 @@ function editarItemMestre(id) {
 function atualizarPreviewImagemItem() {
   const preview = $('item-imagem-preview');
   const url = $('item-imagem')?.value.trim() || '';
+  const requisicao = ++itemImagemPreviewRequisicao;
+  if (itemImagemPreviewUrl) {
+    URL.revokeObjectURL(itemImagemPreviewUrl);
+    itemImagemPreviewUrl = null;
+  }
   try {
     const parsed = new URL(url);
     if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('URL inválida');
@@ -229,8 +236,12 @@ function atualizarPreviewImagemItem() {
       preview.removeAttribute('src');
       fetch(url, { headers: { Authorization: 'Bearer ' + estado.token } })
         .then(resposta => resposta.ok ? resposta.blob() : Promise.reject())
-        .then(blob => { preview.src = URL.createObjectURL(blob); })
-        .catch(() => { preview.hidden = true; });
+        .then(blob => {
+          if (requisicao !== itemImagemPreviewRequisicao) return;
+          itemImagemPreviewUrl = URL.createObjectURL(blob);
+          preview.src = itemImagemPreviewUrl;
+        })
+        .catch(() => { if (requisicao === itemImagemPreviewRequisicao) preview.hidden = true; });
     } else preview.src = url;
   } catch { preview.removeAttribute('src'); preview.hidden = true; }
 }
