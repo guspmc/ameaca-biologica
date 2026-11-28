@@ -81,7 +81,7 @@ Os encontros salvos podem ser editados individualmente: nome, nível, quantidade
 
 ## Gerenciamento de condições
 
-O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquivo do Jogador, consulta rápida de efeitos e duração/remoção, com indicação da página de referência, cadastro manual e campos diretos para registrar o término específico daquela aplicação e observações. A orientação geral do livro permanece separada do registro de duração da instância, evitando que um texto de regra seja confundido com um prazo já definido para aquela criatura. Cada aplicação mantém sua própria duração e observação. O Mestre pode editar esses dois campos depois da aplicação ou remover a condição. A ferramenta não decrementa automaticamente os prazos, pois os gatilhos dependem da condição e da fonte. Para participantes vinculados a Fichas de Personagem, esse registro permanece no estado de combate e não altera `jogo.condicoes` da Ficha. A projeção operacional do Mestre também não expõe condições da Ficha. A sincronização entre esses dois registros depende de uma decisão de fluxo que preserve a autonomia do Jogador; não será feita por escrita direta do Mestre na Ficha.
+O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquivo do Jogador, consulta rápida de efeitos e duração/remoção, com indicação da página de referência, cadastro manual e campos diretos para registrar o término específico daquela aplicação e observações. A orientação geral do livro permanece separada do registro de duração da instância, evitando que um texto de regra seja confundido com um prazo já definido para aquela criatura. Cada aplicação mantém sua própria duração e observação. O Mestre pode editar esses dois campos depois da aplicação ou remover a condição. A ferramenta não decrementa automaticamente os prazos, pois os gatilhos dependem da condição e da fonte. Para participantes vinculados a Fichas de Personagem, esse registro permanece no estado de combate e não altera `jogo.condicoes` da Ficha. A projeção operacional do Mestre expõe somente os nomes das Condições oficiais já registradas na Ficha Ativa, em leitura somente; não há escrita, remoção ou sincronização automática com `jogo.condicoes`. O Mestre continua sem acesso ao conteúdo completo da Ficha.
 
 ### Conteúdo privado do Mestre — cache offline
 
@@ -410,3 +410,34 @@ Esta etapa ainda não está implementada. O contrato abaixo é uma proposta para
 - Alterar duração/observação não dispara nova notificação; remover o efeito não apaga a notificação já recebida.
 - Um Jogador não consulta notificações de outra Ficha; o Mestre não consulta a caixa de entrada nem recebe estado de leitura.
 - O efeito continua aplicado mesmo se o Jogador nunca abrir o aviso.
+
+
+## Preparação de integração com a main v0.9
+
+Revisão feita em 28/11/2026, com base no HEAD `main` `b2a0efd5` (v0.9) e no HEAD desta branch antes dos ajustes `35ac7be`.
+
+### Contratos confirmados na main
+
+- A Ficha Ativa armazena Condições como IDs em `dados.jogo.condicoes`. A lista oficial e seus nomes vêm de `app/js/dados-livro.js` (`LIVRO.CONDICOES`).
+- A projeção do Painel continua restrita a Fichas `ativa` pertencentes a Jogadores aprovados. A rota do Mestre deve expor uma allowlist operacional, não `dados`, atributos, habilidades, história, anotações, inventário ou valores privados.
+- A decisão de integração registrada em `CLAUDE.md` da main pede que a projeção inclua `condicoes` como IDs/nomes de `dados.jogo.condicoes`. Nesta branch, a resposta transforma os IDs em nomes oficiais e descarta IDs desconhecidos. A lista é somente leitura: não altera a Ficha nem substitui as condições anotadas no estado de combate do Painel.
+- Itens personalizados publicados precisam incluir `espacos` (padrão 1). Nesta branch, o Mestre pode informar de 0 a 20 Espaços; o servidor normaliza o valor, aplica padrão 1 para dados antigos/ausentes e o inclui na rota de publicações. O cliente da Ficha deve preencher `itensPersonalizadosMesa` com os itens publicados, incluindo `espacos`, para o seletor do Inventário.
+- A main carrega `app/js/inventario-ui.js` e usa `mestreId` no item da Ficha para ligar o registro ao item publicado. O vínculo e a apresentação no Inventário continuam sendo responsabilidade da integração na main; este branch não altera os módulos da Ficha.
+
+### Ajustes feitos nesta branch para o contrato
+
+- `servidor/painel-mestre-fichas.js`: projeção allowlisted agora inclui apenas nomes de Condições oficiais presentes em `dados.jogo.condicoes`.
+- `servidor/server.js`: injeta `LIVRO.CONDICOES` na projeção, sem duplicar catálogo no servidor.
+- `servidor/painel-mestre-conteudo.js`: preserva `espacos` nos itens e o inclui na resposta pública.
+- `app/js/painel-mestre-conteudo.js`: formulário de item personalizado permite definir Espaços (0–20), com padrão 1.
+- Testes unitários atualizados para conferir filtragem de Condições desconhecidas, ausência de dados privados e Espaços publicados/padrão.
+
+### Pontos de integração que permanecem para o merge
+
+1. No módulo da Ficha da main, preencher `itensPersonalizadosMesa` a partir de `GET /api/mesas/:mesaId/publicacoes`, incluindo `id`, `nome`, `categoria`, `descricao`, `efeito`, `espacos` e `mestreId` necessário para associar o item.
+2. Garantir que a resposta de publicações seja carregada antes de abrir o seletor do Inventário e atualizada quando chegar o evento SSE `mesa`.
+3. Confirmar que o resumo do Mestre permanece GET-only e que nenhum endpoint permite ao Mestre ler a Ficha completa ou gravar em `jogo.condicoes`.
+4. Reconciliar os arquivos compartilhados com a versão atual da main: `servidor/server.js`, `app/index.html`, `app/sw.js`, `app/css/estilo.css` e `package.json`. A main v0.9 também atualizou `tema-dossie.css`, `mesas.js`, `regras.js`, `ficha.js` e `inventario-ui.js`; esses arquivos permanecem sob responsabilidade do Claude.
+5. Rodar a suíte completa já integrada, testar Mestre/Jogador em duas sessões e conferir Local, Offline, publicação/retirada de itens, condições somente leitura e encerramento da Mesa.
+
+Esta branch não foi rebaseada nem mesclada com a main. Os ajustes são commits próprios em `jill/painel-do-mestre`; a integração final continua sob responsabilidade do Claude, conforme combinado.
