@@ -75,6 +75,15 @@ Os encontros salvos podem ser editados individualmente: nome, nível, quantidade
 
 O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquivo do Jogador, consulta rápida de efeitos e duração/remoção, com indicação da página de referência, cadastro manual e campos diretos para registrar o término específico daquela aplicação e observações. A orientação geral do livro permanece separada do registro de duração da instância, evitando que um texto de regra seja confundido com um prazo já definido para aquela criatura. Cada aplicação mantém sua própria duração e observação. O Mestre pode editar esses dois campos depois da aplicação ou remover a condição. A ferramenta não decrementa automaticamente os prazos, pois os gatilhos dependem da condição e da fonte. Para participantes vinculados a Fichas de Personagem, esse registro permanece no estado de combate e não altera `jogo.condicoes` da Ficha. A projeção operacional do Mestre também não expõe condições da Ficha. A sincronização entre esses dois registros depende de uma decisão de fluxo que preserve a autonomia do Jogador; não será feita por escrita direta do Mestre na Ficha.
 
+### Conteúdo privado do Mestre — cache offline
+
+- Anotações, encontros preparados, documentos e itens personalizados possuem cópia local isolada por Mesa no aparelho do Mestre.
+- A leitura offline restaura o último snapshot conhecido. Alterações feitas sem servidor são guardadas localmente e marcadas como pendentes.
+- Na reconexão, o snapshot pendente é enviado usando o controle otimista de versão já aplicado pelo servidor. Após confirmação, a cópia local permanece disponível, agora marcada como sincronizada.
+- Em conflito HTTP 409, a cópia local não é descartada nem sobrescreve silenciosamente o servidor. O Mestre precisa resolver o conflito antes de continuar a sincronização.
+- Upload de novos anexos continua dependendo do servidor; o cache offline guarda referências e conteúdo textual, não transfere arquivos novos sem conexão.
+- O cache local contém conteúdo privado do Mestre no armazenamento do navegador. Em aparelhos compartilhados, o Mestre deve encerrar a sessão e proteger o acesso ao perfil do navegador.
+
 ## Efeitos de Personagem e funcionamento offline
 
 - Os registros aplicados pelo Mestre passaram a distinguir **condições** de **efeitos de progressão**, mantendo ambos no estado operacional do combate. O primeiro efeito de progressão cadastrado é Nível Negativo por Morte; no Nível 1, há também o registro específico da penalidade de −2 em Testes de Atributo, Perícia e Ataque até subir de Nível, conforme Arquivo do Jogador, p. 101.
