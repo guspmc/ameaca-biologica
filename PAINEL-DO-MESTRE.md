@@ -87,6 +87,14 @@ O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquiv
 - Upload de novos anexos continua dependendo do servidor; o cache offline guarda referências e conteúdo textual, não transfere arquivos novos sem conexão.
 - O cache local contém conteúdo privado do Mestre no armazenamento do navegador. Em aparelhos compartilhados, o Mestre deve encerrar a sessão e proteger o acesso ao perfil do navegador.
 
+### Isolamento de gravações assíncronas
+
+- Cada gravação de conteúdo captura o identificador da Mesa de origem.
+- Se o Mestre trocar de Mesa antes da resposta do servidor, a resposta tardia não altera o conteúdo em memória da Mesa nova.
+- A cópia enviada é armazenada no cache da Mesa original; o cache de outra Mesa não é tocado.
+- Edições feitas enquanto uma gravação está em andamento são preservadas e enviadas em uma nova rodada, usando a versão otimista retornada pelo servidor.
+- O teste de regressão simula a troca de Mesa antes da conclusão da requisição.
+
 ### Ajustes de usabilidade em telas estreitas
 
 - Em larguras de até 430 px, o formulário de iniciativa passa a usar uma coluna, evitando campos espremidos lado a lado.
