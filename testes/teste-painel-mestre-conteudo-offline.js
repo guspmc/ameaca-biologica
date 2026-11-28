@@ -24,7 +24,8 @@ const contexto = vm.createContext({
   URL: { createObjectURL() { return 'blob:test'; }, revokeObjectURL() {} },
   fetch: async () => ({ ok: true, json: async () => ({}) }),
   confirm: () => true,
-  crypto: { randomUUID: () => 'id-teste' }
+  crypto: { randomUUID: () => 'id-teste' },
+  process: { exitCode: 0 }
 });
 const codigo = fs.readFileSync(path.join(__dirname, '../app/js/painel-mestre-conteudo.js'), 'utf8');
 vm.runInContext(codigo, contexto, { filename: 'painel-mestre-conteudo.js' });
@@ -32,15 +33,15 @@ vm.runInContext(codigo, contexto, { filename: 'painel-mestre-conteudo.js' });
 (async () => {
   // Conteúdo sincronizado fica disponível offline após recarregar a página.
   const sincronizado = { versao: 3, anotacoes: 'Sessão no laboratório', encontros: [{id:'e1'}], documentos: [], itens: [] };
-  contexto.conteudoMestre = sincronizado;
+  vm.runInContext('conteudoMestre = '+JSON.stringify(sincronizado), contexto);
   assert.equal(vm.runInContext('guardarConteudoMestreOffline(false)', contexto), true);
-  contexto.conteudoMestre = null;
+  vm.runInContext('conteudoMestre = null', contexto);
   await vm.runInContext('carregarConteudoMestre()', contexto);
-  assert.equal(contexto.conteudoMestre.anotacoes, 'Sessão no laboratório');
+  assert.equal(vm.runInContext('conteudoMestre.anotacoes', contexto), 'Sessão no laboratório');
   assert.equal(chamadas.length, 0);
 
   // Edições offline são guardadas e marcadas como pendentes.
-  contexto.conteudoMestre = { ...sincronizado, anotacoes: 'Nova pista descoberta' };
+  vm.runInContext('conteudoMestre = '+JSON.stringify({...JSON.parse(JSON.stringify(sincronizado)),anotacoes:'Nova pista descoberta'}), contexto);
   await vm.runInContext('salvarConteudoMestre()', contexto);
   assert.equal(vm.runInContext('conteudoMestreOfflinePendente()', contexto), true);
   assert.equal(vm.runInContext('lerConteudoMestreOffline().anotacoes', contexto), 'Nova pista descoberta');
@@ -55,11 +56,11 @@ vm.runInContext(codigo, contexto, { filename: 'painel-mestre-conteudo.js' });
   assert.equal(vm.runInContext('lerConteudoMestreOffline().versao', contexto), 4);
 
   // Conflito preserva a cópia pendente em vez de sobrescrever a versão remota.
-  contexto.conteudoMestre = { ...sincronizado, versao: 3, anotacoes: 'Edição conflitante' };
+  vm.runInContext('conteudoMestre = '+JSON.stringify({...JSON.parse(JSON.stringify(sincronizado)),versao:3,anotacoes:'Edição conflitante'}), contexto);
   contexto.estado.modo = 'offline';
   await vm.runInContext('salvarConteudoMestre()', contexto);
   contexto.estado.modo = 'local';
-  contexto.buscar = async () => { const erro = new Error('Conflito'); erro.status = 409; throw erro; };
+  vm.runInContext("buscar = async () => { const erro = new Error('Conflito'); erro.status = 409; throw erro; }", contexto);
   await vm.runInContext('salvarConteudoMestre()', contexto);
   assert.equal(vm.runInContext('conteudoMestreOfflinePendente()', contexto), true);
   assert.equal(vm.runInContext('lerConteudoMestreOffline().anotacoes', contexto), 'Edição conflitante');
