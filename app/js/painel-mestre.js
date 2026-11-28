@@ -7,15 +7,19 @@ let combateMestre=null, carregandoCombate=false, salvandoCombate=false, conflito
 // O snapshot local mantém o estado do Mestre durante quedas de conexão.
 // A sincronização usa a versão otimista já validada pelo servidor.
 function chaveCombateOffline(){return 'ab-combate-mestre:'+String(estado.mesaId||'');}
-function guardarCombateOffline(){
-  if(!combateMestre||!estado.mesaId)return;
-  try{localStorage.setItem(chaveCombateOffline(),JSON.stringify(combateMestre));return true;}
+function guardarCombateOffline(pendente=true){
+  if(!combateMestre||!estado.mesaId)return false;
+  try{localStorage.setItem(chaveCombateOffline(),JSON.stringify({estado:combateMestre,pendente:!!pendente,atualizadoEm:new Date().toISOString()}));return true;}
   catch{return false;}
 }
-function lerCombateOffline(){
-  try{const bruto=localStorage.getItem(chaveCombateOffline());return bruto?JSON.parse(bruto):null;}
-  catch{return null;}
+function envelopeCombateOffline(){
+  try{const bruto=localStorage.getItem(chaveCombateOffline());if(!bruto)return null;const salvo=JSON.parse(bruto);
+    // Compatibilidade com snapshots antigos, que ainda não tinham metadados.
+    return salvo&&salvo.estado&&typeof salvo.estado==='object'?salvo:{estado:salvo,pendente:true};
+  }catch{return null;}
 }
+function lerCombateOffline(){const salvo=envelopeCombateOffline();return salvo?.estado||null;}
+function combateOfflinePendente(){return envelopeCombateOffline()?.pendente===true;}
 function limparCombateOffline(){try{localStorage.removeItem(chaveCombateOffline());}catch{}}
 
 function painelMestreEmEdicao(){
@@ -68,17 +72,16 @@ async function carregarCombateMestre(silencioso=false,forcar=false) {
     return;
   }
   const pendente=lerCombateOffline();
-  if(pendente&&!conflitoCombate){
+  if(pendente&&combateOfflinePendente()&&!conflitoCombate){
     combateMestre=pendente;
     desenharCombateMestre();
     await salvarCombateMestre();
     return;
   }
   carregandoCombate=true;
-  try{const r=await apiPainelMestre();combateMestre=r.combate;conflitoCombate=false;desenharCombateMestre();}
+  try{const r=await apiPainelMestre();combateMestre=r.combate;conflitoCombate=false;guardarCombateOffline(false);desenharCombateMestre();}
   catch(e){
-    if(combateMestre)guardarCombateOffline();
-    const local=lerCombateOffline();if(local){combateMestre=local;desenharCombateMestre();}
+    const local=lerCombateOffline();if(!combateMestre&&local){combateMestre=local;desenharCombateMestre();}
     if(!silencioso)mensagem($('aviso-mesa'),e.message,'aviso');
   }
   finally{carregandoCombate=false;}
@@ -101,7 +104,7 @@ async function salvarCombateMestre() {
       const copia=JSON.parse(JSON.stringify(combateMestre));
       const r=await apiPainelMestre('PUT',copia);
       combateMestre=r.combate;
-      limparCombateOffline();
+      guardarCombateOffline(false);
     }while(salvarCombatePendente);
   }catch(e){
     erro=e;
