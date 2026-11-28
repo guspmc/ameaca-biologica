@@ -134,4 +134,18 @@ r=painel.atender('Mestre','PUT','mesa-1',{versao:versaoA+1,rodada:4,turnoAtual:n
 assert.equal(r.status,200);
 assert.equal(r.dados.combate.versao,versaoA+2);
 
+
+// Atordoamento dos Perseguidores: 1d4 rodadas, imunidade a dano no período
+// e recuperação integral quando voltam a agir.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:2,participantes:[
+{id:'perseguidor',nome:'Tirano',tipo:'criatura',agi:1,bonusIniciativa:1,d20:10,criaturaId:'tirano-t103-perseguidor',pvAtual:0,pvMaximo:80,defesa:18,movimento:'9 m',perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:80,pvCombateMaximo:135,proximidadePerseguidor:5,rodadasAtordoado:2,aguardandoRetorno:true,rodadaInicioAtordoado:2}
+]});
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.participantes[0].rodadasAtordoado,2);
+assert.equal(r.dados.combate.participantes[0].aguardandoRetorno,true);
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:2,participantes:[
+{id:'perseguidor',nome:'Tirano',tipo:'criatura',agi:1,bonusIniciativa:1,d20:10,criaturaId:'tirano-t103-perseguidor',pvAtual:0,pvMaximo:80,defesa:18,movimento:'9 m',perseguidor:true,fase:'perseguicao',pvPerseguicaoMaximo:80,pvCombateMaximo:135,proximidadePerseguidor:5,rodadasAtordoado:5,aguardandoRetorno:true,rodadaInicioAtordoado:2}
+]});
+assert.equal(r.status,400);
+
 console.log('Painel do Mestre: tudo OK');
