@@ -347,7 +347,7 @@ function desenharCombateMestre(){
     const condicoes=document.createElement('div');condicoes.className='combate-condicoes';
     for(const condicao of (p.condicoes||[])){
       const tag=document.createElement('div');tag.className='condicao-combate';
-      const texto=document.createElement('span');texto.textContent=(condicao.tipo==='progressao'?'Progressão · ':'')+condicao.nome+' · '+(condicao.duracao||'término não registrado')+(condicao.observacao?' · '+condicao.observacao:'')+(condicao.notificacao?.estado==='pendente'?' · aviso pendente de sincronização':condicao.notificacao?.estado==='entregue'?' · aviso entregue':'');
+      const texto=document.createElement('span');texto.textContent=(condicao.tipo==='progressao'?'Progressão · ':'')+condicao.nome+' · '+(condicao.duracao||'término não registrado')+(condicao.observacao?' · '+condicao.observacao:'')+(condicao.notificacao?.estado==='pendente'?' · aviso pendente de entrega':condicao.notificacao?.estado==='entregue'?' · aviso entregue':'');
       const editar=document.createElement('button');editar.type='button';editar.className='botao pequeno';editar.textContent='Editar';editar.setAttribute('aria-label','Editar duração e observação de '+condicao.nome);
       const excluir=document.createElement('button');excluir.type='button';excluir.className='botao pequeno';excluir.textContent='×';excluir.setAttribute('aria-label','Remover condição '+condicao.nome);
       const editorEdicao=document.createElement('div');editorEdicao.className='condicao-edicao';editorEdicao.hidden=true;
