@@ -171,4 +171,27 @@ assert.equal(estado().rodada, 4);
 assert.equal(estado().participantes[0].condicoes[0].duracao, '1d4 rodadas');
 assert.equal(estado().participantes[0].condicoes[0].observacao, 'Teste no início do turno');
 
-console.log('Painel do Mestre: turnos, remoção, edição e versão OK');
+
+// Perseguidor reduzido a 0 PV: a contagem só avança ao fechar rodadas
+// completas após o atordoamento; recupera PV ao chegar seu próximo turno.
+preparar([
+  {id:'p',nome:'Tirano',tipo:'criatura',perseguidor:true,fase:'perseguicao',pvAtual:0,pvMaximo:80,pvPerseguicaoMaximo:80,rodadasAtordoado:2,aguardandoRetorno:true,rodadaInicioAtordoado:2},
+  {id:'a',nome:'Alice',iniciativa:20,agi:3,d20:17,ordem:0}
+], 'p', 2);
+vm.runInContext('Math.random = () => 0', contexto);
+vm.runInContext('avancarTurnoCombate()', contexto);
+assert.equal(estado().participantes[0].rodadasAtordoado,2);
+assert.equal(estado().turnoAtual,'a');
+vm.runInContext('avancarTurnoCombate()', contexto);
+assert.equal(estado().rodada,3);
+assert.equal(estado().participantes[0].rodadasAtordoado,1);
+assert.equal(estado().participantes[0].pvAtual,0);
+vm.runInContext('avancarTurnoCombate()', contexto);
+assert.equal(estado().participantes[0].rodadasAtordoado,1);
+vm.runInContext('avancarTurnoCombate()', contexto);
+assert.equal(estado().rodada,4);
+assert.equal(estado().participantes[0].rodadasAtordoado,0);
+assert.equal(estado().participantes[0].pvAtual,80);
+assert.equal(estado().participantes[0].aguardandoRetorno,false);
+
+console.log('Painel do Mestre: turnos OK');
