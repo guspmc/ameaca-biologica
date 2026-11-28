@@ -369,7 +369,12 @@ function desenharConteudoMestre() {
     li.append(elemento('strong', item.nome), elemento('p', (item.categoria || 'Item') + ' · ' + (item.efeito || item.descricao || 'Sem efeito descrito')));
     if (item.imagemUrl) {
       const img = elemento('img'); img.alt = 'Imagem de ' + item.nome; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer'; img.className = 'item-imagem-mestre';
-      if (item.imagemUrl.includes('/api/mesas/')) fetch(item.imagemUrl, { headers: { Authorization: 'Bearer ' + estado.token } }).then(r => r.ok ? r.blob() : Promise.reject()).then(blob => { img.src = URL.createObjectURL(blob); }).catch(() => {});
+      if (item.imagemUrl.includes('/api/mesas/')) fetch(item.imagemUrl, { headers: { Authorization: 'Bearer ' + estado.token } }).then(r => r.ok ? r.blob() : Promise.reject()).then(blob => {
+              if (!img.isConnected) return;
+              const url = URL.createObjectURL(blob);
+              urlsImagemPublicaMesa.add(url);
+              img.src = url;
+            }).catch(() => {});
       else img.src = item.imagemUrl;
       li.append(img);
     }
@@ -560,6 +565,11 @@ function montarConteudoMestre() {
 let documentosPublicosMesa = [];
 let itensPublicosMesa = [];
 let carregandoDocumentosPublicos = false;
+const urlsImagemPublicaMesa = new Set();
+function liberarImagensPublicasMesa() {
+  for (const url of urlsImagemPublicaMesa) URL.revokeObjectURL(url);
+  urlsImagemPublicaMesa.clear();
+}
 async function carregarDocumentosPublicos() {
   if (!estado.mesaId || estado.modo !== 'local' || estado.mesaAtual?.papel !== 'jogador' || carregandoDocumentosPublicos) return;
   carregandoDocumentosPublicos = true;
@@ -615,7 +625,13 @@ window.renderizarMesa = function () {
 };
 let mesaConteudoCarregada = null;
 window.carregarMesaAtual = async function () {
-  if (estado.mesaId !== mesaConteudoCarregada) { conteudoMestre = CONTEUDO_MESTRE_VAZIO(); documentosPublicosMesa = []; itensPublicosMesa = []; mesaConteudoCarregada = estado.mesaId; }
+  if (estado.mesaId !== mesaConteudoCarregada) {
+    liberarImagensPublicasMesa();
+    conteudoMestre = CONTEUDO_MESTRE_VAZIO();
+    documentosPublicosMesa = [];
+    itensPublicosMesa = [];
+    mesaConteudoCarregada = estado.mesaId;
+  }
   await carregarMesaConteudoOriginal();
   if (estado.tela !== 'mesa') return;
   if (estado.mesaAtual?.papel === 'mestre') await carregarBestiarioMestre();
