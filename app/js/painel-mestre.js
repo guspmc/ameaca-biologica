@@ -3,7 +3,7 @@
 const renderizarMesaBase = renderizarMesa;
 const carregarMesaAtualBase = carregarMesaAtual;
 let combateMestre=null, carregandoCombate=false, salvandoCombate=false, conflitoCombate=false;
-let salvarCombatePendente=false, salvarCombatePendenteMesaId=null, mesaSalvandoCombateId=null;
+let salvarCombatePendente=false, salvarCombatePendenteMesaId=null;
 
 // O snapshot local mantém o estado do Mestre durante quedas de conexão.
 // Cada operação recebe o ID da Mesa capturado no início; respostas atrasadas
@@ -127,7 +127,6 @@ async function salvarCombateMestre() {
     return;
   }
   salvandoCombate=true;
-  mesaSalvandoCombateId=mesaIdDaOperacao;
   let erro=null,ultimaCopiaEnviada=null;
   try{
     do{
@@ -165,7 +164,6 @@ async function salvarCombateMestre() {
     salvarCombatePendente=false;
     salvarCombatePendenteMesaId=null;
     salvandoCombate=false;
-    mesaSalvandoCombateId=null;
     if(mesaAtual===mesaIdDaOperacao){
       desenharCombateMestre();
       if(erro)mensagem($('aviso-mesa'),eStatusOffline(erro)?'Sem conexão com o servidor. Alterações guardadas neste aparelho e aguardam sincronização.':erro.message,eStatusOffline(erro)?'aviso':'erro');
