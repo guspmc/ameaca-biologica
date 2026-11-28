@@ -7,6 +7,7 @@ const path = require('node:path');
 const codigo = fs.readFileSync(path.join(__dirname, '../app/js/painel-mestre.js'), 'utf8');
 const raizPainel = { contains: (el) => el && el.dentroDoPainel === true, scrollIntoView() {} };
 const documento = { hidden: false, activeElement: null, addEventListener() {}, getElementById: (id) => id === 'bloco-combate-mestre' ? raizPainel : null };
+const armazenamentoLocal = new Map();
 const contexto = vm.createContext({
   document: documento,
   $: (id) => documento.getElementById(id),
@@ -16,7 +17,12 @@ const contexto = vm.createContext({
   renderizarMesa() {},
   carregarMesaAtual() {},
   crypto: { randomUUID: () => 'ficha-combate-id' },
-  mensagem() {}
+  mensagem() {},
+  localStorage: {
+    setItem(chave, valor) { armazenamentoLocal.set(chave, valor); },
+    getItem(chave) { return armazenamentoLocal.has(chave) ? armazenamentoLocal.get(chave) : null; },
+    removeItem(chave) { armazenamentoLocal.delete(chave); }
+  }
 });
 vm.runInContext(codigo, contexto, { filename: 'painel-mestre.js' });
 
@@ -111,6 +117,17 @@ preparar(participantes, 'b', 8);
 vm.runInContext('combateMestre.versao = 7; salvarCombateMestre = () => {}; novoCombateMestre()', contexto);
 assert.equal(estado().versao, 7);
 assert.equal(estado().participantes.length, 0);
+
+// O snapshot completo do combate é persistido no aparelho e pode ser
+// recuperado sem servidor, mantendo os efeitos aplicados pelo Mestre.
+preparar([{id:'offline',nome:'Claire',tipo:'personagem',agi:2,bonusIniciativa:2,d20:10,ordem:0,
+  condicoes:[{id:'e-off',tipo:'progressao',nome:'Nível Negativo',duracao:'até recuperar o nível'}]}], 'offline', 4);
+vm.runInContext('guardarCombateOffline()', contexto);
+const snapshotOffline = JSON.parse(vm.runInContext('JSON.stringify(lerCombateOffline())', contexto));
+assert.equal(snapshotOffline.participantes[0].condicoes[0].tipo, 'progressao');
+assert.equal(snapshotOffline.rodada, 4);
+vm.runInContext('limparCombateOffline()', contexto);
+assert.equal(vm.runInContext('lerCombateOffline()', contexto), null);
 
 
 // Uma Ficha Ativa aprovada pode entrar na iniciativa com nome e AGI calculada.
