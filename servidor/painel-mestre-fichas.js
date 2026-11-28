@@ -7,7 +7,7 @@
  */
 const mesmo = (a, b) => String(a ?? '').toLocaleLowerCase('pt-BR') === String(b ?? '').toLocaleLowerCase('pt-BR');
 
-function criarResumoFichasMestre({ carregar, infoMesa, calcular }) {
+function criarResumoFichasMestre({ carregar, infoMesa, calcular, condicoesCatalogo = [] }) {
   if (typeof calcular !== 'function') throw new TypeError('A função calcular das regras é obrigatória.');
 
   return {
@@ -19,6 +19,7 @@ function criarResumoFichasMestre({ carregar, infoMesa, calcular }) {
       const aprovados = new Set((Array.isArray(info.aprovados) ? info.aprovados : []).map((nome) => String(nome).toLocaleLowerCase('pt-BR')));
       const todas = carregar() || {};
       const fichasMesa = todas[mesaId] && typeof todas[mesaId] === 'object' ? Object.values(todas[mesaId]) : [];
+      const nomesCondicoes = new Map((Array.isArray(condicoesCatalogo) ? condicoesCatalogo : []).map((c) => [String(c.id), String(c.nome)]));
       const fichas = fichasMesa
         .filter((f) => f && f.estado === 'ativa' && aprovados.has(String(f.usuario ?? '').toLocaleLowerCase('pt-BR')))
         .map((f) => {
@@ -34,6 +35,9 @@ function criarResumoFichasMestre({ carregar, infoMesa, calcular }) {
             bi: { atual: calculados.bi, maximo: calculados.biMax },
             defesa: calculados.defesa,
             iniciativa: calculados.iniciativa,
+            condicoes: (Array.isArray(dados.jogo?.condicoes) ? dados.jogo.condicoes : [])
+              .map((id) => nomesCondicoes.get(String(id)))
+              .filter(Boolean),
             periciasPassivas: {
               percepcao: calculados.passivos?.percepcao ?? null,
               fortitude: calculados.passivos?.fortitude ?? null,
