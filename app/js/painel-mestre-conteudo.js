@@ -69,6 +69,12 @@ function apiConteudoMestre(metodo = 'GET', corpo) {
 
 async function carregarConteudoMestre(silencioso = true) {
   if (!estado.mesaId || estado.modo !== 'local' || estado.mesaAtual?.papel !== 'mestre' || carregandoConteudoMestre) return;
+  const raiz = $('bloco-conteudo-mestre');
+  if (raiz && raiz.contains(document.activeElement)) {
+    mensagem($('conteudo-msg'), 'O conteúdo foi atualizado em outra sessão. Suas alterações locais foram preservadas; salve para verificar conflito ou carregue a versão do servidor.', 'aviso');
+    if ($('conteudo-conflito')) $('conteudo-conflito').hidden = false;
+    return;
+  }
   carregandoConteudoMestre = true;
   try {
     const r = await apiConteudoMestre();
