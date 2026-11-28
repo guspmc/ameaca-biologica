@@ -55,6 +55,18 @@ vm.runInContext('avancarTurnoCombate()', contexto);
 assert.equal(estado().turnoAtual, 'a');
 assert.equal(estado().rodada, 3);
 
+// Participantes tardios mantêm a ordem de chegada, mesmo com AGI/iniciativa diferentes.
+preparar([
+  {id:'a',nome:'Alice',iniciativa:20,agi:3,d20:17,ordem:0,entradaTardia:false},
+  {id:'t1',nome:'Tardio 1',iniciativa:0,agi:1,d20:0,ordem:1,entradaTardia:true},
+  {id:'t2',nome:'Tardio 2',iniciativa:0,agi:8,d20:0,ordem:2,entradaTardia:true}
+], 'a', 3);
+vm.runInContext('ordenarCombateMestre()', contexto);
+assert.deepEqual(estado().participantes.map(p=>p.id), ['a','t1','t2']);
+vm.runInContext("combateMestre.participantes.push({id:'t3',nome:'Tardio 3',iniciativa:0,agi:20,d20:0,ordem:3,entradaTardia:true}); ordenarCombateMestre()", contexto);
+assert.deepEqual(estado().participantes.map(p=>p.id), ['a','t1','t2','t3']);
+assert.equal(estado().turnoAtual,'a');
+
 // Remover o participante atual no meio da ordem seleciona quem vem em seguida.
 preparar(participantes, 'b', 4);
 vm.runInContext("removerParticipanteCombate('b')", contexto);
