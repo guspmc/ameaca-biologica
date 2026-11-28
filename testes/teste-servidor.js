@@ -115,6 +115,7 @@ async function ouvir(token, ms) {
       method: 'PUT',
       headers: { Authorization: 'Bearer ' + ana.token, 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        versao: 0,
         anotacoes: 'Somente o Mestre vê',
         encontros: [],
         documentos: [
