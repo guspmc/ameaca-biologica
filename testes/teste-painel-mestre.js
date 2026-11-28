@@ -161,12 +161,13 @@ assert.deepEqual(r.dados.combate.participantes.map(p=>p.id),['a','t1','t2']);
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,turnoAtual:'a',combateAtivo:true,participantes:[
 {id:'a',nome:'Alice',tipo:'personagem',agi:3,bonusIniciativa:3,d20:17,ordem:0},
 {id:'t2',nome:'Tardio 2',tipo:'personagem',agi:8,bonusIniciativa:8,d20:0,ordem:2,entradaTardia:true},
-{id:'t3',nome:'Tardio 3',tipo:'personagem',agi:2,bonusIniciativa:2,d20:0,ordem:3,entradaTardia:true}
+{id:'t3',nome:'Tardio 3',tipo:'personagem',agi:2,bonusIniciativa:2,d20:0,ordem:3,entradaTardia:false}
 ]});
 assert.equal(r.status,200);
 const ordens=r.dados.combate.participantes.map(p=>p.ordem);
 assert.equal(new Set(ordens).size,3);
 assert.ok(ordens[2]>ordens[1],'nova entrada deve receber ordem posterior à entrada tardia existente');
+assert.equal(r.dados.combate.participantes.find(p=>p.id==='t3').entradaTardia,true,'servidor deve marcar como tardia toda entrada após o início');
 
 // Um Perseguidor em Forma de Combate não pode conservar Atordoamento da fase anterior.
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,participantes:[
