@@ -78,7 +78,8 @@ O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquiv
 ### Conteúdo privado do Mestre — cache offline
 
 - Anotações, encontros preparados, documentos e itens personalizados possuem cópia local isolada por Mesa no aparelho do Mestre.
-- A leitura offline restaura o último snapshot conhecido. Alterações feitas sem servidor são guardadas localmente e marcadas como pendentes.
+- A leitura offline restaura o último snapshot conhecido enquanto a Mesa continua selecionada na sessão atual. Alterações feitas sem servidor são guardadas localmente e marcadas como pendentes.
+- **Limitação atual:** o fluxo principal ainda não persiste/restaura a Mesa selecionada após recarga completa do PWA. Portanto, o cache de conteúdo não garante reabertura autônoma da Mesa depois de fechar/recarregar o app sem conexão; isso depende de integração futura com o fluxo de sessão/Mesas da `main`.
 - Na reconexão, o snapshot pendente é enviado usando o controle otimista de versão já aplicado pelo servidor. Após confirmação, a cópia local permanece disponível, agora marcada como sincronizada.
 - Em conflito HTTP 409, a cópia local não é descartada nem sobrescreve silenciosamente o servidor. O Mestre precisa resolver o conflito antes de continuar a sincronização.
 - Upload de novos anexos continua dependendo do servidor; o cache offline guarda referências e conteúdo textual, não transfere arquivos novos sem conexão.
