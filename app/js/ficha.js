@@ -236,13 +236,17 @@ function secaoIdentificacao(d) {
     }).filter(Boolean);
   }
 
+  const nivelTeto = () => Math.min(fichasOffline ? REGRAS.LIMITES.nivelMax : (estado.mesaAtual ? estado.mesaAtual.limiteNivel : 1), REGRAS.LIMITES.nivelMax);
+
   function mudou(campo, valor) {
+    if (campo === 'nivel') valor = Math.min(nivelTeto(), Math.max(1, Math.trunc(Number(valor)) || 1));
     fichaAtual.dados[campo] = valor;
     if (campo === 'origem') {
       // Resetar escolhas de perícia da origem quando a origem muda.
       fichaAtual.dados.origemTreino = '';
       fichaAtual.dados.origemPericias = ['', ''];
     }
+    if (['origem', 'classe', 'nivel', 'origemTreino'].includes(campo)) REGRAS.ajustarAosLimites(fichaAtual.dados);
     agendarSalvarFicha();
     if (['origem', 'classe', 'nivel', 'origemTreino'].includes(campo)) redesenhar();
   }
@@ -283,7 +287,7 @@ function secaoIdentificacao(d) {
       h('option', { value: '' }, '— escolha —'), ...classes),
 
     h('label', { for: 'fi-nivel' }, 'Nível'),
-    h('input', { id: 'fi-nivel', type: 'number', min: '1', max: '10', value: d.nivel,
+    h('input', { id: 'fi-nivel', type: 'number', min: '1', max: String(nivelTeto()), value: d.nivel,
       onchange: (e) => mudou('nivel', Number(e.target.value)) }),
 
     h('label', { for: 'fi-historia' }, 'História e anotações gerais'),
@@ -334,17 +338,51 @@ function cartaoEvolucao(d) {
     h('p', { class: 'dica' }, 'O resto da Ficha fica travado até o Mestre aprovar. Os valores acima são recalculados sozinhos.'));
 }
 
+// Contador de Missões da Mesa: quantas já foram concluídas e quantas faltam para o próximo Nível (tabela do capítulo 6).
+function cartaoMissoes(d) {
+  const m = estado.mesaAtual;
+  if (fichasOffline || !m || m.missoes == null) return null;
+  const tabela = LIVRO.PROGRESSAO.missoes;
+  const teto = Math.min(m.limiteNivel, REGRAS.LIMITES.nivelMax);
+  const nivel = d.nivel;
+  let texto;
+  let barra = null;
+  if (nivel >= teto) texto = `Nível ${nivel}: o máximo permitido nesta Mesa.`;
+  else if ((m.nivelLiberado || 1) > nivel) texto = `Nível ${nivel + 1} liberado! A subida é aplicada num Descanso Completo em Sala de Descanso.`;
+  else {
+    const exige = tabela[nivel];
+    const inicio = tabela[nivel - 1];
+    texto = `Faltam ${Math.max(0, exige - m.missoes)} Missão(ões) para o Nível ${nivel + 1} (exige ${exige}). O Mestre também pode liberar por Marco Narrativo.`;
+    barra = h('progress', { max: String(Math.max(1, exige - inicio)), value: String(Math.min(exige - inicio, Math.max(0, m.missoes - inicio))), 'aria-label': 'Progresso para o próximo Nível' });
+  }
+  return h('div', { id: 'cartao-missoes', class: 'secao cartao-missoes' },
+    h('h3', {}, `Missões concluídas: ${m.missoes}`),
+    barra,
+    h('p', { class: 'dica' }, texto));
+}
+
 function secaoAtributos(d) {
-  function mudouAtributo(id, valor) {
-    let v = Math.min(5, Math.max(0, Number(valor) || 0));
-    if (emEvolucao()) {
-      const b = fichaAtual.base.atributos;
-      v = Math.max(v, b[id]);
-      const somaBase = LIVRO.ATRIBUTOS.reduce((s, a) => s + b[a.id], 0);
-      const outros = LIVRO.ATRIBUTOS.reduce((s, a) => s + (a.id === id ? 0 : fichaAtual.dados.atributos[a.id]), 0);
-      v = Math.min(v, somaBase + (ganhosEvolucao().atributo ? 1 : 0) - outros);
+  // Limites do livro: 1 em cada + 3 pontos (um pode cair a 0); máximo 3 na criação, +1 nos Níveis 3/5/7/9, teto 5.
+  const ganhosAtrib = LIVRO.PROGRESSAO.atributo.filter((n) => n <= d.nivel).length;
+  const maxPorAtributo = Math.min(5, 3 + ganhosAtrib);
+  const totalPermitido = 7 + ganhosAtrib;
+  const somaAtual = LIVRO.ATRIBUTOS.reduce((s2, a) => s2 + d.atributos[a.id], 0);
+
+  function podeMudarAtributo(id, delta) {
+    const v = d.atributos[id];
+    if (delta > 0) {
+      if (v >= maxPorAtributo || somaAtual >= totalPermitido) return false;
+      return !emEvolucao() || ganhosEvolucao().atributo;
     }
-    fichaAtual.dados.atributos[id] = v;
+    if (emEvolucao()) return v > fichaAtual.base.atributos[id];
+    if (v <= 0) return false;
+    if (v === 1 && LIVRO.ATRIBUTOS.some((a) => a.id !== id && d.atributos[a.id] === 0)) return false; // só um Atributo pode ir a 0
+    return true;
+  }
+
+  function mudouAtributo(id, delta) {
+    if (!podeMudarAtributo(id, delta)) return;
+    fichaAtual.dados.atributos[id] = d.atributos[id] + delta;
     agendarSalvarFicha();
     redesenhar();
   }
@@ -355,30 +393,36 @@ function secaoAtributos(d) {
     redesenhar();
   }
 
-  const totalAtributos = LIVRO.ATRIBUTOS.reduce((s, a) => s + d.atributos[a.id], 0);
-  const nivelBonusAtrib = LIVRO.PROGRESSAO.atributo.filter((n) => n <= d.nivel).length;
-  const maxAtrib = 4 + 3 + nivelBonusAtrib;
-
   const atributoEl = (a) => h('div', { class: 'atributo-linha' },
-    h('label', { for: 'at-' + a.id }, a.nome),
-    h('input', { id: 'at-' + a.id, type: 'number', min: emEvolucao() ? String(fichaAtual.base.atributos[a.id]) : '0', max: '5', value: d.atributos[a.id],
-      disabled: emEvolucao() && !ganhosEvolucao().atributo,
-      onchange: (e) => mudouAtributo(a.id, e.target.value) }),
+    h('span', { class: 'atributo-nome', id: 'rot-at-' + a.id }, a.nome),
+    h('div', { class: 'stepper', role: 'group', 'aria-labelledby': 'rot-at-' + a.id },
+      h('button', { type: 'button', id: 'at-' + a.id + '-menos', class: 'botao pequeno', 'aria-label': 'Diminuir ' + a.nome,
+        disabled: !podeMudarAtributo(a.id, -1), onclick: () => mudouAtributo(a.id, -1) }, '−'),
+      h('output', { id: 'at-' + a.id, class: 'stepper-valor' }, String(d.atributos[a.id])),
+      h('button', { type: 'button', id: 'at-' + a.id + '-mais', class: 'botao pequeno', 'aria-label': 'Aumentar ' + a.nome,
+        disabled: !podeMudarAtributo(a.id, 1), onclick: () => mudouAtributo(a.id, 1) }, '+')),
     h('span', { class: 'atributo-dica' }, LIVRO.PERICIAS.filter((p) => p.atributo === a.id).map((p) => p.nome).join(', ')));
 
   const pericias = calc ? calc.pericias : {};
   const graus = calc ? calc.graus : {};
   const livres = REGRAS.periciasGratuitas(d);
 
-  // Evolução: não baixa o que já tinha; só sobe se o Nível deu ponto e ainda sobra algum.
+  // Perícias que podem receber pontos: lista da Classe + a outra Perícia da Origem.
+  const classeAtual = REGRAS.classePorId(d.classe);
+  const permitidas = new Set(classeAtual ? [...classeAtual.permitidas, REGRAS.outraPericiaDaOrigem(d)].filter(Boolean) : []);
+  const sobra = calc ? calc.pontosPericia.total - calc.pontosPericia.gastos : 0;
+
+  // O grau i está liberado? Bloqueia o que passa da lista da Classe ou dos pontos que sobram.
   function grauLiberado(pid, i, atual, livre) {
-    if (i < fichaAtual.base.pericias[pid]) return false;
+    const piso = livre ? 1 : 0;
     if (i === atual) return true;
-    if (!ganhosEvolucao().pontoPericia) return false;
-    const efetivo = Math.max(i, livre ? 1 : 0);
-    const custo = (efetivo - (livre ? 1 : 0)) - (atual - (livre ? 1 : 0));
-    const sobra = calc ? calc.pontosPericia.total - calc.pontosPericia.gastos : 0;
-    return custo <= sobra;
+    if (i < piso) return false; // Treinamento gratuito não se perde
+    if (emEvolucao() && i < fichaAtual.base.pericias[pid]) return false;
+    const aumento = (Math.max(i, piso) - piso) - (atual - piso);
+    if (aumento <= 0) return true; // só devolve pontos
+    if (!permitidas.has(pid)) return false;
+    if (emEvolucao() && !ganhosEvolucao().pontoPericia) return false;
+    return aumento <= sobra;
   }
 
   const periciaEl = (p) => {
@@ -395,7 +439,7 @@ function secaoAtributos(d) {
             name: 'grau-' + p.id,
             value: String(i),
             checked: grau === i,
-            disabled: emEvolucao() && !grauLiberado(p.id, i, grau, livre),
+            disabled: !grauLiberado(p.id, i, grau, livre),
             onchange: () => mudouPericia(p.id, i),
           }),
           g.nome === 'Não Treinada' ? 'Não' : g.nome))));
@@ -415,18 +459,45 @@ function secaoAtributos(d) {
     const idx = fichaAtual.dados.habilidades.indexOf(id);
     if (idx >= 0) fichaAtual.dados.habilidades.splice(idx, 1);
     else fichaAtual.dados.habilidades.push(id);
+    if (!fichaAtual.dados.habilidades.includes('tentativa-e-erro')) fichaAtual.dados.treinoExtra = '';
     agendarSalvarFicha();
     redesenhar();
   }
 
+  const ORDEM_TIER = LIVRO.TIERS.map((t) => t.id);
+  const escolhidas = d.habilidades.map(REGRAS.habilidadePorId).filter(Boolean);
+  const doTier = (tier) => escolhidas.filter((x) => x.tier === tier);
+
+  // Fora da evolução: só marca se há vaga no tipo e o ramo anterior já foi escolhido; só desmarca se nada depende dela.
+  function habilidadeLivre(hab) {
+    if (emEvolucao()) return habilidadeLiberada(hab);
+    if (d.habilidades.includes(hab.id)) {
+      const proximo = ORDEM_TIER[ORDEM_TIER.indexOf(hab.tier) + 1];
+      return !escolhidas.some((x) => x.ramo === hab.ramo && x.tier === proximo && x.tier !== 'avassaladora');
+    }
+    if (doTier(hab.tier).length >= vagas[hab.tier]) return false;
+    if (hab.tier === 'avancada') return escolhidas.some((x) => x.ramo === hab.ramo && x.tier === 'basica');
+    if (hab.tier === 'superior') return escolhidas.some((x) => x.ramo === hab.ramo && x.tier === 'avancada');
+    return true;
+  }
+
   const habilidadeEl = (h2) => {
     const temela = d.habilidades.includes(h2.id);
-    return h('label', { class: 'hab-label' + (temela ? ' ativo' : '') },
-      h('input', { type: 'checkbox', checked: temela, disabled: emEvolucao() && !habilidadeLiberada(h2), onchange: () => toggleHabilidade(h2.id) }),
+    const exige = h2.tier === 'avancada' ? 'Exige uma Habilidade Básica do mesmo ramo.' : h2.tier === 'superior' ? 'Exige uma Habilidade Avançada do mesmo ramo.' : '';
+    return h('label', { class: 'hab-label' + (temela ? ' ativo' : ''), title: exige },
+      h('input', { type: 'checkbox', checked: temela, disabled: !habilidadeLivre(h2), onchange: () => toggleHabilidade(h2.id) }),
       h('span', { class: 'hab-nome' }, h2.nome),
-      h('span', { class: 'etiqueta' }, h2.tier),
-      h2.descricao ? h('span', { class: 'hab-desc' }, h2.descricao) : null);
+      h2.ramo ? h('span', { class: 'etiqueta' }, h2.ramo) : null,
+      h2.texto ? h('span', { class: 'hab-desc' }, h2.texto) : null);
   };
+
+  // Só aparecem os tipos que o Nível já concede; os demais ficam ocultos até subir de Nível.
+  const tiersVisiveis = LIVRO.TIERS.filter((t) => vagas[t.id] > 0 || doTier(t.id).length > 0);
+  const blocoHabilidades = !classe
+    ? h('p', { class: 'dica' }, 'Escolha uma Classe para ver as Habilidades disponíveis.')
+    : h('div', { class: 'lista-habilidades' }, ...tiersVisiveis.map((t) => h('div', { class: 'grupo-habilidades' },
+        h('h4', {}, `${t.nome}s — ${doTier(t.id).length}/${vagas[t.id]}`),
+        ...habilidadesClasse.filter((x) => x.tier === t.id).map(habilidadeEl))));
 
   // Treinamento extra (Tentativa e Erro).
   const temTentativaErro = d.habilidades.includes('tentativa-e-erro');
@@ -444,16 +515,14 @@ function secaoAtributos(d) {
 
   return h('div', { id: 'secao-atributos', class: 'secao' },
     h('h3', {}, 'Atributos'),
-    h('p', { class: 'dica' }, `Pontos de Atributo: ${totalAtributos}/${maxAtrib}`),
+    h('p', { class: 'dica' }, `Pontos de Atributo: ${somaAtual}/${totalPermitido} (máximo ${maxPorAtributo} por Atributo neste Nível)`),
     ...LIVRO.ATRIBUTOS.map(atributoEl),
 
     h('h3', {}, `Perícias (${pontosGastos}/${pontosTotal} pontos usados)`),
     ...LIVRO.PERICIAS.map(periciaEl),
 
-    h('h3', {}, `Habilidades (Básica: ${d.habilidades.filter((id) => { const hb = REGRAS.habilidadePorId(id); return hb && hb.tier === 'basica'; }).length}/${vagas.basica})`),
-    habilidadesClasse.length
-      ? h('div', { class: 'lista-habilidades' }, habilidadesClasse.map(habilidadeEl))
-      : h('p', { class: 'dica' }, 'Escolha uma Classe para ver as Habilidades disponíveis.'),
+    h('h3', {}, 'Habilidades de Classe'),
+    blocoHabilidades,
 
     temTentativaErro && permiteExtra
       ? h('div', {},
@@ -464,25 +533,48 @@ function secaoAtributos(d) {
 
 /* ---------- Seção: Combate ---------- */
 
+// Bloco recolhível para o que se usa pouco; lembra se estava aberto ao redesenhar a Ficha.
+const detalhesAbertos = {};
+function recolher(chave, titulo, conteudo, abertoPadrao) {
+  const aberto = chave in detalhesAbertos ? detalhesAbertos[chave] : abertoPadrao;
+  return h('details', { class: 'recolher', open: aberto, ontoggle: (e) => { detalhesAbertos[chave] = e.target.open; } },
+    h('summary', {}, titulo), conteudo);
+}
+
 function secaoCombate(d) {
   if (!calc) return h('div', { id: 'secao-combate', class: 'secao' }, h('p', { class: 'dica' }, 'Preencha Atributos e Classe para ver os valores de combate.'));
 
-  // Condições
-  function toggleCondicao(id) {
-    const condicoes = fichaAtual.dados.jogo.condicoes;
-    const idx = condicoes.indexOf(id);
-    if (idx >= 0) condicoes.splice(idx, 1);
-    else condicoes.push(id);
+  // Condições: menu para escolher + "Adicionar"; as ativas aparecem abaixo, cada uma com "Remover".
+  const ativas = fichaAtual.dados.jogo.condicoes;
+  function adicionarCondicao() {
+    const sel = document.getElementById('cond-escolha');
+    const id = sel ? sel.value : '';
+    if (!id || ativas.includes(id)) return;
+    ativas.push(id);
     agendarSalvarJogo();
     redesenhar();
   }
-
-  const condicoesEl = LIVRO.CONDICOES.map((c) => {
-    const ativa = fichaAtual.dados.jogo.condicoes.includes(c.id);
-    return h('label', { class: 'cond-label' + (ativa ? ' ativa' : '') },
-      h('input', { type: 'checkbox', checked: ativa, onchange: () => toggleCondicao(c.id) }),
-      ' ', c.nome);
-  });
+  function removerCondicao(id) {
+    const i = ativas.indexOf(id);
+    if (i >= 0) ativas.splice(i, 1);
+    agendarSalvarJogo();
+    redesenhar();
+  }
+  const disponiveis = LIVRO.CONDICOES.filter((c) => !ativas.includes(c.id));
+  const condicoesEl = h('div', { class: 'condicoes' },
+    h('div', { class: 'cond-adicionar' },
+      h('select', { id: 'cond-escolha', 'aria-label': 'Condição' },
+        h('option', { value: '' }, '— escolha a Condição —'),
+        ...disponiveis.map((c) => h('option', { value: c.id }, c.nome))),
+      h('button', { type: 'button', id: 'cond-adicionar', class: 'botao pequeno primario', onclick: adicionarCondicao }, 'Adicionar')),
+    ativas.length
+      ? h('ul', { class: 'cond-lista' }, ...ativas.map((id) => {
+          const c = LIVRO.CONDICOES.find((x) => x.id === id);
+          return h('li', { class: 'cond-item' },
+            h('div', {}, h('strong', {}, c ? c.nome : id), c && c.texto ? h('span', { class: 'dica' }, c.texto) : null),
+            h('button', { type: 'button', class: 'botao pequeno perigo', onclick: () => removerCondicao(id) }, 'Remover'));
+        }))
+      : h('p', { class: 'dica' }, 'Nenhuma Condição ativa.'));
 
   const pvTemp = fichaAtual.dados.jogo.pvTemp;
 
@@ -508,11 +600,10 @@ function secaoCombate(d) {
     h('input', { type: 'number', min: '0', max: '999', value: pvTemp,
       oninput: (e) => { fichaAtual.dados.jogo.pvTemp = Number(e.target.value); agendarSalvarJogo(); } }),
 
-    h('h3', {}, 'Condições'),
-    h('div', { class: 'condicoes' }, condicoesEl),
+    h('h3', {}, `Condições (${ativas.length})`),
+    condicoesEl,
 
-    h('h3', {}, 'Rolador de Perícias'),
-    painelRolagem(calc.pericias));
+    recolher('rolador', 'Rolador de Perícias', painelRolagem(calc.pericias), false));
 }
 
 /* ---------- Seção: Inventário ---------- */
@@ -520,12 +611,6 @@ function secaoCombate(d) {
 function secaoInventario(d) {
   const usado = calc ? calc.inventarioUsado : 0;
   const maximo = calc ? calc.inventarioMax : 4;
-
-  function mudouMoedas(valor) {
-    fichaAtual.dados.moedas = Math.min(99, Math.max(0, Number(valor) || 0));
-    agendarSalvarFicha();
-    redesenhar();
-  }
 
   // Equipamento inicial (só no rascunho, sem itens ainda).
   const mostraEq = fichaAtual.estado === 'rascunho' && d.itens.length === 0 && REGRAS.classePorId(d.classe);
@@ -560,12 +645,8 @@ function secaoInventario(d) {
     avisoDoArsenal(),
     painelEspacos(d),
 
-    h('h3', {}, 'Munição (reserva)'),
-    painelMunicao(d),
-
-    h('label', { for: 'fi-moedas' }, 'Moedas Antigas (até 3 por Espaço)'),
-    h('input', { id: 'fi-moedas', type: 'number', min: '0', max: '99', value: d.moedas,
-      onchange: (e) => mudouMoedas(e.target.value) }),
+    h('h3', {}, 'Itens especiais'),
+    painelItensEspeciais(d),
 
     h('label', { for: 'fi-anotacoes' }, 'Anotações'),
     h('textarea', { id: 'fi-anotacoes', rows: '4', maxlength: '3000',
@@ -714,7 +795,7 @@ function renderizarEditor() {
 
       // Duas colunas no PC (Identificação + Atributos | Combate + Inventário); uma só no celular.
       h('div', { class: 'ficha-colunas' },
-        h('div', { class: 'ficha-coluna' }, emEvolucao() ? cartaoEvolucao(d) : null, travar(secaoIdentificacao(d)), travarAtiva(secaoAtributos(d))),
+        h('div', { class: 'ficha-coluna' }, emEvolucao() ? cartaoEvolucao(d) : null, cartaoMissoes(d), travar(secaoIdentificacao(d)), travarAtiva(secaoAtributos(d))),
         h('div', { class: 'ficha-coluna' }, travarEvolucao(secaoCombate(d)), travarEvolucao(secaoInventario(d))))),
 
     // Barra inferior (atalhos de seção).
@@ -737,6 +818,7 @@ async function abrirEditorFicha(id) {
   try {
     const r = await apiFichas('/fichas/' + encodeURIComponent(id));
     fichaAtual = r.ficha;
+    janelaSA = 0;
     secaoAtual = 'identificacao';
     renderizarEditor();
   } catch (e) {

@@ -8,6 +8,7 @@
 const opcoesAtaque = {};     // chave do ataque -> escolhas da pessoa (modo, Mirar, Vantagem...)
 const resultadosAtaque = {}; // chave do ataque -> linhas do último resultado
 let avisoArsenal = '';
+let janelaSA = 0;            // SA gastos em Esforço e Manobras desde o fim do último turno (limite de 3)
 
 function limparAtaques() {
   for (const k of Object.keys(opcoesAtaque)) delete opcoesAtaque[k];
@@ -117,24 +118,6 @@ function usarItem(idx) {
   mudouArsenal(`${rel.nome}: ${rel.texto.join(', ') || 'usado'}.`);
 }
 
-function painelMunicao(d) {
-  const com = ARSENAL.MUNICOES.filter((m) => (d.municoes[m.id] || 0) > 0);
-  if (!com.length) return h('p', { class: 'dica' }, 'Sem munição na reserva. Use o "+" do Inventário → Munição para adicionar.');
-  return h('div', { class: 'municoes' },
-    com.map((m) => {
-      const q = d.municoes[m.id] || 0;
-      return h('label', { class: 'municao-item' },
-        h('span', {}, m.nome),
-        h('input', { type: 'number', min: '0', max: '9999', value: q,
-          onchange: (e) => {
-            const n = Math.min(9999, Math.max(0, Number(e.target.value) || 0));
-            if (n > 0) d.municoes[m.id] = n; else delete d.municoes[m.id];
-            mudouArsenal();
-          } }),
-        h('span', { class: 'dica' }, `${Math.ceil(q / m.porEspaco)} Esp. (${m.porEspaco} por Espaço)`));
-    }));
-}
-
 const avisoDoArsenal = () => (avisoArsenal ? h('div', { class: 'mensagem aviso' }, avisoArsenal) : null);
 
 /* ---------- Combate: ataques ---------- */
@@ -145,7 +128,42 @@ function painelAtaques(d) {
     { chave: 'b-desarmado', basico: 'desarmado' },
     { chave: 'b-improvisada', basico: 'improvisada' },
   ];
-  return h('div', { class: 'ataques' }, fontes.map((f) => cartaoAtaque(d, f)));
+  return h('div', { class: 'ataques-bloco' },
+    h('div', { class: 'ataques' }, fontes.map((f) => cartaoAtaque(d, f))),
+    recolher('manobras', 'Manobras de SA', painelManobras(d), true));
+}
+
+/* ---------- Combate: Manobras que usam SA (capítulo 4: "SA e Esforço", "Ações e Manobras Universais") ---------- */
+
+const MANOBRAS_SA = [
+  { nome: 'Esforço: Movimento, Ação Bônus ou Reação extra', custo: 1, texto: 'Ação Livre. 1 SA compra um Movimento, uma Ação Bônus ou uma Reação. Interação Gratuita com Objeto não pode ser comprada.' },
+  { nome: 'Esforço: Ação extra', custo: 2, texto: 'Ação Livre. 2 SA compram uma Ação (por exemplo, um segundo Ataque). Não existe Ataque Extra básico.' },
+  { nome: 'Mirar', custo: 1, texto: 'Declare antes do Ataque: +2 no Teste de Ataque e escolha uma região do alvo. Marque "Mirar" no cartão do ataque, que já desconta o SA.', semBotao: true },
+  { nome: 'Fuga', custo: 1, texto: 'Depois de uma Disparada (Ação convertida em Movimento), gaste 1 SA para receber um terceiro Movimento (27 m com Movimento 9 m).' },
+  { nome: 'Contra-Ataque', custo: 1, texto: 'Depois de Aparar ou Esquivar com sucesso: 1 SA + Reação para um Ataque normal contra a Defesa do agressor. Pode ser preciso comprar uma Reação por Esforço.' },
+  { nome: 'Finalizar', custo: 3, texto: 'Manobra que não gasta sua Ação nem Movimento: Ataque contra a Defesa, podendo se deslocar até seu Movimento só para alcançar o alvo. Em acerto, Fortitude do alvo com DT = resultado do Ataque; em falha, Dano normal +3d6. Vulnerável que possa sofrer Morte Instantânea é morto.' },
+  { nome: 'Finalização Dupla', custo: 3, texto: 'Reação + 3 SA, depois que um aliado Finalizar e o alvo sobreviver (para quem ainda não agiu na rodada). Compromete a Ação e o Movimento do seu próximo turno.' },
+];
+
+function gastarSA(n, nome) {
+  if (calc.sa < n) { resultadosAtaque['manobras'] = [`Sem SA para ${nome} (precisa de ${n}, você tem ${calc.sa}).`]; redesenhar(); return; }
+  fichaAtual.dados.jogo.sa = calc.sa - n;
+  janelaSA += n;
+  resultadosAtaque['manobras'] = [`${nome}: gastou ${n} SA (restam ${calc.sa - n}).`];
+  agendarSalvarFicha();
+  redesenhar();
+}
+
+function painelManobras(d) {
+  const linhas = resultadosAtaque['manobras'] || [];
+  return h('div', { class: 'manobras' },
+    h('p', { class: 'dica' }, `Janela de 3 SA: do fim de um turno seu até o fim do próximo, no máximo 3 SA em Esforço e Manobras (custos de Habilidades não entram). Gastos nesta janela: ${janelaSA}/3.`),
+    ...MANOBRAS_SA.map((m) => h('div', { class: 'manobra' },
+      h('div', {}, h('strong', {}, m.nome), h('span', { class: 'etiqueta' }, `${m.custo} SA`), h('span', { class: 'dica' }, m.texto)),
+      m.semBotao ? null : h('button', { type: 'button', class: 'botao pequeno', disabled: calc.sa < m.custo || janelaSA + m.custo > 3,
+        title: janelaSA + m.custo > 3 ? 'Passaria do limite de 3 SA da janela.' : '', onclick: () => gastarSA(m.custo, m.nome) }, `Gastar ${m.custo} SA`))),
+    h('button', { type: 'button', class: 'botao pequeno', onclick: () => { janelaSA = 0; redesenhar(); } }, 'Fim do meu turno (zera a janela)'),
+    linhas.length ? h('div', { class: 'resultado-rolagem' }, ...linhas.map((l) => h('div', {}, l))) : null);
 }
 
 function cartaoAtaque(d, f) {
@@ -196,9 +214,27 @@ function cartaoAtaque(d, f) {
       arremessavel ? caixa('arremesso', 'Arremesso') : null,
       caixa('vantagem', 'Vantagem'),
       caixa('desvantagem', 'Desvantagem')),
-    h('button', { type: 'button', class: 'botao primario', disabled: bloqueado, onclick: () => atacar(d, f, m, op) },
-      bloqueado ? 'Sem munição' : 'Atacar'),
+    h('div', { class: 'acoes-ataque' },
+      h('button', { type: 'button', class: 'botao primario', disabled: bloqueado, onclick: () => atacar(d, f, m, op) },
+        bloqueado ? 'Sem munição' : 'Atacar'),
+      botaoRecarregar(d, f)),
     linhas.length ? h('div', { class: 'resultado-rolagem' }, ...linhas.map((l) => h('div', {}, l))) : null);
+}
+
+// Puxa da reserva (Inventário) a munição que falta no carregador, sem passar da capacidade da arma.
+function botaoRecarregar(d, f) {
+  const cat = f.cat;
+  if (!f.item || !cat || cat.pente == null || !cat.municao) return null;
+  const cap = REGRAS.capacidadeDaArma(f.item);
+  const reserva = d.municoes[cat.municao] || 0;
+  const cheio = f.item.mun >= cap;
+  return h('button', { type: 'button', class: 'botao recarregar', disabled: cheio || reserva === 0,
+    title: cheio ? 'O carregador já está cheio.' : reserva === 0 ? 'Sem munição na reserva do Inventário.' : '',
+    onclick: () => {
+      const n = REGRAS.recarregar(d, f.item);
+      resultadosAtaque[f.chave] = [`Recarregou ${n}: carregador ${f.item.mun}/${cap}. Reserva restante: ${d.municoes[cat.municao] || 0}.`];
+      mudouArsenal();
+    } }, `Recarregar (reserva ${reserva})`);
 }
 
 function atacar(d, f, m, op) {
@@ -209,7 +245,7 @@ function atacar(d, f, m, op) {
     redesenhar();
     return;
   }
-  if (mirou && !miraLaser) d.jogo.sa = calc.sa - 1;
+  if (mirou && !miraLaser) { d.jogo.sa = calc.sa - 1; janelaSA += 1; }
   if (f.item && m.consumo) REGRAS.gastarMunicao(f.item, m.consumo);
 
   const linhas = [];

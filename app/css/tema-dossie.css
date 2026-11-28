@@ -87,7 +87,8 @@ textarea { width: 100%; padding: 12px 14px; font: inherit; color: var(--texto); 
 .grau-label input { position: absolute; opacity: 0; width: 100%; height: 100%; left: 0; top: 0; margin: 0; cursor: pointer; }
 
 /* Atributos alinhados em colunas */
-.atributo-linha { display: grid; grid-template-columns: 5.5rem 4.2rem 1fr; gap: 10px; align-items: center; margin: 4px 0; }
+.atributo-linha { display: grid; grid-template-columns: 5.5rem auto 1fr; gap: 10px; align-items: center; margin: 4px 0; }
+.atributo-nome { font-size: 0.85rem; }
 .atributo-linha label { margin: 0; }
 .atributo-linha input { width: 100%; text-align: center; }
 .atributo-dica { color: var(--suave); font-size: 0.76rem; line-height: 1.3; }
@@ -158,3 +159,49 @@ textarea { width: 100%; padding: 12px 14px; font: inherit; color: var(--texto); 
 .evo-valores { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 0.8rem; }
 .hab-label:has(input:disabled), .pericia-linha input:disabled + *, .atributo-linha input:disabled { opacity: 0.5; }
 .editor-ficha [inert] { opacity: 0.55; }
+
+/* Botões -/+ (Atributos e quantidades) */
+.stepper { display: inline-flex; align-items: center; gap: 4px; }
+.stepper .botao { min-width: 2.4rem; min-height: 2.4rem; padding: 0 8px; }
+.stepper-valor { min-width: 2.2rem; text-align: center; font-family: var(--mono); font-size: 1.1rem; }
+.stepper-entrada { width: 4.2rem; text-align: center; font-family: var(--mono); }
+.botao:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Habilidades por tipo */
+.grupo-habilidades h4 { margin: 10px 0 4px; font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--suave); }
+
+/* Missões, Condições e blocos recolhíveis */
+.cartao-missoes progress { width: 100%; height: 10px; accent-color: var(--acento); }
+details.recolher { border: 1px solid var(--borda, #333); border-radius: var(--raio, 4px); margin: 8px 0; padding: 0 10px; }
+details.recolher > summary { cursor: pointer; padding: 10px 0; font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; }
+details.recolher[open] > summary { border-bottom: 1px solid var(--borda, #333); margin-bottom: 8px; }
+.cond-adicionar { display: flex; gap: 6px; align-items: center; }
+.cond-adicionar select { flex: 1; }
+.cond-lista { list-style: none; margin: 8px 0; padding: 0; }
+.cond-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--borda, #333); }
+.cond-item .dica { display: block; }
+
+/* Ataques: recarregar e manobras de SA */
+.acoes-ataque { display: flex; flex-wrap: wrap; gap: 6px; }
+.botao.recarregar { border-color: var(--acento); }
+.manobra { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--borda, #333); }
+.manobra .dica { display: block; }
+
+/* Balão do Inventário e janela de exame */
+.inventario-espacos { position: relative; }
+.balao { position: absolute; z-index: 30; width: min(22rem, 100%); padding: 10px 12px; background: var(--painel, #1b1b1b); border: 1px solid var(--acento); border-radius: 6px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55); top: 0; left: 0; }
+.balao::before { content: ''; position: absolute; top: -7px; left: var(--seta, 16px); width: 12px; height: 12px; background: var(--painel, #1b1b1b); border-left: 1px solid var(--acento); border-top: 1px solid var(--acento); transform: rotate(45deg); }
+.balao p { margin: 6px 0; font-size: 0.85rem; }
+.balao-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.balao-acoes { display: flex; gap: 6px; margin-top: 8px; }
+.quantidade { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+.quantidade-nome { font-size: 0.8rem; }
+.lista-especiais { list-style: none; margin: 0; padding: 0; }
+.lista-especiais li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--borda, #333); }
+.exame-fundo { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0, 0, 0, 0.7); }
+.exame { width: min(26rem, 100%); max-height: 90vh; overflow-y: auto; padding: 14px; background: var(--painel, #1b1b1b); border: 1px solid var(--acento); border-radius: 6px; }
+.exame-imagem { display: block; max-width: 100%; max-height: 40vh; margin: 10px auto; border-radius: 4px; }
+progress { appearance: none; -webkit-appearance: none; border: 0; border-radius: 2px; background: #2a2a2a; }
+progress::-webkit-progress-bar { background: #2a2a2a; border-radius: 2px; }
+progress::-webkit-progress-value { background: var(--acento); border-radius: 2px; }
+progress::-moz-progress-bar { background: var(--acento); }

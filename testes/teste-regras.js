@@ -136,6 +136,20 @@ confere('Blocos: W-870 = 2 Espaços; Lanterna de Bolso = sem Espaço; 31 de 9 mm
   bl.blocos.find((b) => b.tipo === 'item').espacos === 2 && bl.semEspaco.length === 1 && bl.blocos.find((b) => b.grupo === '9mm').espacos === 2
   && bl.blocos.find((b) => b.tipo === 'moedas').espacos === 2 && bl.blocos.find((b) => b.grupo === 'gm79').espacos === 2 && bl.usados === 8, JSON.stringify(bl));
 confere('Espaços usados dos blocos = Espaços usados do cálculo', bl.usados === R.calcular(dInv).inventarioUsado, `${bl.usados} x ${R.calcular(dInv).inventarioUsado}`);
+// Ajuste aos limites (troca de Classe/Nível) e vínculo do item do Mestre
+const dAj = R.normalizar({ nome: 'Aj', origem: 'policial', origemTreino: 'pontaria', classe: 'agente', nivel: 4,
+  atributos: { FOR: 5, AGI: 5, VIG: 5, AST: 5 }, pericias: { medicina: 2, luta: 2, pontaria: 2, reflexos: 2, furtividade: 2 },
+  habilidades: ['anatomia-de-combate', 'rolamento', 'finalizacao-a-distancia'] });
+R.ajustarAosLimites(dAj);
+const somaAj = Object.values(dAj.atributos).reduce((a, b) => a + b, 0);
+confere('Ajuste: Atributos no máximo 4 no Nível 4 (3 + 1) e soma 8', Object.values(dAj.atributos).every((v) => v <= 4) && somaAj === 8, JSON.stringify(dAj.atributos));
+confere('Ajuste: Perícia fora da lista da Classe perde os pontos (Medicina no Agente)', dAj.pericias.medicina === 0);
+confere('Ajuste: pontos de Perícia não passam do total (4 + 1 no Nível 4)', R.calcular(dAj).pontosPericia.gastos <= R.calcular(dAj).pontosPericia.total);
+confere('Ajuste: Habilidades dentro das vagas do Nível 4 (2 Básicas, 1 Avançada)', dAj.habilidades.length <= 3 && R.validar(dAj).erros.every((e) => !/Habilidade/.test(e)), JSON.stringify(dAj.habilidades));
+dAj.classe = 'operador'; R.ajustarAosLimites(dAj);
+confere('Ajuste: trocar a Classe remove Habilidades da outra Classe', dAj.habilidades.length === 0);
+const dMestre = R.normalizar({ itens: [{ nome: 'Chave do Porão', espacos: 1, nota: 'x', mestreId: 'abc123' }, { nome: 'Faca', ref: 'faca' }] });
+confere('Item do Mestre guarda mestreId; item do livro não ganha o campo', dMestre.itens[0].mestreId === 'abc123' && !('mestreId' in dMestre.itens[1]));
 
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTUDO OK');
 process.exit(falhas ? 1 : 0);

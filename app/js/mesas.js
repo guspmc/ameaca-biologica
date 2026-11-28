@@ -324,7 +324,7 @@ function visaoDoJogador(m) {
   } else {
     const gente = [m.mestre, ...m.jogadores.map((j) => j.usuario)];
     partes.push(cartao('Mesa',
-      h('p', {}, `Nível máximo de personagem: ${m.limiteNivel}` + (m.nivelLiberado != null ? ` · Nível liberado: ${m.nivelLiberado}` : '')),
+      h('p', {}, `Nível máximo de personagem: ${m.limiteNivel}` + (m.nivelLiberado != null ? ` · Nível liberado: ${m.nivelLiberado}` : '') + (m.missoes != null ? ` · Missões concluídas: ${m.missoes}` : '')),
       h('ul', { class: 'lista' }, gente.map((nome, i) => h('li', {},
         pontoOnline(nome), nome,
         i === 0 ? h('span', { class: 'etiqueta' }, 'Mestre') : null,

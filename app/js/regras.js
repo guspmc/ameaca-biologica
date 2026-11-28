@@ -68,6 +68,7 @@
         mun: inteiro(i && i.mun, 0, 999, 0),
         pecas: pecas.slice(0, 3),
         equip: !!(cat && cat.tipo === 'protecao' && i.equip),
+        ...(i && i.mestreId ? { mestreId: texto(i.mestreId, 40) } : {}), // item publicado pelo Mestre (imagem e texto vêm do Painel)
       };
     });
 
@@ -604,6 +605,50 @@
     return { blocos, semEspaco, usados };
   }
 
+  // Mantém Atributos, Habilidades e Perícias dentro das regras depois de trocar Classe, Origem ou Nível
+  // (a tela já impede passar do limite; isto cobre o que muda por tabela, como a Classe).
+  function ajustarAosLimites(d) {
+    const classe = classePorId(d.classe);
+    const ganhos = contarAte(LIVRO.PROGRESSAO.atributo, d.nivel);
+    const maximo = Math.min(5, 3 + ganhos);
+    const permitido = 7 + ganhos;
+    for (const id of ATRIBUTO_IDS) d.atributos[id] = Math.min(maximo, Math.max(0, d.atributos[id]));
+    ATRIBUTO_IDS.filter((id) => d.atributos[id] === 0).slice(1).forEach((id) => { d.atributos[id] = 1; });
+    let soma = ATRIBUTO_IDS.reduce((s, id) => s + d.atributos[id], 0);
+    while (soma > permitido) {
+      const maior = ATRIBUTO_IDS.slice().sort((a, b) => d.atributos[b] - d.atributos[a])[0];
+      d.atributos[maior]--;
+      soma--;
+    }
+
+    const vagas = vagasDeHabilidade(d.nivel);
+    const mantidas = [];
+    for (const tier of LIVRO.TIERS.map((t) => t.id)) {
+      let n = 0;
+      for (const id of d.habilidades) {
+        const hb = habilidadePorId(id);
+        if (!hb || hb.tier !== tier || !classe || hb.classe !== classe.id || n >= vagas[tier]) continue;
+        if (tier === 'avancada' && !mantidas.some((x) => x.ramo === hb.ramo && x.tier === 'basica')) continue;
+        if (tier === 'superior' && !mantidas.some((x) => x.ramo === hb.ramo && x.tier === 'avancada')) continue;
+        mantidas.push(hb);
+        n++;
+      }
+    }
+    d.habilidades = mantidas.map((x) => x.id);
+    if (!d.habilidades.includes('tentativa-e-erro') || (classe && !classe.permitidas.includes(d.treinoExtra)) || d.treinoExtra === d.origemTreino) d.treinoExtra = '';
+
+    const livres = periciasGratuitas(d);
+    const piso = (pid) => (livres.has(pid) ? 1 : 0);
+    const permitidas = new Set(classe ? [...classe.permitidas, outraPericiaDaOrigem(d)].filter(Boolean) : []);
+    for (const p of LIVRO.PERICIAS) if (!permitidas.has(p.id)) d.pericias[p.id] = Math.min(d.pericias[p.id], piso(p.id));
+    const total = classe ? classe.pontos + contarAte(LIVRO.PROGRESSAO.pontoPericia, d.nivel) : 0;
+    const gastos = () => LIVRO.PERICIAS.reduce((s, p) => s + Math.max(d.pericias[p.id], piso(p.id)) - piso(p.id), 0);
+    for (const p of LIVRO.PERICIAS.slice().reverse()) {
+      while (gastos() > total && d.pericias[p.id] > piso(p.id)) d.pericias[p.id]--;
+    }
+    return d;
+  }
+
   /* ---------- Validação ---------- */
 
   function validar(d, opcoes = {}) {
@@ -706,7 +751,7 @@
 
   return {
     LIMITES, novaFicha, normalizar, calcular, validar, vagasDeHabilidade, equipamentoInicial,
-    nivelPorMissoes, ganhosDoNivel, fotoBase, travarEvolucao, validarEvolucao, blocosInventario,
+    nivelPorMissoes, ganhosDoNivel, fotoBase, travarEvolucao, validarEvolucao, blocosInventario, ajustarAosLimites,
     espacosDoItem, capacidadeDaArma, protecaoEquipada, temProficiencia, armasDaFicha, montarAtaque, resolverAtaque,
     gastarMunicao, recarregar, usarConsumivel, rolarExpressao, somaDados,
     origemPorId, classePorId, habilidadePorId, periciasGratuitas, outraPericiaDaOrigem,
