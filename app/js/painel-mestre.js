@@ -596,6 +596,8 @@ function montarResumoFichasMestre() {
       ' · BI ' + ficha.bi.atual + '/' + ficha.bi.maximo;
     const combate = document.createElement('p');
     combate.textContent = 'Defesa ' + ficha.defesa + ' · Iniciativa ' + ficha.iniciativa;
+    const condicoes = document.createElement('p');
+    condicoes.textContent = 'Condições — ' + (Array.isArray(ficha.condicoes) && ficha.condicoes.length ? ficha.condicoes.join(', ') : 'Nenhuma');
     const passivos = ficha.periciasPassivas || {};
     const testes = document.createElement('p');
     testes.textContent = 'Passivos — Percepção ' + (passivos.percepcao ?? '—') +
@@ -613,7 +615,7 @@ function montarResumoFichasMestre() {
     adicionar.disabled = jaNaIniciativa || !combateMestre || combateMestre.participantes.length >= 30;
     adicionar.addEventListener('click', () => adicionarFichaAtivaAoCombate(ficha));
     acoes.append(adicionar);
-    item.append(nome, jogador, recursos, combate, testes, acoes);
+    item.append(nome, jogador, recursos, combate, condicoes, testes, acoes);
     lista.append(item);
   }
 }
