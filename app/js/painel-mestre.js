@@ -3,11 +3,28 @@
 const renderizarMesaBase = renderizarMesa;
 const carregarMesaAtualBase = carregarMesaAtual;
 let combateMestre=null, carregandoCombate=false, salvandoCombate=false, conflitoCombate=false;
+
+// O snapshot local mantém o estado do Mestre durante quedas de conexão.
+// A sincronização usa a versão otimista já validada pelo servidor.
+function chaveCombateOffline(){return 'ab-combate-mestre:'+String(estado.mesaId||'');}
+function guardarCombateOffline(){
+  if(!combateMestre||!estado.mesaId)return;
+  try{localStorage.setItem(chaveCombateOffline(),JSON.stringify(combateMestre));return true;}
+  catch{return false;}
+}
+function lerCombateOffline(){
+  try{const bruto=localStorage.getItem(chaveCombateOffline());return bruto?JSON.parse(bruto):null;}
+  catch{return null;}
+}
+function limparCombateOffline(){try{localStorage.removeItem(chaveCombateOffline());}catch{}}
+
 function painelMestreEmEdicao(){
   const raiz=$('bloco-combate-mestre'),ativo=document.activeElement;
   return Boolean(raiz&&ativo&&raiz.contains(ativo)&&['INPUT','TEXTAREA','SELECT'].includes(ativo.tagName));
 }
 const CONDICOES_OFICIAIS_AB = [
+  {nome:'Nível Negativo',tipo:'progressao',pagina:101,efeito:'Perda de 1 Nível por Morte: a Personagem retorna à última Sala de Descanso visitada e reverte os benefícios daquele nível.',duracao:'Permanece até a progressão recuperar o Nível perdido.'},
+  {nome:'Penalidade por Morte no Nível 1',tipo:'progressao',pagina:101,efeito:'No Nível 1, em vez de cair para o Nível 0, a Personagem sofre −2 em Testes de Atributo, Perícia e Ataque.',duracao:'Até subir de Nível.'},
   {nome:'Agarrado',pagina:81,efeito:'Movimento passa a 0 e não pode receber bônus de Movimento. A criatura que agarra pode arrastar o alvo com Movimento pela metade, salvo alvo 2+ categorias menor.',duracao:'Termina se quem agarra ficar Incapacitado, se o alvo sair do alcance por efeito externo ou se o alvo escapar usando sua Ação e Atletismo/Reflexos contra a DT original do Agarrão.'},
   {nome:'Amedrontado',pagina:81,efeito:'Tem Desvantagem em testes aplicáveis enquanto perceber a fonte do medo, tenta se afastar/fugir dela e não pode se aproximar voluntariamente.',duracao:'Conforme a fonte do medo.'},
   {nome:'Atordoado',pagina:81,efeito:'Não pode realizar Ações, Reações ou Movimento. Ataques e Manobras ofensivas resistidas contra o alvo recebem Vantagem.',duracao:'Conforme a fonte; algumas Habilidades usam até o início/fim de turno indicado.'},
@@ -44,16 +61,38 @@ function apiPainelMestre(metodo='GET',corpo) {
   });
 }
 async function carregarCombateMestre(silencioso=false,forcar=false) {
-  if(!estado.mesaId||estado.modo!=='local'||estado.mesaAtual?.papel!=='mestre'||carregandoCombate||salvandoCombate||(!forcar&&(conflitoCombate||painelMestreEmEdicao())))return;
+  if(!estado.mesaId||estado.mesaAtual?.papel!=='mestre'||carregandoCombate||salvandoCombate||(!forcar&&(conflitoCombate||painelMestreEmEdicao())))return;
+  if(estado.modo!=='local'){
+    const local=lerCombateOffline();
+    if(local){combateMestre=local;desenharCombateMestre();}
+    return;
+  }
+  const pendente=lerCombateOffline();
+  if(pendente&&!conflitoCombate){
+    combateMestre=pendente;
+    desenharCombateMestre();
+    await salvarCombateMestre();
+    return;
+  }
   carregandoCombate=true;
   try{const r=await apiPainelMestre();combateMestre=r.combate;conflitoCombate=false;desenharCombateMestre();}
-  catch(e){if(!silencioso)mensagem($('aviso-mesa'),e.message,'erro');}
+  catch(e){
+    if(combateMestre)guardarCombateOffline();
+    const local=lerCombateOffline();if(local){combateMestre=local;desenharCombateMestre();}
+    if(!silencioso)mensagem($('aviso-mesa'),e.message,'aviso');
+  }
   finally{carregandoCombate=false;}
 }
 let salvarCombatePendente=false;
 async function salvarCombateMestre() {
   if(!combateMestre)return;
   if(salvandoCombate){salvarCombatePendente=true;return;}
+  if(estado.modo!=='local'){
+    const salvo=guardarCombateOffline();
+    desenharCombateMestre();
+    mensagem($('aviso-mesa'),salvo?'Alterações guardadas neste aparelho. Serão sincronizadas quando o servidor voltar.':'Não foi possível guardar as alterações offline neste navegador.','aviso');
+    return;
+  }
   salvandoCombate=true;
   let erro=null;
   try{
@@ -61,15 +100,21 @@ async function salvarCombateMestre() {
       salvarCombatePendente=false;
       const copia=JSON.parse(JSON.stringify(combateMestre));
       const r=await apiPainelMestre('PUT',copia);
-      if(!salvarCombatePendente)combateMestre=r.combate;
+      combateMestre=r.combate;
+      limparCombateOffline();
     }while(salvarCombatePendente);
-  }catch(e){erro=e;if(e.status===409)conflitoCombate=true;}
+  }catch(e){
+    erro=e;
+    if(e.status===409)conflitoCombate=true;
+    else guardarCombateOffline();
+  }
   finally{
     salvandoCombate=false;
     desenharCombateMestre();
-    if(erro)mensagem($('aviso-mesa'),erro.message,'erro');
+    if(erro)mensagem($('aviso-mesa'),eStatusOffline(erro)?'Sem conexão com o servidor. Alterações guardadas neste aparelho e aguardam sincronização.':erro.message,eStatusOffline(erro)?'aviso':'erro');
   }
 }
+function eStatusOffline(erro){return !erro?.status||erro.status>=500;}
 function ordenarCombateMestre(){
   combateMestre.participantes.sort((a,b)=>{
     if(a.entradaTardia!==b.entradaTardia)return a.entradaTardia?1:-1;
@@ -211,7 +256,9 @@ function adicionarCondicaoCombate(id){
   if(p.condicoes.some(x=>x.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){
     mensagem($('aviso-mesa'),'Os efeitos mecânicos da mesma condição não se acumulam; esta nova instância terá sua duração acompanhada separadamente.','aviso');
   }
-  p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),nome,duracao,observacao});
+  const itemOficial=CONDICOES_OFICIAIS_AB.find(x=>x.nome===nome);
+  const tipo=itemOficial?.tipo==='progressao'?'progressao':'condicao';
+  p.condicoes.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),tipo,nome,duracao,observacao,notificacao:{id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),estado:'pendente',criadaEm:new Date().toISOString()}});
   salvarCombateMestre();
 }
 function ajustarProximidadePerseguidor(id,delta){
@@ -300,7 +347,7 @@ function desenharCombateMestre(){
     const condicoes=document.createElement('div');condicoes.className='combate-condicoes';
     for(const condicao of (p.condicoes||[])){
       const tag=document.createElement('div');tag.className='condicao-combate';
-      const texto=document.createElement('span');texto.textContent=condicao.nome+' · '+(condicao.duracao||'término não registrado')+(condicao.observacao?' · '+condicao.observacao:'');
+      const texto=document.createElement('span');texto.textContent=(condicao.tipo==='progressao'?'Progressão · ':'')+condicao.nome+' · '+(condicao.duracao||'término não registrado')+(condicao.observacao?' · '+condicao.observacao:'')+(condicao.notificacao?.estado==='pendente'?' · aviso pendente de sincronização':condicao.notificacao?.estado==='entregue'?' · aviso entregue':'');
       const editar=document.createElement('button');editar.type='button';editar.className='botao pequeno';editar.textContent='Editar';editar.setAttribute('aria-label','Editar duração e observação de '+condicao.nome);
       const excluir=document.createElement('button');excluir.type='button';excluir.className='botao pequeno';excluir.textContent='×';excluir.setAttribute('aria-label','Remover condição '+condicao.nome);
       const editorEdicao=document.createElement('div');editorEdicao.className='condicao-edicao';editorEdicao.hidden=true;
