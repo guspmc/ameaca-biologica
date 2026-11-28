@@ -63,6 +63,18 @@ r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 ]});
 assert.equal(r.status,400);
 assert.match(r.dados.erro,/bônus de Iniciativa deve ser igual à AGI/);
+// Referência da Ficha Ativa fica vinculada ao participante, sem expor o conteúdo da Ficha.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+  {id:'p-ficha',nome:'Claire',tipo:'personagem',agi:4,bonusIniciativa:4,d20:0,fichaId:'0123456789abcdef'}
+]});
+assert.equal(r.status,200);
+assert.equal(r.dados.combate.participantes[0].fichaId,'0123456789abcdef');
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+  {id:'p-ficha',nome:'Claire',tipo:'personagem',agi:4,bonusIniciativa:4,d20:0,fichaId:'id-invalido'}
+]});
+assert.equal(r.status,400);
+assert.match(r.dados.erro,/Referência da Ficha/);
+
 // Criaturas continuam podendo informar o bônus indicado em sua ficha.
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 {id:'c1',nome:'Infectado',tipo:'criatura',agi:1,bonusIniciativa:4,d20:12}
