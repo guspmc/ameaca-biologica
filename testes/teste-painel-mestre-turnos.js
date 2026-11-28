@@ -306,6 +306,18 @@ console.log('Painel do Mestre: turnos OK');
     assert.equal(vm.runInContext('combateMestre.mesaId',ctx),'mesa-b');
   }
 
+  // Uma ação atrasada da interface de A não pode gravar seu snapshot sob o ID de B.
+  {
+    const {ctx,armazenamento}=novoContextoPersistencia();
+    let requisicoes=0;
+    ctx.buscar=()=>{requisicoes++;return Promise.resolve({combate:snapshotA});};
+    ctx.estado.mesaId='mesa-b';
+    vm.runInContext('combateMestre='+JSON.stringify(snapshotA),ctx);
+    await vm.runInContext('salvarCombateMestre()',ctx);
+    assert.equal(requisicoes,0);
+    assert.equal(armazenamento.has('ab-combate-mestre:mesa-b'),false);
+  }
+
   // GET atrasado também fica isolado: a resposta de A não invade a Mesa B aberta.
   {
     const {ctx,armazenamento}=novoContextoPersistencia();
