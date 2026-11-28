@@ -131,7 +131,7 @@ async function ouvir(token, ms) {
         anotacoes: 'Somente o Mestre vê',
         encontros: [],
         documentos: [
-          { id: 'doc-publico', titulo: 'Relatório', tipo: 'Arquivo', conteudo: 'Documento compartilhado', arquivoUrl: 'http://127.0.0.1:' + PORTA + arquivoPublicado.url, visivel: true },
+          { id: 'doc-publico', titulo: 'Relatório', tipo: 'Arquivo', conteudo: 'Documento compartilhado', arquivoUrl: B + arquivoPublicado.url, visivel: true },
           { id: 'doc-privado', titulo: 'Segredo', tipo: 'Nota', conteudo: 'Documento reservado', visivel: false }
         ],
         itens: [
