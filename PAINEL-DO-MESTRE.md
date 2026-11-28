@@ -77,6 +77,8 @@ O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquiv
 
 ### Conteúdo privado do Mestre — cache offline
 
+- O Bestiário é um recurso estático do aplicativo e pode ser carregado pelo próprio PWA no modo Offline; não depende de uma chamada ao servidor local para exibir o catálogo já distribuído com o app.
+
 - Anotações, encontros preparados, documentos e itens personalizados possuem cópia local isolada por Mesa no aparelho do Mestre.
 - A leitura offline restaura o último snapshot conhecido enquanto a Mesa continua selecionada na sessão atual. Alterações feitas sem servidor são guardadas localmente e marcadas como pendentes.
 - **Limitação atual:** o fluxo principal ainda não persiste/restaura a Mesa selecionada após recarga completa do PWA. Portanto, o cache de conteúdo não garante reabertura autônoma da Mesa depois de fechar/recarregar o app sem conexão; isso depende de integração futura com o fluxo de sessão/Mesas da `main`.
