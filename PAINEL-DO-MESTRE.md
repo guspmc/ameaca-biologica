@@ -28,6 +28,14 @@ Fonte: Arquivo do Jogador v1.0, capítulo 4 — Regras e Combate, p. 76; Arquivo
 - As alterações são avisadas ao Mestre pelo evento SSE da Mesa; uma consulta periódica de segurança atualiza a tela caso algum evento se perca. O salvamento do combate mantém uma fila de alterações: se novas mudanças ocorrerem enquanto uma gravação estiver em andamento, elas são enviadas em seguida, sem serem descartadas pela resposta anterior.
 - Os dados operacionais são apagados quando o Mestre encerra a Mesa.
 
+
+## Isolamento de operações assíncronas por Mesa
+
+- As consultas e gravações do combate capturam o ID da Mesa no início da operação e mantêm esse destino durante toda a requisição.
+- Se o Mestre trocar de Mesa antes da resposta, o resultado atrasado é armazenado somente no cache da Mesa de origem; não substitui o combate atualmente exibido nem grava na chave da Mesa aberta.
+- Uma gravação solicitada para outra Mesa enquanto a primeira está em andamento fica identificada pelo próprio ID e é processada depois que a operação anterior termina.
+- Testes de regressão simulam respostas atrasadas de GET e PUT para verificar o isolamento entre Mesas.
+
 ## API
 
 `GET /api/painel-mestre/:mesaId/combate` — retorna o estado de combate.  
