@@ -126,6 +126,15 @@ vm.runInContext('guardarCombateOffline()', contexto);
 const snapshotOffline = JSON.parse(vm.runInContext('JSON.stringify(lerCombateOffline())', contexto));
 assert.equal(snapshotOffline.participantes[0].condicoes[0].tipo, 'progressao');
 assert.equal(snapshotOffline.rodada, 4);
+assert.equal(vm.runInContext('combateOfflinePendente()', contexto), true);
+// Depois da confirmação do servidor, a cópia continua no aparelho, mas deixa de ser pendente.
+vm.runInContext('guardarCombateOffline(false)', contexto);
+assert.equal(vm.runInContext('combateOfflinePendente()', contexto), false);
+assert.equal(JSON.parse(vm.runInContext('JSON.stringify(lerCombateOffline())', contexto)).rodada, 4);
+// Snapshots legados continuam recuperáveis e são tratados como pendentes.
+armazenamentoLocal.set('ab-combate-mestre:mesa-teste', JSON.stringify({mesaId:'mesa-teste',rodada:9,participantes:[]}));
+assert.equal(vm.runInContext('lerCombateOffline().rodada', contexto), 9);
+assert.equal(vm.runInContext('combateOfflinePendente()', contexto), true);
 vm.runInContext('limparCombateOffline()', contexto);
 assert.equal(vm.runInContext('lerCombateOffline()', contexto), null);
 
