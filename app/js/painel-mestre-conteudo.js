@@ -32,6 +32,29 @@ let salvarConteudoPendente = false;
 let itemImagemPreviewUrl = null;
 let itemImagemPreviewRequisicao = 0;
 
+// Cache isolado por Mesa; o conteúdo privado nunca é gravado no cache público.
+function chaveConteudoMestreOffline() { return 'ab-conteudo-mestre:' + String(estado.mesaId || ''); }
+function guardarConteudoMestreOffline(pendente = true) {
+  if (!estado.mesaId || !conteudoMestre) return false;
+  try {
+    localStorage.setItem(chaveConteudoMestreOffline(), JSON.stringify({
+      conteudo: conteudoMestre, pendente: Boolean(pendente), atualizadoEm: new Date().toISOString()
+    }));
+    return true;
+  } catch { return false; }
+}
+function envelopeConteudoMestreOffline() {
+  try {
+    const bruto = localStorage.getItem(chaveConteudoMestreOffline());
+    if (!bruto) return null;
+    const salvo = JSON.parse(bruto);
+    // Migração transparente de snapshots antigos sem envelope de sincronização.
+    return salvo && salvo.conteudo && typeof salvo.conteudo === 'object'
+      ? salvo : { conteudo: salvo, pendente: true };
+  } catch { return null; }
+}
+function lerConteudoMestreOffline() { return envelopeConteudoMestreOffline()?.conteudo || null; }
+function conteudoMestreOfflinePendente() { return envelopeConteudoMestreOffline()?.pendente === true; }
 
 async function enviarArquivoMestre(arquivo) {
   if (!arquivo) throw new Error('Selecione um arquivo.');
@@ -70,26 +93,45 @@ function apiConteudoMestre(metodo = 'GET', corpo) {
 }
 
 async function carregarConteudoMestre(silencioso = true) {
-  if (!estado.mesaId || estado.modo !== 'local' || estado.mesaAtual?.papel !== 'mestre' || carregandoConteudoMestre) return;
+  if (!estado.mesaId || estado.mesaAtual?.papel !== 'mestre' || carregandoConteudoMestre) return;
   const raiz = $('bloco-conteudo-mestre');
   if (raiz && raiz.contains(document.activeElement)) {
     mensagem($('conteudo-msg'), 'O conteúdo foi atualizado em outra sessão. Suas alterações locais foram preservadas; salve para verificar conflito ou carregue a versão do servidor.', 'aviso');
     if ($('conteudo-conflito')) $('conteudo-conflito').hidden = false;
     return;
   }
+  const local = lerConteudoMestreOffline();
+  if (estado.modo !== 'local') {
+    if (local) { conteudoMestre = local; desenharConteudoMestre(); }
+    return;
+  }
+  if (local && conteudoMestreOfflinePendente()) {
+    conteudoMestre = local;
+    desenharConteudoMestre();
+    await salvarConteudoMestre();
+    return;
+  }
   carregandoConteudoMestre = true;
   try {
     const r = await apiConteudoMestre();
     conteudoMestre = r.conteudo || CONTEUDO_MESTRE_VAZIO();
+    guardarConteudoMestreOffline(false);
     if ($('conteudo-conflito')) $('conteudo-conflito').hidden = true;
     desenharConteudoMestre();
   } catch (e) {
-    if (!silencioso) mensagem($('aviso-mesa'), e.message, 'erro');
+    if (local) { conteudoMestre = local; desenharConteudoMestre(); }
+    if (!silencioso) mensagem($('aviso-mesa'), e.message, local ? 'aviso' : 'erro');
   } finally { carregandoConteudoMestre = false; }
 }
 
 async function salvarConteudoMestre() {
   if (salvandoConteudoMestre) { salvarConteudoPendente = true; return; }
+  if (estado.modo !== 'local') {
+    const salvo = guardarConteudoMestreOffline(true);
+    desenharConteudoMestre();
+    mensagem($('conteudo-msg'), salvo ? 'Alterações guardadas neste aparelho. Serão sincronizadas quando o servidor voltar.' : 'Não foi possível guardar as alterações offline neste navegador.', 'aviso');
+    return;
+  }
   salvandoConteudoMestre = true;
   let erro = null;
   try {
@@ -97,19 +139,22 @@ async function salvarConteudoMestre() {
       salvarConteudoPendente = false;
       const copia = JSON.parse(JSON.stringify(conteudoMestre));
       const r = await apiConteudoMestre('PUT', copia);
-      conteudoMestre.versao = r.conteudo.versao;
-      if (!salvarConteudoPendente) conteudoMestre = r.conteudo;
+      conteudoMestre = r.conteudo;
+      guardarConteudoMestreOffline(false);
     } while (salvarConteudoPendente);
-  } catch (e) { erro = e; }
+  } catch (e) {
+    erro = e;
+    guardarConteudoMestreOffline(true);
+  }
   finally {
     salvandoConteudoMestre = false;
     desenharConteudoMestre();
     if (erro) {
-      mensagem($('conteudo-msg'), erro.message, 'erro');
+      mensagem($('conteudo-msg'), erro.status === 409 ? erro.message : 'Não foi possível sincronizar. As alterações permanecem guardadas neste aparelho.', erro.status === 409 ? 'erro' : 'aviso');
       if (erro.status === 409 && $('conteudo-conflito')) $('conteudo-conflito').hidden = false;
     } else {
       if ($('conteudo-conflito')) $('conteudo-conflito').hidden = true;
-      mensagem($('conteudo-msg'), 'Alterações salvas.', 'info');
+      mensagem($('conteudo-msg'), 'Alterações salvas e sincronizadas.', 'info');
     }
   }
 }
