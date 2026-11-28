@@ -150,9 +150,9 @@ assert.equal(r.status,400);
 
 // O servidor preserva a ordem de chegada dos participantes tardios.
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,turnoAtual:'a',combateAtivo:true,participantes:[
-{id:'a',nome:'Alice',tipo:'personagem',agi:3,bonusIniciativa:17,d20:3,iniciativa:20,ordem:0},
-{id:'t1',nome:'Tardio 1',tipo:'personagem',agi:1,bonusIniciativa:0,d20:0,iniciativa:0,ordem:1,entradaTardia:true},
-{id:'t2',nome:'Tardio 2',tipo:'personagem',agi:8,bonusIniciativa:0,d20:0,iniciativa:0,ordem:2,entradaTardia:true}
+{id:'a',nome:'Alice',tipo:'personagem',agi:3,bonusIniciativa:3,d20:17,iniciativa:20,ordem:0},
+{id:'t1',nome:'Tardio 1',tipo:'personagem',agi:1,bonusIniciativa:1,d20:0,iniciativa:0,ordem:1,entradaTardia:true},
+{id:'t2',nome:'Tardio 2',tipo:'personagem',agi:8,bonusIniciativa:8,d20:0,iniciativa:0,ordem:2,entradaTardia:true}
 ]});
 assert.equal(r.status,200);
 assert.deepEqual(r.dados.combate.participantes.map(p=>p.id),['a','t1','t2']);
