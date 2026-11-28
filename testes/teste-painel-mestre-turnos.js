@@ -133,7 +133,9 @@ vm.runInContext("adicionarFichaAtivaAoCombate({ personagem: 'Chris', iniciativa:
 assert.equal(estado().participantes.length, 1);
 
 // O catálogo contém exatamente as 20 condições listadas nas pp. 81–83 do Arquivo do Jogador.
-const catalogoCondicoes = JSON.parse(vm.runInContext('JSON.stringify(CONDICOES_OFICIAIS_AB)', contexto));
+const catalogoCompleto = JSON.parse(vm.runInContext('JSON.stringify(CONDICOES_OFICIAIS_AB)', contexto));
+const catalogoCondicoes = catalogoCompleto.filter(c => c.tipo !== 'progressao');
+const efeitosProgressao = catalogoCompleto.filter(c => c.tipo === 'progressao');
 const nomesCondicoesEsperados = [
   'Agarrado', 'Amedrontado', 'Atordoado', 'Caído', 'Cego',
   'Colapso Viral', 'Corrosão', 'Cabeça Carmesim', 'Desacordado',
@@ -143,6 +145,10 @@ const nomesCondicoesEsperados = [
 ];
 assert.deepEqual(catalogoCondicoes.map(c => c.nome), nomesCondicoesEsperados);
 assert.equal(new Set(catalogoCondicoes.map(c => c.nome)).size, 20);
+assert.deepEqual(efeitosProgressao.map(c => c.nome), ['Nível Negativo', 'Penalidade por Morte no Nível 1']);
+assert.ok(efeitosProgressao.every(c => Number.isInteger(c.pagina) && c.efeito && c.duracao));
+assert.equal(efeitosProgressao[0].pagina, 101);
+assert.equal(efeitosProgressao[1].pagina, 101);
 assert.ok(catalogoCondicoes.every(c => c.efeito && c.duracao));
 
 const condicaoPorNome = nome => catalogoCondicoes.find(c => c.nome === nome);
