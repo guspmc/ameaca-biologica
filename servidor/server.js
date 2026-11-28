@@ -18,7 +18,8 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { qrSvg } = require('./qr');
 const { criarMesas } = require('./mesas');
-const LIVRO = require('../app/js/dados-livro.js');
+let condicoesCatalogo = [];
+try { condicoesCatalogo = require('../app/js/dados-livro.js').CONDICOES || []; } catch { /* catálogo chega com a Ficha da main */ }
 const { criarPainelMestre } = require('./painel-mestre');
 const { criarConteudoMestre } = require('./painel-mestre-conteudo');
 const { criarResumoFichasMestre } = require('./painel-mestre-fichas');
@@ -293,7 +294,7 @@ const resumoFichasMestre = criarResumoFichasMestre({
   carregar: () => lerDados('fichas.json', {}),
   infoMesa: (mesaId) => mesas.info(mesaId),
   calcular: regrasResumoFichas?.calcular || (() => { throw new Error('Módulo de regras das Fichas indisponível.'); }),
-  condicoesCatalogo: LIVRO.CONDICOES,
+  condicoesCatalogo,
 });
 
 
