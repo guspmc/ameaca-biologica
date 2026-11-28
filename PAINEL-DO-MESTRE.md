@@ -73,7 +73,7 @@ Os encontros salvos podem ser editados individualmente: nome, nível, quantidade
 
 ## Gerenciamento de condições
 
-O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquivo do Jogador, consulta rápida de efeitos e duração/remoção, cadastro manual e campos diretos para duração/momento de término e observações. Cada aplicação mantém sua própria duração e observação. O Mestre pode editar esses dois campos depois da aplicação ou remover a condição. A ferramenta não decrementa automaticamente os prazos, pois os gatilhos dependem da condição e da fonte.
+O Painel oferece catálogo das 20 condições oficiais das pp. 81–83 do Arquivo do Jogador, consulta rápida de efeitos e duração/remoção, com indicação da página de referência, cadastro manual e campos diretos para registrar o término específico daquela aplicação e observações. A orientação geral do livro permanece separada do registro de duração da instância, evitando que um texto de regra seja confundido com um prazo já definido para aquela criatura. Cada aplicação mantém sua própria duração e observação. O Mestre pode editar esses dois campos depois da aplicação ou remover a condição. A ferramenta não decrementa automaticamente os prazos, pois os gatilhos dependem da condição e da fonte.
 
 ## Referências de regras e limites
 
