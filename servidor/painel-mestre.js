@@ -34,6 +34,10 @@ function criarPainelMestre({ carregar, salvar, ehMestre }) {
       })).filter(x => x.nome) : (original?.condicoes || []);
       const participante={ id,nome,tipo,agi,bonusIniciativa:bonus,d20,iniciativa:d20?d20+bonus:0,condicoes,
         entradaTardia:original?original.entradaTardia:Boolean(p.entradaTardia),ordem:original?original.ordem:i };
+      if(tipo==='personagem' && p.fichaId!==undefined){
+        if(typeof p.fichaId!=='string'||! /^[a-f0-9]{16}$/i.test(p.fichaId))return {erro:'Referência da Ficha de Personagem inválida.'};
+        participante.fichaId=p.fichaId;
+      }
       if(tipo==='criatura' && p.criaturaId){
         const pvMaximo=Number(p.pvMaximo),pvAtual=Number(p.pvAtual),defesa=Number(p.defesa);
         if(typeof p.criaturaId!=='string'||p.criaturaId.length>80||!Number.isInteger(pvMaximo)||pvMaximo<1||pvMaximo>9999||
