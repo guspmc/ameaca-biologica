@@ -170,6 +170,9 @@ assert.equal(condicaoPorNome('Agarrado').pagina, 81);
 assert.equal(condicaoPorNome('Corrosão').pagina, 82);
 assert.equal(condicaoPorNome('Queimadura').pagina, 83);
 assert.ok(catalogoCondicoes.every(c => Number.isInteger(c.pagina) && c.pagina >= 81 && c.pagina <= 83));
+assert.equal(vm.runInContext('referenciaPaginaCondicao('+JSON.stringify(condicaoPorNome('Agarrado'))+')', contexto), 'Arquivo do Jogador, p. 81');
+assert.equal(vm.runInContext('referenciaPaginaCondicao('+JSON.stringify(condicaoPorNome('Corrosão'))+')', contexto), 'Arquivo do Jogador, p. 82');
+assert.equal(vm.runInContext('referenciaPaginaCondicao('+JSON.stringify(condicaoPorNome('Queimadura'))+')', contexto), 'Arquivo do Jogador, p. 83');
 
 
 
