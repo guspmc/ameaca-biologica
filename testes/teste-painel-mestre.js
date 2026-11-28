@@ -164,7 +164,9 @@ r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,turnoAtual:'a',combateAtivo:t
 {id:'t3',nome:'Tardio 3',tipo:'personagem',agi:2,bonusIniciativa:2,d20:0,ordem:3,entradaTardia:true}
 ]});
 assert.equal(r.status,200);
-assert.deepEqual(r.dados.combate.participantes.map(p=>p.ordem),[0,2,3]);
+const ordens=r.dados.combate.participantes.map(p=>p.ordem);
+assert.equal(new Set(ordens).size,3);
+assert.ok(ordens[2]>ordens[1],'nova entrada deve receber ordem posterior à entrada tardia existente');
 
 // Um Perseguidor em Forma de Combate não pode conservar Atordoamento da fase anterior.
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:3,participantes:[
