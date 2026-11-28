@@ -237,3 +237,84 @@ A main avançou até a versão 0.7 (Fichas, Arsenal, tema Dossiê, evolução de
 3. **Itens publicados e inventário:** os itens publicados são disponibilizados como catálogo da Mesa. A inclusão no inventário pessoal precisa ser iniciada e confirmada pelo Jogador, por meio da API da Ficha. O Mestre não pode inserir, alterar ou remover itens diretamente na Ficha.
 4. **Integração de arquivos compartilhados:** o merge deverá combinar cuidadosamente `servidor/server.js` (rotas de Fichas da main + rotas do Painel e uploads desta branch), `app/index.html` (arquivos da Ficha/tema + scripts do Painel), `app/sw.js` (listas de cache das duas frentes), `app/css/estilo.css` e `package.json` (versão e todos os testes). Não substituir um lado pelo outro.
 5. **Validação final:** depois da integração, testar login, Mesa, aprovação de Ficha, resumo restrito, atualização SSE, iniciativa, conteúdo publicado, upload/leitura de anexos e funcionamento offline. Esta branch não altera os módulos de Ficha pertencentes ao Claude.
+
+## Plano de fechamento — resumo de Fichas, itens e testes multiplayer
+
+### 1. Resumo operacional das Fichas — integração pendente na main
+
+A projeção do Painel já foi testada com mais de um Jogador e filtra Fichas por estado Ativa e vínculo aprovado à Mesa. A resposta permanece limitada a identificação, PV/SA/BI atuais e máximos, Defesa, Iniciativa e quatro perícias passivas.
+
+**Ajuste necessário no módulo do Claude (servidor/fichas.js):**
+- Em salvar(mesaId, usuario, fichaId, dadosEntrada), depois de gravar com sucesso, retornar também avisar com o Mestre e os Jogadores aprovados da Mesa.
+- A lista deve ser construída como [info.mestre, ...info.aprovados] (ou equivalente), e não usar indiscriminadamente todos os membros se houver Jogadores pendentes.
+- O servidor já transforma avisar em evento SSE ficha com payload { mesaId, fichaId }; o listener do Painel já aceita esse formato.
+- Emitir o evento somente depois de a gravação ter sido concluída. Falhas de validação, autorização ou persistência não devem disparar atualização.
+- Manter a consulta periódica de quatro segundos como recuperação caso um cliente perca o evento.
+
+**Critério de aceite:** ao alterar PV, SA, BI ou inventário em uma Ficha Ativa, o Mestre vê o resumo atualizado sem recarregar a página; outro Jogador aprovado não recebe conteúdo de Ficha alheia; Jogador pendente e usuário externo não recebem a projeção.
+
+### 2. Fluxo proposto para itens publicados
+
+O catálogo público já entrega apenas itens marcados como visíveis. Hoje o Jogador consegue consultar os itens, mas não existe uma ação para incorporá-los ao inventário.
+
+**Fluxo recomendado:**
+1. O Mestre cria o item e o publica. Publicar significa disponibilizá-lo no catálogo da Mesa, não inseri-lo automaticamente em nenhuma Ficha.
+2. O Jogador abre o catálogo e escolhe **Adicionar à minha Ficha**.
+3. O Jogador escolhe uma de suas Fichas Ativas. A ação é iniciada pelo próprio Jogador e nunca pelo Mestre.
+4. O servidor valida sessão, aprovação na Mesa, propriedade da Ficha, estado Ativa e publicação atual do item naquela Mesa.
+5. O servidor copia um retrato dos dados do item para o inventário da Ficha escolhida. Alterações futuras no catálogo não devem sobrescrever silenciosamente o item já recebido.
+6. A inclusão respeita o limite de itens da Ficha e os espaços de inventário. Se não houver espaço ou capacidade, a operação é recusada com mensagem clara; não descartar nem substituir outro item.
+7. A Ficha é salva pelo fluxo normal do Jogador; o Mestre recebe somente a atualização da projeção permitida.
+
+**Contrato técnico a combinar com o Claude:**
+- Criar uma ação autenticada de Jogador, por exemplo POST /api/mesas/:mesaId/fichas/:fichaId/itens-publicados/:itemId.
+- A API deve localizar o item na lista atualmente publicada daquela Mesa; não aceitar do cliente nome, efeito, espaços ou outros dados livres como fonte confiável.
+- O inventário atual normaliza os campos nome, espacos, nota, ref, mun, pecas e equip. Para preservar a origem e os detalhes de itens personalizados sem truncar informação, avaliar com o Claude a inclusão de metadados próprios, como origemMesaItemId, descricao e efeito, no normalizador e na interface da Ficha.
+- Definir o custo em espaços do item no cadastro do Mestre (sugestão inicial: 1 espaço por padrão, editável pelo Mestre antes de publicar).
+- Permitir cópias adicionais quando desejado, mas impedir que uma repetição acidental da mesma requisição gere duplicação involuntária.
+- Ao retirar a publicação, impedir novas inclusões; não apagar itens que Jogadores já receberam.
+- O Mestre não pode consultar nem alterar o inventário completo dos Jogadores. O resumo operacional não deve ganhar novos campos por causa desta função.
+
+**Critérios de aceite:** Jogador A consegue adicionar um item à própria Ficha; Jogador B não consegue adicionar à Ficha de A; Mestre recebe 403 ao tentar executar a ação; item privado ou despublicado não pode ser adicionado; tentativa acima do limite de inventário não altera a Ficha; o item já recebido permanece mesmo se o Mestre retirar a publicação.
+
+### 3. Roteiro de teste multiplayer — Mestre + dois Jogadores
+
+Executar após a integração da main, em três sessões distintas (idealmente três aparelhos ou dois aparelhos e um navegador separado):
+
+- [ ] Mestre cria uma Mesa com limite para dois Jogadores.
+- [ ] Jogador A e Jogador B entram usando o código/QR; ambos aparecem como pendentes.
+- [ ] Mestre aprova A e B; ambos passam a acessar as publicações.
+- [ ] Jogador C solicita entrada e permanece pendente; não acessa documentos, itens nem resumo operacional.
+- [ ] A e B criam, submetem e têm suas Fichas aprovadas; Mestre vê apenas a projeção permitida das duas Fichas Ativas.
+- [ ] Conferir que rascunhos, Fichas pendentes e Fichas de usuários não aprovados não aparecem no resumo.
+- [ ] A altera PV; Mestre recebe a atualização SSE. Repetir com SA, BI e inventário.
+- [ ] A e B abrem o Painel ao mesmo tempo; ambos recebem as atualizações sem precisar recarregar.
+- [ ] Mestre adiciona A e B à iniciativa; a ordem, turnos e rodada são sincronizados entre as sessões do Mestre (em outro aparelho do mesmo usuário, se aplicável).
+- [ ] Mestre publica um documento e um item; A e B recebem o catálogo atualizado. C continua sem acesso.
+- [ ] A adiciona o item à própria Ficha; verificar que B não recebeu cópia e que o Mestre não editou a Ficha.
+- [ ] Tentar acesso cruzado por API: A tenta ler/salvar Ficha de B; Mestre tenta ler conteúdo completo ou salvar Ficha; C tenta ler publicação. Todas as operações indevidas devem ser recusadas.
+- [ ] Testar upload privado e publicado: Jogadores aprovados só abrem anexos efetivamente publicados; C não abre anexos.
+- [ ] Desconectar e reconectar um Jogador; confirmar recuperação de estado e atualização do resumo.
+- [ ] Encerrar a Mesa; confirmar limpeza dos dados operacionais e dos anexos da Mesa.
+
+Registrar para cada teste: aparelho/navegador, usuário, ação, resultado esperado, resultado observado e eventual evidência. Os testes automatizados existentes não substituem esta validação real com múltiplas sessões.
+
+### 4. Novos recursos — backlog sugerido
+
+Prioridade sugerida, sem alterar as regras do livro nem ampliar o acesso do Mestre às Fichas:
+
+**Prioridade alta**
+- **Registro da sessão:** linha do tempo privada do Mestre com eventos, decisões e acontecimentos importantes.
+- **Objetivos e pistas:** cartões com título, descrição, status (não descoberto, descoberto, resolvido) e visibilidade privada/compartilhada.
+- **Controle de cenas:** cena atual, local, objetivo e notas rápidas para conduzir a narrativa.
+
+**Prioridade média**
+- **Biblioteca de NPCs:** personagens não jogadores com descrição, papel narrativo, imagem e notas privadas.
+- **Diário de combate:** histórico de rodadas, participantes, mudanças de turno e condições administradas no rastreador.
+- **Modelos de documentos:** duplicar documentos e encontros preparados entre sessões da mesma Mesa.
+
+**Prioridade futura**
+- **Resumo de encerramento:** montar um relatório da sessão a partir das anotações e eventos registrados.
+- **Exportação/importação dos dados do Mestre:** backup separado das Fichas dos Jogadores, com restauração por Mesa.
+
+Qualquer recurso futuro que envolva recursos ou dados das Fichas deve continuar estritamente de leitura e limitado à projeção operacional já aprovada pelo usuário.
