@@ -8,30 +8,31 @@ function painelMestreEmEdicao(){
   return Boolean(raiz&&ativo&&raiz.contains(ativo)&&['INPUT','TEXTAREA','SELECT'].includes(ativo.tagName));
 }
 const CONDICOES_OFICIAIS_AB = [
-  {nome:'Agarrado',efeito:'Movimento passa a 0 e não pode receber bônus de Movimento. A criatura que agarra pode arrastar o alvo com Movimento pela metade, salvo alvo 2+ categorias menor.',duracao:'Termina se quem agarra ficar Incapacitado, se o alvo sair do alcance por efeito externo ou se o alvo escapar usando sua Ação e Atletismo/Reflexos contra a DT original do Agarrão.'},
-  {nome:'Amedrontado',efeito:'Tem Desvantagem em testes aplicáveis enquanto perceber a fonte do medo, tenta se afastar/fugir dela e não pode se aproximar voluntariamente.',duracao:'Conforme a fonte do medo.'},
-  {nome:'Atordoado',efeito:'Não pode realizar Ações, Reações ou Movimento. Ataques e Manobras ofensivas resistidas contra o alvo recebem Vantagem.',duracao:'Conforme a fonte; algumas Habilidades usam até o início/fim de turno indicado.'},
-  {nome:'Caído',efeito:'Só pode se deslocar Rastejando. Levantar custa metade do Movimento. Seus Ataques têm Desvantagem; Ataques Corpo a Corpo contra você têm Vantagem e Ataques à distância contra você têm Desvantagem. Com Movimento 0, não pode se levantar.',duracao:'Até se levantar ou outro efeito remover.'},
-  {nome:'Cego',efeito:'Tem Desvantagem em seus Ataques; Ataques contra ele têm Vantagem; falha automaticamente em testes que dependam exclusivamente de visão.',duracao:'Conforme a fonte.'},
-  {nome:'Colapso Viral',efeito:'Consequência de atingir a BI Máxima. Ver “Colapso”, Capítulo 5 — Bio-Infecção.',duracao:'—'},
-  {nome:'Corrosão',efeito:'A pele e tecidos sofrem ação corrosiva. Causa 1d4 de Dano ao final de cada turno.',duracao:'Se a fonte não definir duração, dura até ser encerrada por um Teste bem-sucedido ou pela duração específica da fonte. No início do turno, faça Fortitude DT 12; em sucesso, a Corrosão termina imediatamente e não causa seu Dano naquele turno. Em falha, ela permanece e causa 1d4 de Dano ao final do turno. Fora de combate, causa Dano uma única vez por exposição, salvo regra específica.'},
-  {nome:'Cabeça Carmesim',efeito:'Transformação posterior de um Zumbi. Ver “Crimson”, Capítulo 5 — Bio-Infecção.',duracao:'—'},
-  {nome:'Desacordado',efeito:'A personagem fica inconsciente: não realiza Ações ou Reações e não percebe conscientemente o ambiente. Ver “0 PV”, Capítulo 4 — Regras e Combate. Ver “Colapso”, Capítulo 5 — Bio-Infecção.',duracao:'Em 0 PV, segue Testes de Reanimação. Outras fontes determinam como despertar.'},
-  {nome:'Desorientado',efeito:'Não pode usar Atacar, tem Desvantagem em Testes de Perícia e perde a contribuição de AGI na Defesa.',duracao:'Conforme a fonte.'},
-  {nome:'Enfraquecido',efeito:'Desvantagem em Testes baseados em FOR e em Fortitude.',duracao:'A fonte determina duração e cura.'},
-  {nome:'Exposto',efeito:'Sofre -2 na Defesa. Exposto não impõe penalidade em Ataques, Perícias, Reações ou outros valores.',duracao:'Quando causado por Falha Crítica, dura até o final do próximo turno da criatura.'},
-  {nome:'Imobilizado',efeito:'Movimento 0; Desvantagem nos próprios Ataques; Ataques contra o alvo têm Vantagem; Desvantagem em Reflexos.',duracao:'Conforme a fonte.'},
-  {nome:'Incapacitado',efeito:'Não pode realizar Ações nem Reações.',duracao:'Conforme a fonte.'},
-  {nome:'Intoxicado',efeito:'Movimento reduzido em 3 m. Desvantagem em Testes de Ataque e Testes de Perícia. Testes de Atributo permanecem normais.',duracao:'Conforme a fonte.'},
-  {nome:'Queimadura',efeito:'O corpo está em chamas. Sofre 1d6 de Dano ao final de cada turno.',duracao:'Se a fonte não definir duração, dura 1d4 rodadas. No início de cada turno, Reflexos DT 12 apaga completamente as chamas em sucesso. Fora de combate, aplica o Dano apenas uma vez.'},
-  {nome:'Surdo',efeito:'Falha automaticamente em testes que dependam exclusivamente de audição.',duracao:'Conforme a fonte.'},
-  {nome:'Surpreendido',efeito:'No primeiro turno em que estiver Surpreendido, não pode se mover nem realizar Ações. Enquanto estiver Surpreendido, não pode usar Reações nem gastar SA.',duracao:'Normalmente termina ao fim do primeiro turno da própria criatura, salvo efeito específico.'},
-  {nome:'Vulnerável',efeito:'Uma criatura fica Vulnerável enquanto seus PV atuais forem iguais ou inferiores a 1/5 dos PV máximos. A condição habilita efeitos específicos, como Morte Instantânea por Finalizar, Pisão ou propriedades de armas; ela não derrota nem mata o alvo por si só.',duracao:'Dura enquanto os PV permanecerem em 1/5 do máximo ou menos, salvo regra específica.'},
-  {nome:'Infectado Especial',efeito:'Transformação causada pela Bio-Infecção. Ver “Infectado”, Capítulo 5 — Bio-Infecção.',duracao:'—'}
+  {nome:'Agarrado',pagina:81,efeito:'Movimento passa a 0 e não pode receber bônus de Movimento. A criatura que agarra pode arrastar o alvo com Movimento pela metade, salvo alvo 2+ categorias menor.',duracao:'Termina se quem agarra ficar Incapacitado, se o alvo sair do alcance por efeito externo ou se o alvo escapar usando sua Ação e Atletismo/Reflexos contra a DT original do Agarrão.'},
+  {nome:'Amedrontado',pagina:81,efeito:'Tem Desvantagem em testes aplicáveis enquanto perceber a fonte do medo, tenta se afastar/fugir dela e não pode se aproximar voluntariamente.',duracao:'Conforme a fonte do medo.'},
+  {nome:'Atordoado',pagina:81,efeito:'Não pode realizar Ações, Reações ou Movimento. Ataques e Manobras ofensivas resistidas contra o alvo recebem Vantagem.',duracao:'Conforme a fonte; algumas Habilidades usam até o início/fim de turno indicado.'},
+  {nome:'Caído',pagina:81,efeito:'Só pode se deslocar Rastejando. Levantar custa metade do Movimento. Seus Ataques têm Desvantagem; Ataques Corpo a Corpo contra você têm Vantagem e Ataques à distância contra você têm Desvantagem. Com Movimento 0, não pode se levantar.',duracao:'Até se levantar ou outro efeito remover.'},
+  {nome:'Cego',pagina:82,efeito:'Tem Desvantagem em seus Ataques; Ataques contra ele têm Vantagem; falha automaticamente em testes que dependam exclusivamente de visão.',duracao:'Conforme a fonte.'},
+  {nome:'Colapso Viral',pagina:82,efeito:'Consequência de atingir a BI Máxima. Ver “Colapso”, Capítulo 5 — Bio-Infecção.',duracao:'—'},
+  {nome:'Corrosão',pagina:82,efeito:'A pele e tecidos sofrem ação corrosiva. Causa 1d4 de Dano ao final de cada turno.',duracao:'Se a fonte não definir duração, dura até ser encerrada por um Teste bem-sucedido ou pela duração específica da fonte. No início do turno, faça Fortitude DT 12; em sucesso, a Corrosão termina imediatamente e não causa seu Dano naquele turno. Em falha, ela permanece e causa 1d4 de Dano ao final do turno. Fora de combate, causa Dano uma única vez por exposição, salvo regra específica.'},
+  {nome:'Cabeça Carmesim',pagina:82,efeito:'Transformação posterior de um Zumbi. Ver “Crimson”, Capítulo 5 — Bio-Infecção.',duracao:'—'},
+  {nome:'Desacordado',pagina:82,efeito:'A personagem fica inconsciente: não realiza Ações ou Reações e não percebe conscientemente o ambiente. Ver “0 PV”, Capítulo 4 — Regras e Combate. Ver “Colapso”, Capítulo 5 — Bio-Infecção.',duracao:'Em 0 PV, segue Testes de Reanimação. Outras fontes determinam como despertar.'},
+  {nome:'Desorientado',pagina:82,efeito:'Não pode usar Atacar, tem Desvantagem em Testes de Perícia e perde a contribuição de AGI na Defesa.',duracao:'Conforme a fonte.'},
+  {nome:'Enfraquecido',pagina:82,efeito:'Desvantagem em Testes baseados em FOR e em Fortitude.',duracao:'A fonte determina duração e cura.'},
+  {nome:'Exposto',pagina:82,efeito:'Sofre -2 na Defesa. Exposto não impõe penalidade em Ataques, Perícias, Reações ou outros valores.',duracao:'Quando causado por Falha Crítica, dura até o final do próximo turno da criatura.'},
+  {nome:'Imobilizado',pagina:82,efeito:'Movimento 0; Desvantagem nos próprios Ataques; Ataques contra o alvo têm Vantagem; Desvantagem em Reflexos.',duracao:'Conforme a fonte.'},
+  {nome:'Incapacitado',pagina:82,efeito:'Não pode realizar Ações nem Reações.',duracao:'Conforme a fonte.'},
+  {nome:'Intoxicado',pagina:82,efeito:'Movimento reduzido em 3 m. Desvantagem em Testes de Ataque e Testes de Perícia. Testes de Atributo permanecem normais.',duracao:'Conforme a fonte.'},
+  {nome:'Queimadura',pagina:83,efeito:'O corpo está em chamas. Sofre 1d6 de Dano ao final de cada turno.',duracao:'Se a fonte não definir duração, dura 1d4 rodadas. No início de cada turno, Reflexos DT 12 apaga completamente as chamas em sucesso. Fora de combate, aplica o Dano apenas uma vez.'},
+  {nome:'Surdo',pagina:83,efeito:'Falha automaticamente em testes que dependam exclusivamente de audição.',duracao:'Conforme a fonte.'},
+  {nome:'Surpreendido',pagina:83,efeito:'No primeiro turno em que estiver Surpreendido, não pode se mover nem realizar Ações. Enquanto estiver Surpreendido, não pode usar Reações nem gastar SA.',duracao:'Normalmente termina ao fim do primeiro turno da própria criatura, salvo efeito específico.'},
+  {nome:'Vulnerável',pagina:83,efeito:'Uma criatura fica Vulnerável enquanto seus PV atuais forem iguais ou inferiores a 1/5 dos PV máximos. A condição habilita efeitos específicos, como Morte Instantânea por Finalizar, Pisão ou propriedades de armas; ela não derrota nem mata o alvo por si só.',duracao:'Dura enquanto os PV permanecerem em 1/5 do máximo ou menos, salvo regra específica.'},
+  {nome:'Infectado Especial',pagina:83,efeito:'Transformação causada pela Bio-Infecção. Ver “Infectado”, Capítulo 5 — Bio-Infecção.',duracao:'—'}
 ];
-function duracaoInicialCondicao(item){
-  if(!item||item.duracao==='—')return '';
-  return item.duracao.length<=80?item.duracao:'Conforme a fonte';
+function duracaoInicialCondicao(){
+  // A referência do livro explica a regra geral; o campo de duração registra
+  // somente o término específico desta aplicação da condição.
+  return '';
 }
 function apiPainelMestre(metodo='GET',corpo) {
   return buscar(estado.base+'/api/painel-mestre/'+encodeURIComponent(estado.mesaId)+'/combate',{
@@ -186,7 +187,7 @@ function adicionarCondicaoCombate(id){
   const select=$('condicao-selecao-'+id),manualInput=$('condicao-manual-'+id);
   const nome=select?.value==='__manual__'?manualInput?.value.trim():select?.value;
   if(!nome){mensagem($('aviso-mesa'),'Selecione uma condição ou informe o nome personalizado.','erro');return;}
-  const duracao=$('condicao-duracao-'+id)?.value.trim()||'Conforme a fonte';
+  const duracao=$('condicao-duracao-'+id)?.value.trim()||'';
   const observacao=$('condicao-observacao-'+id)?.value.trim()||'';
   p.condicoes=p.condicoes||[];
   if(p.condicoes.some(x=>x.nome.toLocaleLowerCase('pt-BR')===nome.toLocaleLowerCase('pt-BR'))){
@@ -255,7 +256,7 @@ function desenharCombateMestre(){
     const condicoes=document.createElement('div');condicoes.className='combate-condicoes';
     for(const condicao of (p.condicoes||[])){
       const tag=document.createElement('div');tag.className='condicao-combate';
-      const texto=document.createElement('span');texto.textContent=condicao.nome+' · '+(condicao.duracao||'duração não definida')+(condicao.observacao?' · '+condicao.observacao:'');
+      const texto=document.createElement('span');texto.textContent=condicao.nome+' · '+(condicao.duracao||'término não registrado')+(condicao.observacao?' · '+condicao.observacao:'');
       const editar=document.createElement('button');editar.type='button';editar.className='botao pequeno';editar.textContent='Editar';editar.setAttribute('aria-label','Editar duração e observação de '+condicao.nome);
       const excluir=document.createElement('button');excluir.type='button';excluir.className='botao pequeno';excluir.textContent='×';excluir.setAttribute('aria-label','Remover condição '+condicao.nome);
       const editorEdicao=document.createElement('div');editorEdicao.className='condicao-edicao';editorEdicao.hidden=true;
@@ -264,7 +265,7 @@ function desenharCombateMestre(){
       const salvarEdicao=document.createElement('button');salvarEdicao.type='button';salvarEdicao.className='botao pequeno primario';salvarEdicao.textContent='Salvar';
       const cancelarEdicao=document.createElement('button');cancelarEdicao.type='button';cancelarEdicao.className='botao pequeno';cancelarEdicao.textContent='Cancelar';
       editar.addEventListener('click',()=>{editorEdicao.hidden=!editorEdicao.hidden;if(!editorEdicao.hidden)duracaoEdicao.focus();});
-      salvarEdicao.addEventListener('click',()=>{condicao.duracao=duracaoEdicao.value.trim()||'Conforme a fonte';condicao.observacao=observacaoEdicao.value.trim();salvarCombateMestre();});
+      salvarEdicao.addEventListener('click',()=>{condicao.duracao=duracaoEdicao.value.trim();condicao.observacao=observacaoEdicao.value.trim();salvarCombateMestre();});
       cancelarEdicao.addEventListener('click',()=>{editorEdicao.hidden=true;});
       excluir.addEventListener('click',()=>removerCondicaoCombate(p.id,condicao.id));
       editorEdicao.append(duracaoEdicao,observacaoEdicao,salvarEdicao,cancelarEdicao);
@@ -276,7 +277,7 @@ function desenharCombateMestre(){
     const manual=document.createElement('option');manual.value='__manual__';manual.textContent='Outra condição (inserir manualmente)';seletor.append(manual);
     const referencia=document.createElement('div');referencia.className='condicao-referencia dica';referencia.setAttribute('aria-live','polite');referencia.textContent='Selecione uma condição para consultar seu efeito e a orientação de duração do livro.';
     const manualInput=document.createElement('input');manualInput.id='condicao-manual-'+p.id;manualInput.type='text';manualInput.maxLength=60;manualInput.placeholder='Nome da condição personalizada';manualInput.setAttribute('aria-label','Nome da condição personalizada');manualInput.hidden=true;
-    const duracaoRotulo=document.createElement('label');duracaoRotulo.textContent='Duração / término';const duracao=document.createElement('input');duracao.id='condicao-duracao-'+p.id;duracao.type='text';duracao.maxLength=80;duracao.placeholder='Ex.: até o fim do próximo turno';duracao.setAttribute('aria-label','Duração ou momento de término');
+    const duracaoRotulo=document.createElement('label');duracaoRotulo.textContent='Duração / término desta aplicação';const duracao=document.createElement('input');duracao.id='condicao-duracao-'+p.id;duracao.type='text';duracao.maxLength=80;duracao.placeholder='Registre quando esta aplicação termina';duracao.setAttribute('aria-label','Duração ou momento de término');
     const observacaoRotulo=document.createElement('label');observacaoRotulo.textContent='Observação (opcional)';const observacao=document.createElement('textarea');observacao.id='condicao-observacao-'+p.id;observacao.rows=2;observacao.maxLength=300;observacao.placeholder='Fonte, teste necessário ou detalhe da cena';observacao.setAttribute('aria-label','Observação da condição');
     function atualizarReferencia(){const item=CONDICOES_OFICIAIS_AB.find(x=>x.nome===seletor.value);referencia.replaceChildren();if(item){const efeito=document.createElement('p');efeito.textContent='Efeito: '+item.efeito;const dur=document.createElement('p');dur.textContent='Duração/remoção no livro: '+item.duracao;referencia.append(efeito,dur);duracao.value=duracaoInicialCondicao(item);}else{referencia.textContent=seletor.value==='__manual__'?'Condição personalizada: registre o efeito e o término nas observações.':'Selecione uma condição para consultar seu efeito e a orientação de duração do livro.';duracao.value='';}manualInput.hidden=seletor.value!=='__manual__';}
     seletor.addEventListener('change',atualizarReferencia);
