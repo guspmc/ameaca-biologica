@@ -248,3 +248,62 @@ assert.equal(estado().participantes[0].pvAtual,80);
 assert.equal(estado().participantes[0].aguardandoRetorno,false);
 
 console.log('Painel do Mestre: turnos OK');
+
+
+// Respostas assíncronas do combate ficam vinculadas à Mesa que iniciou a operação.
+(async()=>{
+  function novoContextoPersistencia(){
+    const armazenamento=new Map();
+    const doc={hidden:false,activeElement:null,addEventListener(){},getElementById(){return null;}};
+    const ctx=vm.createContext({
+      document:doc,$:()=>null,confirm:()=>true,estado:{mesaId:'mesa-a',mesaAtual:{papel:'mestre'},modo:'local',base:'http://servidor',token:'token'},
+      setInterval(){},renderizarMesa(){},carregarMesaAtual(){},crypto:{randomUUID:()=> 'id-teste'},mensagem(){},
+      localStorage:{setItem(k,v){armazenamento.set(k,v);},getItem(k){return armazenamento.has(k)?armazenamento.get(k):null;},removeItem(k){armazenamento.delete(k);}},
+      buscar:null
+    });
+    vm.runInContext(codigo,ctx,{filename:'painel-mestre-persistencia.js'});
+    return {ctx,armazenamento};
+  }
+  const snapshotA={mesaId:'mesa-a',versao:2,combateAtivo:true,rodada:1,turnoAtual:'a',participantes:[{id:'a',nome:'Participante A'}]};
+  const snapshotB={mesaId:'mesa-b',versao:4,combateAtivo:true,rodada:3,turnoAtual:'b',participantes:[{id:'b',nome:'Participante B'}]};
+
+  // PUT atrasado da Mesa A não pode substituir o combate ativo nem o cache da Mesa B.
+  {
+    const {ctx,armazenamento}=novoContextoPersistencia();
+    let resolver,urlEnviada;
+    ctx.buscar=(url)=>{urlEnviada=url;return new Promise(resolve=>{resolver=resolve;});};
+    vm.runInContext('combateMestre='+JSON.stringify(snapshotA),ctx);
+    const operacao=vm.runInContext('salvarCombateMestre()',ctx);
+    ctx.estado.mesaId='mesa-b';
+    ctx.estado.mesaAtual={papel:'jogador'};
+    vm.runInContext('combateMestre='+JSON.stringify(snapshotB),ctx);
+    resolver({combate:snapshotA});
+    await operacao;
+    assert.match(urlEnviada,/mesa-a\/combate$/);
+    assert.equal(vm.runInContext('combateMestre.mesaId',ctx),'mesa-b');
+    const cacheA=JSON.parse(armazenamento.get('ab-combate-mestre:mesa-a'));
+    assert.equal(cacheA.estado.mesaId,'mesa-a');
+    assert.equal(cacheA.pendente,false);
+    assert.equal(armazenamento.has('ab-combate-mestre:mesa-b'),false);
+  }
+
+  // GET atrasado também fica isolado: a resposta de A não invade a Mesa B aberta.
+  {
+    const {ctx,armazenamento}=novoContextoPersistencia();
+    let resolver,urlEnviada;
+    ctx.buscar=(url)=>{urlEnviada=url;return new Promise(resolve=>{resolver=resolve;});};
+    const operacao=vm.runInContext('carregarCombateMestre()',ctx);
+    ctx.estado.mesaId='mesa-b';
+    ctx.estado.mesaAtual={papel:'jogador'};
+    vm.runInContext('combateMestre='+JSON.stringify(snapshotB),ctx);
+    resolver({combate:snapshotA});
+    await operacao;
+    assert.match(urlEnviada,/mesa-a\/combate$/);
+    assert.equal(vm.runInContext('combateMestre.mesaId',ctx),'mesa-b');
+    const cacheA=JSON.parse(armazenamento.get('ab-combate-mestre:mesa-a'));
+    assert.equal(cacheA.estado.mesaId,'mesa-a');
+    assert.equal(cacheA.pendente,false);
+    assert.equal(armazenamento.has('ab-combate-mestre:mesa-b'),false);
+  }
+  console.log('Painel do Mestre: isolamento assíncrono por Mesa OK');
+})().catch(erro=>{console.error(erro);process.exitCode=1;});
