@@ -339,7 +339,8 @@ function observarEventosFicha() {
   fontesEventosFicha.add(fonte);
   fonte.addEventListener('ficha', evento => {
     let dados; try { dados = JSON.parse(evento.data); } catch { return; }
-    if (dados.id === estado.mesaId && estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') carregarResumoFichasMestre();
+    const mesaEvento = dados.mesaId || dados.id; // O servidor de Fichas da main emite { mesaId, fichaId }.
+    if (mesaEvento === estado.mesaId && estado.tela === 'mesa' && estado.mesaAtual?.papel === 'mestre') carregarResumoFichasMestre();
   });
 }
 let mesaCombateCarregada=null;
