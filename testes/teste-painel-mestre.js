@@ -57,6 +57,20 @@ assert.equal(condicao.nome,'Exposto');
 assert.equal(condicao.duracao.length,80);
 assert.equal(condicao.observacao.length,300);
 
+// Efeitos de progressão usam o mesmo registro persistente das condições,
+// mas conservam sua categoria e o estado independente da notificação.
+r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
+{id:'p1',nome:'Alice',tipo:'personagem',agi:3,bonusIniciativa:3,d20:12,condicoes:[
+{id:'e1',tipo:'progressao',nome:'Nível Negativo',duracao:'até recuperar o nível',observacao:'Perda por Morte',notificacao:{id:'n1',estado:'pendente',criadaEm:'2026-11-28T10:00:00.000Z'}}
+]}
+]});
+assert.equal(r.status,200);
+const efeitoProgressao=r.dados.combate.participantes[0].condicoes[0];
+assert.equal(efeitoProgressao.tipo,'progressao');
+assert.equal(efeitoProgressao.notificacao.estado,'pendente');
+assert.equal(efeitoProgressao.notificacao.id,'n1');
+
+
 // Personagens não podem enviar bônus de Iniciativa diferente da AGI.
 r=painel.atender('Mestre','PUT','mesa-1',{rodada:1,participantes:[
 {id:'p1',nome:'Alice',tipo:'personagem',agi:3,bonusIniciativa:4,d20:12}
